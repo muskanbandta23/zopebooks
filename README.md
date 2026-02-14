@@ -2,6 +2,9 @@
 
 A modular, pluggable ebook-as-code system for generating multi-format ebooks (HTML, PDF, EPUB) with auto-generated landing pages and social media assets.
 
+**Repository:** https://github.com/talvinder/ebooks
+**Roadmap:** [6-Week SOTA Transformation Plan](https://github.com/talvinder/ebooks/issues/7)
+
 ## ✅ System Status: **Fully Operational**
 
 All components tested and working:
@@ -214,6 +217,23 @@ Edit TSX templates in `_social/templates/` to customize:
 **EPUB**: 204KB e-reader compatible format  
 **Landing Page**: Lead capture page with form, chapter listing, and brand styling  
 **Social Assets**: Ready-to-publish images for LinkedIn, Instagram, and social sharing
+
+## Roadmap
+
+See the [6-Week SOTA Transformation Plan](https://github.com/talvinder/ebooks/issues/7) for upcoming enhancements:
+
+- **Epic #1**: Hierarchical Brand Configuration System ([#1](https://github.com/talvinder/ebooks/issues/1))
+- **Epic #2**: Visual Foundation & Premium Theme ([#2](https://github.com/talvinder/ebooks/issues/2))
+- **Epic #3**: Professional D2 Diagram System ([#3](https://github.com/talvinder/ebooks/issues/3))
+- **Epic #4**: Content Transformation to SOTA Quality ([#4](https://github.com/talvinder/ebooks/issues/4))
+- **Epic #5**: Interactive Elements & Observable JS ([#5](https://github.com/talvinder/ebooks/issues/5))
+- **Epic #6**: Multi-Book Hub & Scalable Publishing ([#6](https://github.com/talvinder/ebooks/issues/6))
+
+**Target:** Transform from 21% → 85% quality score (AWS/Stripe documentation level)
+
+## Contributing
+
+This is an active project with planned iterations. See the [GitHub Issues](https://github.com/talvinder/ebooks/issues) for the current roadmap and open tasks.
 
 ## License
 
