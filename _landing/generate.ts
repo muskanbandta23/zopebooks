@@ -97,6 +97,7 @@ for (const ebook of calendar.ebooks) {
     cta_text: ctaText,
     form_action: landing.form_action || "#",
     year: new Date().getFullYear(),
+    theme_color: brandConfig.resolved.colors.primary,
     css_vars: buildCssVars(brandConfig),
 
     // Brand-extended data
