@@ -404,12 +404,19 @@ throw new Error(
   - PR: #8
   - Key files: `_brand/_brand-extended.yml`, `scripts/brand-utils.ts`, `books/finops-playbook/brand-overrides.yml`
 
-### Next (Epic #2)
-- 🚧 **Visual Foundation & Premium Theme System**
-  - Hero gradient backgrounds
-  - Card hover effects
-  - Premium typography scale
-  - Enhanced responsive design
+- ✅ **Epic #2:** Visual Foundation & Premium Theme System
+  - Branch: `feature/visual-foundation`
+  - Key files: `scripts/theme-tokens.ts`, `scripts/theme-utils.ts`, `_landing/styles.css`, all social templates
+  - Design tokens: Type scale, spacing, shadows, radii, transitions, letter-spacing, line-height
+  - Landing pages: Mesh gradients, glass-morphism, card hover lifts, 4 responsive breakpoints
+  - Social assets: Gradient backgrounds, decorative elements, expanded color palette
+
+### Next (Epic #3)
+- 🚧 **Enhanced Content System**
+  - Rich chapter metadata
+  - Author bios
+  - Call-out boxes
+  - Chapter dependencies
 
 ### Future
 - See `docs/EBOOK_UPGRADE_ROADMAP.md` for full roadmap
@@ -431,6 +438,8 @@ books/{id}/
 
 scripts/
 ├── brand-utils.ts         # Brand loading & merging
+├── theme-tokens.ts        # Design token definitions
+├── theme-utils.ts         # Token CSS vars & social theme values
 ├── validate.ts            # Config validation
 └── new-ebook.sh          # Scaffolding
 
@@ -456,8 +465,14 @@ loadMergedBrand(ebookId: string): BrandConfig
 // Deep merge two objects
 deepMerge(base: any, override: any): any
 
-// Generate CSS variables from brand
-buildCssVars(colors: ColorPalette): string
+// Generate CSS variables from brand + design tokens
+buildCssVars(config: MergedBrandConfig): Array<{ name: string; value: string }>
+
+// Generate design token CSS variables
+buildDesignTokenCssVars(): Array<{ name: string; value: string }>
+
+// Get Satori-safe social theme values
+getSocialThemeValues(config): SocialThemeColors
 ```
 
 ### Make Commands
@@ -473,4 +488,4 @@ make all                   # Full pipeline
 
 ---
 
-**Last Updated:** 2026-02-14 (after Epic #1 completion)
+**Last Updated:** 2026-02-14 (after Epic #2 completion)
