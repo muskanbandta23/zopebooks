@@ -7,6 +7,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { parse } from "yaml";
+import { buildDesignTokenCssVars } from "./theme-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
@@ -337,6 +338,28 @@ for (const slug of slugs) {
         warn(`${prefix}: color override '${key}' value '${value}' is not a hex color (may be a palette reference)`);
       }
     }
+  }
+}
+
+// --- Validate design tokens ---
+
+console.log("Validating design tokens...");
+
+const tokenVars = buildDesignTokenCssVars();
+const MIN_TOKEN_COUNT = 30;
+
+if (tokenVars.length < MIN_TOKEN_COUNT) {
+  error(
+    `Design token system produced only ${tokenVars.length} CSS variables (expected at least ${MIN_TOKEN_COUNT}). ` +
+    `Check scripts/theme-tokens.ts for missing token categories.`
+  );
+}
+
+// Verify key token prefixes are present
+const expectedPrefixes = ["--font-size-", "--space-", "--shadow-", "--radius-", "--transition-", "--letter-spacing-", "--line-height-"];
+for (const prefix of expectedPrefixes) {
+  if (!tokenVars.some(v => v.name.startsWith(prefix))) {
+    error(`Design tokens missing category: ${prefix}* (check scripts/theme-tokens.ts)`);
   }
 }
 

@@ -432,6 +432,64 @@ The hierarchical brand system now:
    - `_templates/brand-overrides.yml` provides starter template
    - See example implementation in `books/finops-playbook/brand-overrides.yml`
 
+## Design Token System
+
+### Overview
+
+The design token system provides consistent, reusable design primitives across all output formats. Tokens are defined once in `scripts/theme-tokens.ts` and consumed through format-specific utilities.
+
+### Token Categories
+
+| Category | Prefix | Example | File |
+|----------|--------|---------|------|
+| Type scale | `--font-size-*` | `--font-size-2xl` → `1.728rem` | `theme-tokens.ts` |
+| Spacing | `--space-*` | `--space-8` → `2rem` | `theme-tokens.ts` |
+| Shadows | `--shadow-*` | `--shadow-lg` → complex box-shadow | `theme-tokens.ts` |
+| Border radius | `--radius-*` | `--radius-lg` → `0.75rem` | `theme-tokens.ts` |
+| Transitions | `--transition-*` | `--transition-fast` → `150ms ease` | `theme-tokens.ts` |
+| Letter spacing | `--letter-spacing-*` | `--letter-spacing-tight` → `-0.025em` | `theme-tokens.ts` |
+| Line height | `--line-height-*` | `--line-height-relaxed` → `1.625` | `theme-tokens.ts` |
+
+### How Tokens Flow
+
+```
+scripts/theme-tokens.ts        Pure data definitions (no I/O)
+        ↓
+scripts/theme-utils.ts         Consumer utilities
+        ↓
+┌───────────────────────────────────────────────────┐
+│                                                   │
+│  Landing pages:                                   │
+│    buildDesignTokenCssVars() → CSS custom props    │
+│    Appended via buildCssVars() in brand-utils.ts  │
+│    Used in styles.css as var(--font-size-xl, ...)  │
+│                                                   │
+│  Social templates:                                │
+│    getSocialThemeValues() → flat object            │
+│    No CSS vars (Satori doesn't support them)      │
+│    Adds darkPrimary, lightBackground from primary │
+│                                                   │
+└───────────────────────────────────────────────────┘
+```
+
+### Adding New Tokens
+
+1. Add the token values to the appropriate constant in `scripts/theme-tokens.ts`
+2. If it's a new category, add it to the `designTokens` bundle
+3. Add CSS variable generation in `scripts/theme-utils.ts` → `buildDesignTokenCssVars()`
+4. If social templates need it, update `getSocialThemeValues()` in `theme-utils.ts`
+5. Use the new tokens in CSS (`var(--your-token)`) or social templates (direct values)
+6. Validation automatically checks that all token categories produce CSS variables
+
+### Key Files
+
+```
+scripts/
+├── theme-tokens.ts     # Token definitions (pure data)
+├── theme-utils.ts      # buildDesignTokenCssVars(), getSocialThemeValues()
+└── brand-utils.ts      # Imports & re-exports theme utils, integrates into buildCssVars()
+```
+
 ## Issue Workflow
 
 ### Epics
