@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+_output/
+.build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Quarto render artifacts
+.quarto/
+*_files/
+
+# Environment
+.env
+.env.local
+
+# Bun
+bun.lockb
+
+# Documentation (work in progress, not for version control)
+docs/

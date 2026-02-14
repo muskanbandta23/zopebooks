@@ -1,0 +1,60 @@
+meta:
+  slug: "finops-playbook"
+  title: "The FinOps Playbook"
+  subtitle: "A Practical Guide to Cloud Financial Management"
+  version: "0.1.0"
+
+chapters:
+  - id: "01-intro"
+    title: "Introduction to FinOps"
+    summary: "Why cloud financial management matters and what FinOps means for modern engineering teams."
+  - id: "02-cloud-cost-fundamentals"
+    title: "Cloud Cost Fundamentals"
+    summary: "Understanding cloud pricing models, billing structures, and the economics of cloud computing."
+  - id: "03-finops-framework"
+    title: "The FinOps Framework"
+    summary: "The Inform, Optimize, Operate lifecycle and how to implement it in your organization."
+  - id: "04-cost-allocation"
+    title: "Cost Allocation & Tagging"
+    summary: "Strategies for attributing cloud costs to teams, products, and business units."
+  - id: "05-optimization-strategies"
+    title: "Optimization Strategies"
+    summary: "Right-sizing, reserved instances, spot instances, and architectural cost optimization."
+  - id: "06-tooling-automation"
+    title: "Tooling & Automation"
+    summary: "Building automated cost monitoring, alerting, and optimization pipelines."
+  - id: "07-culture-adoption"
+    title: "Culture & Adoption"
+    summary: "Building a FinOps culture and driving adoption across engineering and finance teams."
+  - id: "08-case-studies"
+    title: "Case Studies"
+    summary: "Real-world examples of FinOps transformations and their measurable outcomes."
+
+social:
+  linkedin_carousel:
+    slides:
+      - heading: "The FinOps Playbook"
+        body: "A practical guide to cloud financial management by Zopdev"
+      - heading: "Why FinOps Matters"
+        body: "Organizations waste 30%+ of cloud spend. FinOps helps you take control."
+      - heading: "The FinOps Lifecycle"
+        body: "Inform → Optimize → Operate: A continuous cycle of cloud cost management."
+      - heading: "Right-Size Everything"
+        body: "Match resource allocation to actual usage. Stop paying for idle capacity."
+      - heading: "Automate Savings"
+        body: "Build pipelines that automatically detect waste and optimize spend."
+      - heading: "Get the Full Guide"
+        body: "Download the free FinOps Playbook at zopdev.com"
+
+  instagram_posts:
+    quotes:
+      - text: "The goal of FinOps isn't to cut costs — it's to maximize the business value of every dollar spent in the cloud."
+        attribution: "The FinOps Playbook"
+      - text: "You can't optimize what you can't measure. Start with visibility, then drive accountability."
+        attribution: "The FinOps Playbook"
+      - text: "FinOps is a cultural practice. Technology alone won't fix cloud waste — you need shared ownership."
+        attribution: "The FinOps Playbook"
+
+  og_image:
+    title: "The FinOps Playbook"
+    subtitle: "A Practical Guide to Cloud Financial Management"

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} — {{subtitle}}</title>
+  <meta name="description" content="{{description}}">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:type" content="website">
+  {{#og_image}}
+  <meta property="og:image" content="{{og_image}}">
+  {{/og_image}}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{title}}">
+  <meta name="twitter:description" content="{{description}}">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      {{#css_vars}}
+      {{name}}: {{value}};
+      {{/css_vars}}
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="logo">
+        <img src="logo.svg" alt="Zopdev" width="150" height="38">
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            {{#tags}}
+            <div class="tags">
+              {{#items}}
+              <span class="tag">{{.}}</span>
+              {{/items}}
+            </div>
+            {{/tags}}
+            <h1>{{headline}}</h1>
+            <p class="subtitle">{{subtitle}}</p>
+            <p class="description">{{description}}</p>
+          </div>
+          <div class="hero-form">
+            <div class="form-card">
+              <h2>{{cta_text}}</h2>
+              <form action="{{form_action}}" method="POST">
+                <input type="hidden" name="ebook_slug" value="{{slug}}">
+                <div class="form-group">
+                  <label for="name">Full Name</label>
+                  <input type="text" id="name" name="name" placeholder="Your name" required>
+                </div>
+                <div class="form-group">
+                  <label for="email">Work Email</label>
+                  <input type="email" id="email" name="email" placeholder="you@company.com" required>
+                </div>
+                <div class="form-group">
+                  <label for="company">Company</label>
+                  <input type="text" id="company" name="company" placeholder="Your company">
+                </div>
+                <button type="submit" class="btn-primary">{{cta_text}}</button>
+                <p class="form-note">Free download. No spam. Unsubscribe anytime.</p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {{#chapters}}
+    <section class="chapters">
+      <div class="container">
+        <h2>What's Inside</h2>
+        <div class="chapter-grid">
+          {{#items}}
+          <div class="chapter-card">
+            <span class="chapter-number">{{number}}</span>
+            <h3>{{title}}</h3>
+            <p>{{summary}}</p>
+          </div>
+          {{/items}}
+        </div>
+      </div>
+    </section>
+    {{/chapters}}
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Ready to take control of your cloud costs?</h2>
+        <p>Download <em>{{title}}</em> and start optimizing today.</p>
+        <a href="#" class="btn-primary" onclick="document.querySelector('.hero-form').scrollIntoView({behavior:'smooth'});return false;">
+          {{cta_text}}
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; {{year}} Zopdev. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

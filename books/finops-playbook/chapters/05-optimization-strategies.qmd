@@ -1,0 +1,107 @@
+---
+title: "Optimization Strategies"
+---
+
+# Optimization Strategies
+
+With visibility and allocation in place, the next step is to act on what you see. This chapter covers the primary optimization strategies available to FinOps practitioners: right-sizing resources, leveraging commitment-based discounts, adopting spot instances, redesigning architectures for cost efficiency, and optimizing storage and data transfer. Each strategy has different effort levels, risk profiles, and savings potential.
+
+## Right-Sizing Resources
+
+Right-sizing is the practice of matching resource allocation to actual workload requirements. It is consistently the highest-impact optimization available, because over-provisioning is pervasive — most organizations find that 30% to 50% of their compute instances are significantly oversized relative to actual utilization.
+
+### Identifying Over-Provisioned Resources
+
+Cloud providers offer built-in recommendations for right-sizing. AWS Compute Optimizer, GCP Recommender, and Azure Advisor all analyze historical utilization data and suggest smaller instance types that would still meet performance requirements. Third-party tools like Spot.io, CloudHealth, and Kubecost provide similar recommendations with additional context.
+
+The key metric for right-sizing is utilization. An instance running at 5% CPU utilization is almost certainly over-provisioned. However, CPU is not the only dimension — memory, network throughput, and disk I/O must also be considered. A workload that is CPU-light but memory-heavy needs a different instance family, not just a smaller instance.
+
+### Implementing Right-Sizing
+
+Right-sizing can feel risky because it involves reducing resource allocation for production workloads. The key to managing this risk is a gradual, data-driven approach. Start with the most obviously over-provisioned resources — instances running below 10% utilization for sustained periods. Make changes during maintenance windows. Monitor performance after changes and be prepared to scale back up if needed.
+
+::: {.callout-tip}
+Automate right-sizing for non-production environments first. Development and staging environments can tolerate more aggressive sizing without production risk, and the savings add up quickly.
+:::
+
+### Continuous Right-Sizing
+
+Right-sizing is not a one-time activity. Workload patterns change over time, and instances that were correctly sized six months ago may be over- or under-provisioned today. Establish a regular cadence — monthly or quarterly — for reviewing utilization data and adjusting instance sizes. Automated right-sizing tools that continuously adjust resource allocation based on real-time demand are emerging and represent the future of this practice.
+
+## Reserved Instances and Savings Plans
+
+Commitment-based discounts are the second major optimization lever. By committing to a certain level of cloud usage over one or three years, organizations can reduce compute costs by 30% to 70% compared to on-demand pricing.
+
+### Choosing the Right Commitment
+
+The commitment landscape is complex. AWS alone offers Standard Reserved Instances, Convertible Reserved Instances, Compute Savings Plans, and EC2 Instance Savings Plans — each with different flexibility and discount levels. Azure and GCP have their own equivalents.
+
+The general principle is straightforward: the more flexibility you give up, the deeper the discount. A one-year convertible reserved instance offers a modest discount but can be exchanged for a different instance type. A three-year standard reserved instance offers the deepest discount but locks you into a specific instance type, region, and operating system.
+
+### Managing a Commitment Portfolio
+
+Effective commitment management requires treating reservations and savings plans as a portfolio. Monitor utilization rates (what percentage of committed capacity is actually used) and coverage rates (what percentage of eligible on-demand usage is covered by commitments). Target utilization above 80% and coverage that balances savings against the risk of over-commitment.
+
+Review the portfolio quarterly. As workloads change, some commitments may become underutilized while new workloads run at on-demand rates. Most providers allow you to sell unused reserved instances on a marketplace or exchange convertible reservations for different instance types.
+
+::: {.callout-warning}
+Avoid the temptation to maximize commitment coverage. A portfolio with 100% coverage and 60% utilization wastes money on unused commitments. A portfolio with 70% coverage and 95% utilization is more cost-effective overall.
+:::
+
+## Spot and Preemptible Instances
+
+Spot instances offer the deepest discounts in cloud computing — typically 60% to 90% off on-demand pricing. The trade-off is that the cloud provider can reclaim spot capacity with minimal notice when demand from on-demand or reserved customers increases.
+
+### Workload Suitability
+
+Not every workload is suitable for spot instances. Ideal spot candidates are stateless, fault-tolerant, and flexible in their execution timing. Common use cases include batch processing, CI/CD pipelines, data analytics, machine learning training, and containerized microservices behind load balancers.
+
+Workloads that are stateful, latency-sensitive, or cannot tolerate interruption should remain on on-demand or reserved capacity. The key question is: "What happens if this instance disappears with two minutes' notice?" If the answer is "the workload restarts on another instance and continues," it is a spot candidate.
+
+### Spot Architecture Patterns
+
+Adopting spot instances requires architectural patterns that handle interruptions gracefully. Common patterns include diversifying across multiple instance types and availability zones (reducing the probability of simultaneous reclamation), using instance fleets that mix spot and on-demand capacity, implementing checkpointing for long-running jobs, and using orchestration tools like Kubernetes with spot-aware schedulers.
+
+The investment in spot-compatible architecture pays for itself quickly. An organization spending $100,000/month on CI/CD infrastructure can reduce that to $20,000/month with spot instances — a $960,000 annual saving that justifies significant engineering effort.
+
+## Architectural Cost Optimization
+
+Architectural cost optimization involves redesigning systems to be inherently cheaper to operate. Unlike right-sizing and commitment management, which optimize within existing architecture, architectural changes alter the fundamental cost structure of a system.
+
+### Serverless for Variable Workloads
+
+Serverless computing (AWS Lambda, GCP Cloud Functions, Azure Functions) charges only for actual execution time, with no cost for idle capacity. For workloads with highly variable traffic — APIs with spiky request patterns, event-driven processing, scheduled jobs — serverless can dramatically reduce costs compared to always-on compute instances.
+
+The transition to serverless requires rethinking application design. Cold start latency, execution time limits, and stateless execution constraints all influence whether serverless is appropriate. The savings potential is highest for workloads that are idle much of the time and experience brief bursts of activity.
+
+### Caching and CDN Optimization
+
+Caching reduces costs by eliminating redundant computation and data transfer. A well-implemented caching layer — using services like ElastiCache, Memorystore, or CloudFront — can reduce database query volume by 80% or more, directly lowering both compute and data transfer costs.
+
+CDN (Content Delivery Network) optimization reduces data transfer costs by serving content from edge locations close to users instead of from origin servers. For content-heavy applications, CDN optimization can reduce origin egress charges by 50% to 80%.
+
+### Managed Services vs Self-Hosted
+
+The build-vs-buy decision has direct cost implications. Running a self-managed Kafka cluster, Elasticsearch cluster, or PostgreSQL database requires provisioning compute, storage, and networking — plus engineering time for operations, patching, and scaling. Managed alternatives (Amazon MSK, Elastic Cloud, Amazon RDS) trade higher per-unit costs for reduced operational burden.
+
+The total cost comparison must include engineering time. An organization paying a senior engineer $200,000/year to manage a database cluster should compare that total cost (salary plus infrastructure) against the fully loaded cost of a managed service.
+
+## Storage and Data Transfer Optimization
+
+Storage and data transfer costs are often overlooked but can represent 20% to 40% of total cloud spending. Optimization in these areas requires a combination of lifecycle policies, architectural decisions, and monitoring.
+
+### Storage Lifecycle Policies
+
+Cloud object storage services offer multiple storage tiers at different price points. Amazon S3, for example, offers Standard, Infrequent Access, Glacier Instant Retrieval, Glacier Flexible Retrieval, and Glacier Deep Archive — ranging from $0.023/GB/month to $0.00099/GB/month. Implementing lifecycle policies that automatically transition data to cheaper tiers based on access patterns is one of the simplest and highest-ROI optimizations available.
+
+The key is understanding access patterns. Data that is written once and accessed frequently for 30 days, then rarely accessed, is a perfect candidate for automatic tiering. Data that must remain instantly accessible but is accessed infrequently benefits from Infrequent Access tiers. Compliance archives that are never accessed except in audits belong in deep archive storage.
+
+### Reducing Data Transfer Costs
+
+Data transfer optimization starts with understanding traffic flows. Use VPC flow logs and cloud billing data to identify the largest sources of data transfer charges. Common optimization strategies include co-locating services in the same region and availability zone, using private connectivity (VPC peering, PrivateLink) instead of public internet paths, compressing data before transfer, and implementing efficient serialization formats (Protocol Buffers instead of JSON, for example).
+
+For multi-region architectures, evaluate whether all regions are necessary. Each additional region multiplies data replication costs. Some organizations find that a single-region architecture with a CDN for global content delivery is more cost-effective than a true multi-region deployment.
+
+## Summary
+
+Optimization strategies span a spectrum from low-effort, immediate wins (right-sizing obvious over-provisioning) to high-effort, transformative changes (architectural redesign for cost efficiency). The most effective FinOps programs pursue all levels simultaneously: right-sizing for quick wins, commitment management for sustained savings, spot instances for eligible workloads, and architectural optimization for long-term cost efficiency. Storage and data transfer optimization round out the toolkit, addressing cost categories that are easy to overlook but significant in aggregate.

@@ -1,0 +1,76 @@
+% Zopdev PDF Preamble
+% Included via: include-in-header in _quarto.yml
+
+% Colors
+\usepackage{xcolor}
+\definecolor{zopdev-blue}{HTML}{0052FF}
+\definecolor{zopdev-navy}{HTML}{0A1628}
+\definecolor{zopdev-gray}{HTML}{475569}
+\definecolor{zopdev-light}{HTML}{F8FAFC}
+
+% Typography
+\usepackage{fontspec}
+\setmainfont{Inter}[
+  UprightFont = *-Regular,
+  BoldFont = *-Bold,
+  ItalicFont = *-Italic,
+  BoldItalicFont = *-BoldItalic
+]
+\setmonofont{JetBrains Mono}[
+  Scale=0.85
+]
+
+% Headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{zopdev-gray}{\leftmark}}
+\fancyhead[R]{\small\textcolor{zopdev-gray}{\thepage}}
+\fancyfoot[C]{\small\textcolor{zopdev-gray}{zopdev}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Chapter title formatting
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{zopdev-navy}}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{zopdev-navy}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{zopdev-navy}}
+  {\thesubsection}{1em}{}
+
+% Code block styling
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, skins, breakable}
+\newtcblisting{codebox}{
+  colback=zopdev-light,
+  colframe=zopdev-blue,
+  listing only,
+  left=6pt,
+  right=6pt,
+  top=4pt,
+  bottom=4pt,
+  arc=4pt,
+  boxrule=0.5pt
+}
+
+% Hyperlink colors
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=zopdev-blue,
+  urlcolor=zopdev-blue,
+  citecolor=zopdev-blue
+}
+
+% Better tables
+\usepackage{booktabs}
+\usepackage{longtable}
+
+% Tight spacing
+\usepackage{parskip}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}

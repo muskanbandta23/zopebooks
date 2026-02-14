@@ -1,0 +1,117 @@
+/* Zopdev EPUB Theme */
+
+body {
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  line-height: 1.7;
+  color: #0A1628;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  font-weight: 700;
+  color: #0A1628;
+  line-height: 1.3;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+h1 {
+  font-size: 1.8em;
+  border-bottom: 2px solid #0052FF;
+  padding-bottom: 0.3em;
+}
+
+h2 {
+  font-size: 1.4em;
+}
+
+h3 {
+  font-size: 1.2em;
+}
+
+code {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 0.875em;
+  color: #0052FF;
+}
+
+pre {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  padding: 1em;
+  overflow-x: auto;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+pre code {
+  color: inherit;
+}
+
+blockquote {
+  border-left: 4px solid #0052FF;
+  margin: 1.5em 0;
+  padding: 0.5em 1em;
+  color: #475569;
+  font-style: italic;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+th {
+  background-color: #0052FF;
+  color: #FFFFFF;
+  padding: 0.75em;
+  text-align: left;
+}
+
+td {
+  padding: 0.75em;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+a {
+  color: #0052FF;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+figcaption {
+  font-size: 0.875em;
+  color: #64748B;
+  text-align: center;
+  margin-top: 0.5em;
+}
+
+/* Callout boxes */
+.callout {
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  padding: 1em;
+  margin: 1.5em 0;
+}
+
+.callout-tip {
+  border-left: 4px solid #0052FF;
+}
+
+.callout-warning {
+  border-left: 4px solid #F59E0B;
+}
+
+.callout-important {
+  border-left: 4px solid #EF4444;
+}

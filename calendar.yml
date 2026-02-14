@@ -1,0 +1,25 @@
+# Zopdev Ebook Content Calendar
+# This file is the source of truth for all ebook projects.
+
+ebooks:
+  - slug: finops-playbook
+    title: "The FinOps Playbook"
+    subtitle: "A Practical Guide to Cloud Financial Management"
+    authors:
+      - "Zopdev Team"
+    status: in-progress          # draft | in-progress | review | published | archived
+    scheduled_publish: 2026-04-15
+    tags: [finops, cloud, cost-optimization, devops]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true
+    landing:
+      headline: "Master Cloud Financial Operations"
+      description: "Learn practical strategies to optimize cloud costs, implement FinOps practices, and build a culture of financial accountability across your engineering teams."
+      cta_text: "Download Free PDF"
+      form_action: "https://YOUR_WEBHOOK_URL/ebook-signup"  # placeholder — wire up later

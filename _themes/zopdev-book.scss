@@ -1,0 +1,60 @@
+/*-- scss:defaults --*/
+
+// Zopdev Book Theme — extends Quarto's cosmo + brand
+// Applied via: theme: [cosmo, brand, ../../_themes/zopdev-book.scss]
+
+/*-- scss:rules --*/
+
+// Chapter title styling
+.chapter-title {
+  border-bottom: 3px solid $primary;
+  padding-bottom: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+// Sidebar nav
+.sidebar-title {
+  font-weight: 700;
+}
+
+// Callout blocks (tip, note, warning, etc.)
+.callout {
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+
+// Code blocks
+pre.sourceCode {
+  border-radius: 8px;
+  border: 1px solid $gray-200;
+}
+
+// Tables
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+
+  thead {
+    background-color: $primary;
+    color: $white;
+  }
+}
+
+// Figures
+.quarto-figure {
+  margin: 2rem 0;
+  text-align: center;
+
+  figcaption {
+    font-size: 0.875rem;
+    color: $gray-500;
+    margin-top: 0.5rem;
+  }
+}
+
+// Print-friendly adjustments
+@media print {
+  .sidebar, .navbar {
+    display: none !important;
+  }
+}

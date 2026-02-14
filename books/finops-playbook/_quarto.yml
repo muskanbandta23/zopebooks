@@ -1,0 +1,38 @@
+project:
+  type: book
+  output-dir: ../../_output/books/finops-playbook
+
+book:
+  title: "The FinOps Playbook"
+  subtitle: "A Practical Guide to Cloud Financial Management"
+  author: "Zopdev Team"
+  date: "2026-04-15"
+  chapters:
+    - index.qmd
+    - chapters/01-intro.qmd
+    - chapters/02-cloud-cost-fundamentals.qmd
+    - chapters/03-finops-framework.qmd
+    - chapters/04-cost-allocation.qmd
+    - chapters/05-optimization-strategies.qmd
+    - chapters/06-tooling-automation.qmd
+    - chapters/07-culture-adoption.qmd
+    - chapters/08-case-studies.qmd
+
+format:
+  html:
+    theme: [cosmo, brand, ../../_themes/zopdev-book.scss]
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-link: true
+  pdf:
+    documentclass: book
+    include-in-header: ../../_themes/preamble.tex
+    toc: true
+    number-sections: true
+    colorlinks: true
+    keep-tex: false
+  epub:
+    css: ../../_themes/zopdev-epub.css
+    toc: true
+    number-sections: true

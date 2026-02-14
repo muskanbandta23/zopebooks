@@ -1,0 +1,34 @@
+# Per-ebook metadata for {{title}}
+# Supplements calendar.yml with ebook-specific detail.
+
+meta:
+  slug: "{{slug}}"
+  title: "{{title}}"
+  subtitle: "{{subtitle}}"
+  version: "0.1.0"
+
+chapters:
+  - id: "01-intro"
+    title: "Introduction"
+    summary: ""
+
+social:
+  linkedin_carousel:
+    slides:
+      - heading: "{{title}}"
+        body: "A comprehensive guide by Zopdev"
+      - heading: "Key Takeaway #1"
+        body: "Replace with actual takeaway"
+      - heading: "Key Takeaway #2"
+        body: "Replace with actual takeaway"
+      - heading: "Get the Full Guide"
+        body: "Download now at zopdev.com"
+
+  instagram_posts:
+    quotes:
+      - text: "Replace with a key quote from the ebook."
+        attribution: "Zopdev Team"
+
+  og_image:
+    title: "{{title}}"
+    subtitle: "{{subtitle}}"
