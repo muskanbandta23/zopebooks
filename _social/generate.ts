@@ -23,6 +23,7 @@ import { LinkedInSlide, type LinkedInSlideProps } from "./templates/linkedin-sli
 import { InstagramPost, type InstagramPostProps } from "./templates/instagram-post.js";
 import { OgImage, type OgImageProps } from "./templates/og-image.js";
 import { loadMergedBrand } from "../scripts/brand-utils.js";
+import { getSocialThemeValues } from "../scripts/theme-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const ROOT_DIR = join(SCRIPT_DIR, "..");
@@ -123,11 +124,14 @@ for (const ebook of calendar.ebooks) {
 
   // Load merged brand config (core + extended + per-ebook overrides)
   const brandConfig = loadMergedBrand(ROOT_DIR, ebook.slug);
+  const themeValues = getSocialThemeValues(brandConfig.resolved);
   const brandColors = {
-    primary: brandConfig.resolved.colors.primary,
-    foreground: brandConfig.resolved.colors.foreground,
-    background: brandConfig.resolved.colors.background,
-    secondary: brandConfig.resolved.colors.secondary,
+    primary: themeValues.primary,
+    foreground: themeValues.foreground,
+    background: themeValues.background,
+    secondary: themeValues.secondary,
+    darkPrimary: themeValues.darkPrimary,
+    lightBackground: themeValues.lightBackground,
   };
 
   // --- LinkedIn Carousel ---

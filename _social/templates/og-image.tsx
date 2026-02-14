@@ -11,6 +11,8 @@ export interface OgImageProps {
     foreground: string;
     background: string;
     secondary: string;
+    darkPrimary: string;
+    lightBackground: string;
   };
 }
 
@@ -26,21 +28,36 @@ export function OgImage(props: OgImageProps) {
         flexDirection: "column",
         justifyContent: "center",
         padding: 80,
-        backgroundColor: brandColors.primary,
+        background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.darkPrimary})`,
         color: "#FFFFFF",
         fontFamily: "Inter",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* Decorative corner element */}
+      {/* Decorative circle — top-right */}
       <div
         style={{
           position: "absolute",
-          top: 0,
-          right: 0,
+          top: -80,
+          right: -80,
           width: 300,
           height: 300,
           backgroundColor: "rgba(255,255,255,0.08)",
-          borderRadius: "0 0 0 100%",
+          borderRadius: "50%",
+        }}
+      />
+
+      {/* Decorative circle — bottom-left */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: -100,
+          left: -100,
+          width: 250,
+          height: 250,
+          backgroundColor: "rgba(255,255,255,0.05)",
+          borderRadius: "50%",
         }}
       />
 
@@ -49,7 +66,7 @@ export function OgImage(props: OgImageProps) {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 16,
+          gap: 20,
           maxWidth: 900,
         }}
       >
@@ -58,11 +75,23 @@ export function OgImage(props: OgImageProps) {
             fontSize: 56,
             fontWeight: 700,
             lineHeight: 1.2,
+            letterSpacing: "-0.02em",
             margin: 0,
           }}
         >
           {title}
         </h1>
+
+        {/* Divider */}
+        <div
+          style={{
+            width: 60,
+            height: 3,
+            backgroundColor: "rgba(255, 255, 255, 0.4)",
+            borderRadius: 2,
+          }}
+        />
+
         <p
           style={{
             fontSize: 28,

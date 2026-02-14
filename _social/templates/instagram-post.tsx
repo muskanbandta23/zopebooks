@@ -12,6 +12,8 @@ export interface InstagramPostProps {
     foreground: string;
     background: string;
     secondary: string;
+    darkPrimary: string;
+    lightBackground: string;
   };
 }
 
@@ -30,9 +32,11 @@ export function InstagramPost(props: InstagramPostProps) {
         padding: 80,
         backgroundColor: brandColors.background,
         fontFamily: "Inter",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* Decorative top accent */}
+      {/* Top accent bar — gradient */}
       <div
         style={{
           position: "absolute",
@@ -40,11 +44,40 @@ export function InstagramPost(props: InstagramPostProps) {
           left: 0,
           right: 0,
           height: 8,
-          backgroundColor: brandColors.primary,
+          background: `linear-gradient(90deg, ${brandColors.primary}, ${brandColors.darkPrimary})`,
         }}
       />
 
-      {/* Quote mark */}
+      {/* Background watermark quote mark */}
+      <div
+        style={{
+          position: "absolute",
+          top: 120,
+          right: 40,
+          fontSize: 480,
+          color: brandColors.primary,
+          lineHeight: 1,
+          fontWeight: 700,
+          opacity: 0.04,
+        }}
+      >
+        {"\u201C"}
+      </div>
+
+      {/* Bottom fade overlay */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 200,
+          backgroundColor: brandColors.lightBackground,
+          opacity: 0.4,
+        }}
+      />
+
+      {/* Visible quote mark */}
       <div
         style={{
           fontSize: 120,
@@ -55,7 +88,7 @@ export function InstagramPost(props: InstagramPostProps) {
           opacity: 0.3,
         }}
       >
-        &ldquo;
+        {"\u201C"}
       </div>
 
       {/* Quote text */}
@@ -84,10 +117,11 @@ export function InstagramPost(props: InstagramPostProps) {
       >
         <div
           style={{
-            width: 60,
+            width: 80,
             height: 3,
             backgroundColor: brandColors.primary,
             marginBottom: 12,
+            borderRadius: 2,
           }}
         />
         <span
