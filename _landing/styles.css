@@ -214,6 +214,60 @@ body {
   line-height: 1.6;
 }
 
+/* Products */
+.products {
+  padding: 4rem 0;
+}
+
+.products h2 {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  color: var(--color-foreground, #0A1628);
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.product-card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid var(--color-gray-200, #E2E8F0);
+  transition: box-shadow 0.2s;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.product-card h3 {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-foreground, #0A1628);
+}
+
+.product-card p {
+  font-size: 0.875rem;
+  color: var(--color-secondary, #475569);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.product-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary, #0052FF);
+  text-decoration: none;
+}
+
+.product-link:hover {
+  text-decoration: underline;
+}
+
 /* Bottom CTA */
 .cta-bottom {
   padding: 4rem 0;
@@ -243,6 +297,33 @@ body {
   background-color: var(--color-gray-100, #F1F5F9);
 }
 
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 0.875rem 2rem;
+  background-color: transparent;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Footer */
 .footer {
   padding: 2rem 0;
@@ -250,6 +331,15 @@ body {
   border-top: 1px solid var(--color-gray-200, #E2E8F0);
   color: var(--color-gray-400, #94A3B8);
   font-size: 0.875rem;
+}
+
+.footer a {
+  color: var(--color-gray-400, #94A3B8);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--color-primary, #0052FF);
 }
 
 /* Responsive */
@@ -264,6 +354,10 @@ body {
   }
 
   .chapter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-grid {
     grid-template-columns: 1fr;
   }
 }

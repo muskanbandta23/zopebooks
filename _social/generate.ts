@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Social media asset generator.
- * Reads calendar.yml, ebook.yml, and _brand.yml to generate:
+ * Reads calendar.yml, ebook.yml, and merged brand config to generate:
  *   - LinkedIn carousel slides (PNG + combined PDF)
  *   - Instagram quote cards (PNG)
  *   - Open Graph images (PNG)
@@ -22,39 +22,10 @@ import { PDFDocument } from "pdf-lib";
 import { LinkedInSlide, type LinkedInSlideProps } from "./templates/linkedin-slide.js";
 import { InstagramPost, type InstagramPostProps } from "./templates/instagram-post.js";
 import { OgImage, type OgImageProps } from "./templates/og-image.js";
+import { loadMergedBrand } from "../scripts/brand-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const ROOT_DIR = join(SCRIPT_DIR, "..");
-
-// --- Load brand config ---
-
-const brandPath = join(ROOT_DIR, "_brand", "_brand.yml");
-if (!existsSync(brandPath)) {
-  console.error("Error: _brand/_brand.yml not found");
-  process.exit(1);
-}
-
-const brand = parse(readFileSync(brandPath, "utf-8")) as {
-  color: {
-    palette: Record<string, string>;
-    foreground?: string;
-    background?: string;
-    primary?: string;
-    secondary?: string;
-  };
-};
-
-function resolveColor(value: string): string {
-  if (value.startsWith("#")) return value;
-  return brand.color.palette[value] || value;
-}
-
-const brandColors = {
-  primary: resolveColor(brand.color.primary || "#0052FF"),
-  foreground: resolveColor(brand.color.foreground || "#0A1628"),
-  background: resolveColor(brand.color.background || "#FFFFFF"),
-  secondary: resolveColor(brand.color.secondary || "#475569"),
-};
 
 // --- Load fonts ---
 
@@ -149,6 +120,15 @@ for (const ebook of calendar.ebooks) {
     console.log(`Skipping ${ebook.slug}: no social config in ebook.yml`);
     continue;
   }
+
+  // Load merged brand config (core + extended + per-ebook overrides)
+  const brandConfig = loadMergedBrand(ROOT_DIR, ebook.slug);
+  const brandColors = {
+    primary: brandConfig.resolved.colors.primary,
+    foreground: brandConfig.resolved.colors.foreground,
+    background: brandConfig.resolved.colors.background,
+    secondary: brandConfig.resolved.colors.secondary,
+  };
 
   // --- LinkedIn Carousel ---
   if (

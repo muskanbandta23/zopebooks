@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Validates calendar.yml and per-ebook ebook.yml files.
+ * Validates calendar.yml, per-ebook ebook.yml, brand configs, and brand overrides.
  * Usage: bun run scripts/validate.ts
  */
 
@@ -8,9 +8,6 @@ import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { parse } from "yaml";
 
-const ROOT_DIR = join(dirname(import.meta.dir), ".");
-// When run via `bun run scripts/validate.ts`, import.meta.dir is the scripts dir
-// Adjust to find root correctly
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
 
@@ -48,6 +45,38 @@ interface EbookManifest {
     summary?: string;
   }>;
   social?: Record<string, unknown>;
+}
+
+interface BrandExtended {
+  company?: {
+    name?: string;
+    tagline?: string;
+    website?: string;
+  };
+  products?: Array<{
+    id?: string;
+    name?: string;
+    description?: string;
+    url?: string;
+  }>;
+  default_icps?: Array<{
+    id?: string;
+    title?: string;
+    pain_points?: string[];
+    goals?: string[];
+  }>;
+  tone?: {
+    voice?: string;
+  };
+}
+
+interface BrandOverrides {
+  target_icps?: string[];
+  colors?: Record<string, string>;
+  tone?: Record<string, string>;
+  featured_products?: string[];
+  ctas?: Record<string, unknown>;
+  landing?: Record<string, unknown>;
 }
 
 const VALID_STATUSES = ["draft", "in-progress", "review", "published", "archived"];
@@ -185,11 +214,130 @@ for (const slug of slugs) {
   }
 }
 
-// --- Validate brand file ---
+// --- Validate brand files ---
 
 const brandPath = join(PROJECT_ROOT, "_brand", "_brand.yml");
 if (!existsSync(brandPath)) {
   error("_brand/_brand.yml not found");
+}
+
+const brandExtPath = join(PROJECT_ROOT, "_brand", "_brand-extended.yml");
+if (!existsSync(brandExtPath)) {
+  warn("_brand/_brand-extended.yml not found (expected for brand system)");
+} else {
+  console.log("Validating _brand/_brand-extended.yml...");
+
+  try {
+    const brandExtContent = readFileSync(brandExtPath, "utf-8");
+    const brandExt = parse(brandExtContent) as BrandExtended;
+
+    if (!brandExt.company) {
+      error("_brand-extended.yml: missing 'company' section");
+    } else {
+      if (!brandExt.company.name) error("_brand-extended.yml: missing 'company.name'");
+      if (!brandExt.company.website) warn("_brand-extended.yml: missing 'company.website'");
+    }
+
+    if (!brandExt.products || !Array.isArray(brandExt.products)) {
+      warn("_brand-extended.yml: missing or empty 'products' array");
+    } else {
+      const productIds = new Set<string>();
+      for (const product of brandExt.products) {
+        if (!product.id) {
+          error("_brand-extended.yml: product missing 'id'");
+        } else {
+          if (productIds.has(product.id)) {
+            error(`_brand-extended.yml: duplicate product id '${product.id}'`);
+          }
+          productIds.add(product.id);
+        }
+        if (!product.name) error("_brand-extended.yml: product missing 'name'");
+      }
+    }
+
+    if (!brandExt.default_icps || !Array.isArray(brandExt.default_icps)) {
+      warn("_brand-extended.yml: missing or empty 'default_icps' array");
+    } else {
+      const icpIds = new Set<string>();
+      for (const icp of brandExt.default_icps) {
+        if (!icp.id) {
+          error("_brand-extended.yml: ICP missing 'id'");
+        } else {
+          if (icpIds.has(icp.id)) {
+            error(`_brand-extended.yml: duplicate ICP id '${icp.id}'`);
+          }
+          icpIds.add(icp.id);
+        }
+        if (!icp.title) error("_brand-extended.yml: ICP missing 'title'");
+      }
+    }
+
+    if (!brandExt.tone) {
+      warn("_brand-extended.yml: missing 'tone' section");
+    }
+  } catch (e) {
+    error(`_brand-extended.yml is not valid YAML: ${e}`);
+  }
+}
+
+// --- Validate per-ebook brand-overrides.yml ---
+
+// Load brand extended for cross-referencing
+let brandExtData: BrandExtended | null = null;
+if (existsSync(brandExtPath)) {
+  try {
+    brandExtData = parse(readFileSync(brandExtPath, "utf-8")) as BrandExtended;
+  } catch {
+    // Already reported above
+  }
+}
+
+for (const slug of slugs) {
+  const overridesPath = join(PROJECT_ROOT, "books", slug, "brand-overrides.yml");
+  if (!existsSync(overridesPath)) continue;
+
+  console.log(`Validating books/${slug}/brand-overrides.yml...`);
+
+  let overrides: BrandOverrides;
+  try {
+    overrides = parse(readFileSync(overridesPath, "utf-8")) as BrandOverrides;
+  } catch (e) {
+    error(`books/${slug}/brand-overrides.yml is not valid YAML: ${e}`);
+    continue;
+  }
+
+  const prefix = `books/${slug}/brand-overrides.yml`;
+
+  // Validate target_icps reference valid ICP ids
+  if (overrides.target_icps && brandExtData?.default_icps) {
+    const validIcpIds = new Set(brandExtData.default_icps.map((i) => i.id));
+    for (const icpId of overrides.target_icps) {
+      if (!validIcpIds.has(icpId)) {
+        error(`${prefix}: target_icps references unknown ICP '${icpId}'`);
+      }
+    }
+  }
+
+  // Validate featured_products reference valid product ids
+  if (overrides.featured_products && brandExtData?.products) {
+    const validProductIds = new Set(brandExtData.products.map((p) => p.id));
+    for (const productId of overrides.featured_products) {
+      if (!validProductIds.has(productId)) {
+        error(`${prefix}: featured_products references unknown product '${productId}'`);
+      }
+    }
+  }
+
+  // Validate color overrides are valid hex values
+  if (overrides.colors) {
+    for (const [key, value] of Object.entries(overrides.colors)) {
+      if (value && !value.startsWith("#") && value.length > 0) {
+        // Check if it's a valid palette reference
+        // This is a soft warning since it could be a palette name
+        warn(`${prefix}: color override '${key}' value '${value}' is not a hex color (may be a palette reference)`);
+      }
+    }
+  }
 }
 
 printResults();

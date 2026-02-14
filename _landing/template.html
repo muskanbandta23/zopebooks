@@ -37,7 +37,9 @@
   <header class="header">
     <div class="container">
       <div class="logo">
-        <img src="logo.svg" alt="Zopdev" width="150" height="38">
+        <a href="{{company_website}}">
+          <img src="logo.svg" alt="{{company_name}}" width="150" height="38">
+        </a>
       </div>
     </div>
   </header>
@@ -101,20 +103,42 @@
     </section>
     {{/chapters}}
 
+    {{#featured_products}}
+    <section class="products">
+      <div class="container">
+        <h2>Powered by {{company_name}}</h2>
+        <div class="product-grid">
+          {{#items}}
+          <div class="product-card">
+            <h3>{{name}}</h3>
+            <p>{{description}}</p>
+            <a href="{{url}}" class="product-link">Learn more</a>
+          </div>
+          {{/items}}
+        </div>
+      </div>
+    </section>
+    {{/featured_products}}
+
     <section class="cta-bottom">
       <div class="container">
         <h2>Ready to take control of your cloud costs?</h2>
         <p>Download <em>{{title}}</em> and start optimizing today.</p>
-        <a href="#" class="btn-primary" onclick="document.querySelector('.hero-form').scrollIntoView({behavior:'smooth'});return false;">
-          {{cta_text}}
-        </a>
+        <div class="cta-buttons">
+          <a href="#" class="btn-primary" onclick="document.querySelector('.hero-form').scrollIntoView({behavior:'smooth'});return false;">
+            {{cta_text}}
+          </a>
+          {{#secondary_cta}}
+          <a href="{{url}}" class="btn-secondary">{{text}}</a>
+          {{/secondary_cta}}
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="container">
-      <p>&copy; {{year}} Zopdev. All rights reserved.</p>
+      <p>&copy; {{year}} <a href="{{company_website}}">{{company_name}}</a>. All rights reserved.</p>
     </div>
   </footer>
 </body>
