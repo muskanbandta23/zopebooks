@@ -63,6 +63,10 @@ sed -e "s/{{title}}/Introduction/g" \
 # Create empty references.bib
 touch "$BOOK_DIR/references.bib"
 
+# Generate brand-overrides.yml from template
+sed -e "s/{{title}}/$TITLE/g" \
+    "$ROOT_DIR/_templates/brand-overrides.yml" > "$BOOK_DIR/brand-overrides.yml"
+
 # Setup brand symlink
 "$SCRIPT_DIR/setup-ebook.sh" "$SLUG"
 
@@ -72,5 +76,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Add an entry to calendar.yml for '$SLUG'"
 echo "  2. Edit $BOOK_DIR/_quarto.yml to add chapters"
-echo "  3. Write your content in $BOOK_DIR/chapters/"
-echo "  4. Run: make render ebook=$SLUG"
+echo "  3. Customize $BOOK_DIR/brand-overrides.yml for this ebook"
+echo "  4. Write your content in $BOOK_DIR/chapters/"
+echo "  5. Run: make render ebook=$SLUG"
