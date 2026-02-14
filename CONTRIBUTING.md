@@ -432,6 +432,86 @@ The hierarchical brand system now:
    - `_templates/brand-overrides.yml` provides starter template
    - See example implementation in `books/finops-playbook/brand-overrides.yml`
 
+## Enhanced Content System
+
+### Overview
+
+The enhanced content system (Epic #3) adds rich chapter metadata, an author system, and content utilities. All new fields are **optional** — existing ebooks without them continue to work.
+
+### Enriched Chapter Metadata
+
+Chapters in `ebook.yml` support the following optional fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `difficulty` | `"beginner"` \| `"intermediate"` \| `"advanced"` | Chapter difficulty level |
+| `reading_time_minutes` | number (positive) | Estimated reading time |
+| `learning_objectives` | string[] | What readers will learn |
+| `key_takeaways` | string[] | Key points to remember |
+| `tags` | string[] | Topic tags for categorization |
+| `prerequisites` | string[] | Chapter IDs that should be read first |
+
+**Example:**
+
+```yaml
+chapters:
+  - id: "01-intro"
+    title: "Introduction"
+    summary: "Overview of the topic."
+    difficulty: beginner
+    reading_time_minutes: 5
+    learning_objectives:
+      - "Understand the core concepts"
+    key_takeaways:
+      - "Key insight from this chapter"
+    tags: [introduction, fundamentals]
+    prerequisites: []
+```
+
+### Author System
+
+Authors are defined at the brand level in `_brand/_brand-extended.yml` and referenced by ID in each ebook's `ebook.yml`.
+
+**Defining authors** (`_brand/_brand-extended.yml`):
+
+```yaml
+authors:
+  - id: "zopdev-team"
+    name: "Zopdev Team"
+    title: "Cloud Engineering"
+    bio: "Description of the author or team."
+    avatar_url: "/assets/authors/zopdev-team.png"
+    social:
+      linkedin: "https://linkedin.com/company/zopdev"
+      github: "https://github.com/zopdev"
+```
+
+**Referencing authors** (`books/{slug}/ebook.yml`):
+
+```yaml
+meta:
+  slug: "my-ebook"
+  title: "My Ebook"
+  authors: ["zopdev-team"]  # References author IDs from _brand-extended.yml
+```
+
+### Content Utilities (`scripts/content-utils.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `loadEbookContent(rootDir, slug)` | Loads `ebook.yml` with enriched types |
+| `resolveAuthors(authorIds, authors)` | Resolves author ID refs to full profiles |
+| `computeReadingTime(qmdPath)` | Estimates reading time from a QMD file (250 wpm) |
+
+### Validation
+
+The validation script checks all enhanced content fields:
+- `difficulty` must be one of: `beginner`, `intermediate`, `advanced`
+- `reading_time_minutes` must be a positive number
+- `prerequisites` must reference valid chapter IDs within the same ebook
+- `meta.authors` must reference valid author IDs from `_brand-extended.yml`
+- Empty `learning_objectives` or `key_takeaways` arrays trigger warnings
+
 ## Design Token System
 
 ### Overview

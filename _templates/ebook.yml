@@ -6,11 +6,21 @@ meta:
   title: "{{title}}"
   subtitle: "{{subtitle}}"
   version: "0.1.0"
+  authors: ["zopdev-team"]       # References author IDs from _brand-extended.yml
 
 chapters:
   - id: "01-intro"
     title: "Introduction"
     summary: ""
+    # difficulty: beginner        # beginner | intermediate | advanced
+    # reading_time_minutes: 5     # Estimated reading time
+    # learning_objectives:        # What the reader will learn
+    #   - "Understand the core concepts"
+    #   - "Learn the key terminology"
+    # key_takeaways:              # Key points to remember
+    #   - "Main insight from this chapter"
+    # tags: [introduction]        # Topic tags
+    # prerequisites: []           # Chapter IDs that should be read first
 
 social:
   linkedin_carousel:

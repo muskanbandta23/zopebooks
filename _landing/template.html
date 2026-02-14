@@ -87,6 +87,35 @@
       </div>
     </section>
 
+    {{#authors}}
+    <section class="authors">
+      <div class="container">
+        <h2>About the Authors</h2>
+        <div class="author-grid">
+          {{#items}}
+          <div class="author-card">
+            {{#avatar_url}}
+            <img class="author-avatar" src="{{avatar_url}}" alt="{{name}}">
+            {{/avatar_url}}
+            <div class="author-info">
+              <h3>{{name}}</h3>
+              {{#title}}<p class="author-title">{{title}}</p>{{/title}}
+              {{#bio}}<p class="author-bio">{{bio}}</p>{{/bio}}
+              {{#has_social}}
+              <div class="author-social">
+                {{#linkedin}}<a href="{{linkedin}}" class="social-link" aria-label="LinkedIn">LinkedIn</a>{{/linkedin}}
+                {{#github}}<a href="{{github}}" class="social-link" aria-label="GitHub">GitHub</a>{{/github}}
+                {{#twitter}}<a href="{{twitter}}" class="social-link" aria-label="Twitter">Twitter</a>{{/twitter}}
+              </div>
+              {{/has_social}}
+            </div>
+          </div>
+          {{/items}}
+        </div>
+      </div>
+    </section>
+    {{/authors}}
+
     {{#chapters}}
     <section class="chapters">
       <div class="container">
@@ -94,9 +123,26 @@
         <div class="chapter-grid">
           {{#items}}
           <div class="chapter-card">
-            <span class="chapter-number">{{number}}</span>
+            <div class="chapter-header">
+              <span class="chapter-number">{{number}}</span>
+              {{#difficulty}}
+              <div class="chapter-meta">
+                <span class="chapter-difficulty chapter-difficulty--{{difficulty}}">{{difficulty}}</span>
+                {{#reading_time_minutes}}
+                <span class="chapter-reading-time">{{reading_time_minutes}} min read</span>
+                {{/reading_time_minutes}}
+              </div>
+              {{/difficulty}}
+            </div>
             <h3>{{title}}</h3>
             <p>{{summary}}</p>
+            {{#has_objectives}}
+            <ul class="chapter-objectives">
+              {{#learning_objectives}}
+              <li>{{text}}</li>
+              {{/learning_objectives}}
+            </ul>
+            {{/has_objectives}}
           </div>
           {{/items}}
         </div>

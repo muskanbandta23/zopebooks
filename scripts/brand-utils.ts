@@ -68,6 +68,15 @@ export interface CTA {
   style?: string;
 }
 
+export interface AuthorProfile {
+  id: string;
+  name: string;
+  title?: string;
+  bio?: string;
+  avatar_url?: string;
+  social?: Record<string, string>;
+}
+
 export interface BrandExtended {
   company: {
     name: string;
@@ -77,6 +86,7 @@ export interface BrandExtended {
   };
   products: Product[];
   default_icps: ICP[];
+  authors?: AuthorProfile[];
   tone: {
     voice: string;
     principles?: string[];
@@ -122,6 +132,7 @@ export interface MergedBrandConfig {
     icps: ICP[];
     products: Product[];
     featuredProducts: Product[];
+    authors: AuthorProfile[];
     tone: BrandExtended["tone"];
     ctas: { primary: CTA; secondary?: CTA };
   };
@@ -187,7 +198,7 @@ export function loadBrandOverrides(rootDir: string, slug: string): BrandOverride
 
 // ── Main merge function ─────────────────────────────────────────────────────
 
-export function loadMergedBrand(rootDir: string, slug: string): MergedBrandConfig {
+export function loadMergedBrand(rootDir: string, slug: string, authorIds?: string[]): MergedBrandConfig {
   const core = loadBrandCore(rootDir);
   const extended = loadBrandExtended(rootDir);
   const overrides = loadBrandOverrides(rootDir, slug);
@@ -249,6 +260,14 @@ export function loadMergedBrand(rootDir: string, slug: string): MergedBrandConfi
         secondary: defaultCtas.secondary,
       };
 
+  // Resolve authors: filter by authorIds if specified, otherwise return all
+  const allAuthors = extended.authors || [];
+  let authors = allAuthors;
+  if (authorIds && authorIds.length > 0) {
+    const idSet = new Set(authorIds);
+    authors = allAuthors.filter((a) => idSet.has(a.id));
+  }
+
   return {
     core,
     extended,
@@ -259,6 +278,7 @@ export function loadMergedBrand(rootDir: string, slug: string): MergedBrandConfi
       icps,
       products,
       featuredProducts,
+      authors,
       tone,
       ctas,
     },

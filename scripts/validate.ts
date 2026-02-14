@@ -39,11 +39,18 @@ interface EbookManifest {
     title: string;
     subtitle?: string;
     version?: string;
+    authors?: string[];
   };
   chapters?: Array<{
     id: string;
     title: string;
     summary?: string;
+    difficulty?: string;
+    reading_time_minutes?: number;
+    learning_objectives?: string[];
+    key_takeaways?: string[];
+    tags?: string[];
+    prerequisites?: string[];
   }>;
   social?: Record<string, unknown>;
 }
@@ -65,6 +72,14 @@ interface BrandExtended {
     title?: string;
     pain_points?: string[];
     goals?: string[];
+  }>;
+  authors?: Array<{
+    id?: string;
+    name?: string;
+    title?: string;
+    bio?: string;
+    avatar_url?: string;
+    social?: Record<string, string>;
   }>;
   tone?: {
     voice?: string;
@@ -175,6 +190,18 @@ for (const ebook of calendar.ebooks) {
   }
 }
 
+// --- Pre-load brand extended data for cross-referencing ---
+
+const brandExtPath = join(PROJECT_ROOT, "_brand", "_brand-extended.yml");
+let brandExtData: BrandExtended | null = null;
+if (existsSync(brandExtPath)) {
+  try {
+    brandExtData = parse(readFileSync(brandExtPath, "utf-8")) as BrandExtended;
+  } catch {
+    // Will be reported during brand validation below
+  }
+}
+
 // --- Validate per-ebook ebook.yml files ---
 
 for (const slug of slugs) {
@@ -213,6 +240,61 @@ for (const slug of slugs) {
   if (!ebookManifest.meta.title) {
     error(`${prefix}: missing 'meta.title'`);
   }
+
+  // Validate meta.authors reference valid author IDs from _brand-extended.yml
+  if (ebookManifest.meta.authors && brandExtData?.authors) {
+    const validAuthorIds = new Set(brandExtData.authors.map((a) => a.id));
+    for (const authorId of ebookManifest.meta.authors) {
+      if (!validAuthorIds.has(authorId)) {
+        error(`${prefix}: meta.authors references unknown author '${authorId}'. Valid IDs: ${[...validAuthorIds].join(", ")}`);
+      }
+    }
+  }
+
+  // Validate enriched chapter metadata
+  const VALID_DIFFICULTIES = ["beginner", "intermediate", "advanced"];
+
+  if (ebookManifest.chapters && Array.isArray(ebookManifest.chapters)) {
+    const chapterIds = new Set(ebookManifest.chapters.map((ch) => ch.id));
+
+    for (const chapter of ebookManifest.chapters) {
+      const chPrefix = `${prefix} [${chapter.id}]`;
+
+      // Validate difficulty
+      if (chapter.difficulty !== undefined) {
+        if (!VALID_DIFFICULTIES.includes(chapter.difficulty)) {
+          error(`${chPrefix}: invalid difficulty '${chapter.difficulty}'. Must be one of: ${VALID_DIFFICULTIES.join(", ")}`);
+        }
+      }
+
+      // Validate reading_time_minutes
+      if (chapter.reading_time_minutes !== undefined) {
+        if (typeof chapter.reading_time_minutes !== "number" || chapter.reading_time_minutes <= 0) {
+          error(`${chPrefix}: reading_time_minutes must be a positive number`);
+        }
+      }
+
+      // Validate prerequisites reference valid chapter IDs within the same ebook
+      if (chapter.prerequisites && Array.isArray(chapter.prerequisites)) {
+        for (const prereq of chapter.prerequisites) {
+          if (!chapterIds.has(prereq)) {
+            error(`${chPrefix}: prerequisite '${prereq}' is not a valid chapter ID in this ebook`);
+          }
+          if (prereq === chapter.id) {
+            error(`${chPrefix}: chapter cannot be a prerequisite of itself`);
+          }
+        }
+      }
+
+      // Warn if learning_objectives or key_takeaways are empty arrays
+      if (chapter.learning_objectives && chapter.learning_objectives.length === 0) {
+        warn(`${chPrefix}: learning_objectives is empty (consider adding objectives or removing the field)`);
+      }
+      if (chapter.key_takeaways && chapter.key_takeaways.length === 0) {
+        warn(`${chPrefix}: key_takeaways is empty (consider adding takeaways or removing the field)`);
+      }
+    }
+  }
 }
 
 // --- Validate brand files ---
@@ -222,7 +304,6 @@ if (!existsSync(brandPath)) {
   error("_brand/_brand.yml not found");
 }
 
-const brandExtPath = join(PROJECT_ROOT, "_brand", "_brand-extended.yml");
 if (!existsSync(brandExtPath)) {
   warn("_brand/_brand-extended.yml not found (expected for brand system)");
 } else {
@@ -273,6 +354,22 @@ if (!existsSync(brandExtPath)) {
       }
     }
 
+    // Validate authors
+    if (brandExt.authors && Array.isArray(brandExt.authors)) {
+      const authorIds = new Set<string>();
+      for (const author of brandExt.authors) {
+        if (!author.id) {
+          error("_brand-extended.yml: author missing 'id'");
+        } else {
+          if (authorIds.has(author.id)) {
+            error(`_brand-extended.yml: duplicate author id '${author.id}'`);
+          }
+          authorIds.add(author.id);
+        }
+        if (!author.name) error("_brand-extended.yml: author missing 'name'");
+      }
+    }
+
     if (!brandExt.tone) {
       warn("_brand-extended.yml: missing 'tone' section");
     }
@@ -282,16 +379,6 @@ if (!existsSync(brandExtPath)) {
 }
 
 // --- Validate per-ebook brand-overrides.yml ---
-
-// Load brand extended for cross-referencing
-let brandExtData: BrandExtended | null = null;
-if (existsSync(brandExtPath)) {
-  try {
-    brandExtData = parse(readFileSync(brandExtPath, "utf-8")) as BrandExtended;
-  } catch {
-    // Already reported above
-  }
-}
 
 for (const slug of slugs) {
   const overridesPath = join(PROJECT_ROOT, "books", slug, "brand-overrides.yml");

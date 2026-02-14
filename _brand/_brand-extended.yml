@@ -71,6 +71,16 @@ tone:
     - "Hedging language (might, could, perhaps)"
     - "Unnecessary jargon without explanation"
 
+authors:
+  - id: "zopdev-team"
+    name: "Zopdev Team"
+    title: "Cloud Engineering"
+    bio: "The Zopdev engineering team specializes in cloud-native infrastructure, FinOps automation, and developer experience."
+    avatar_url: "/assets/authors/zopdev-team.png"
+    social:
+      linkedin: "https://linkedin.com/company/zopdev"
+      github: "https://github.com/zopdev"
+
 default_ctas:
   primary:
     text: "Download Free PDF"

@@ -14,6 +14,8 @@ import { join, dirname } from "path";
 import { parse } from "yaml";
 import Mustache from "mustache";
 import { loadMergedBrand, buildCssVars } from "../scripts/brand-utils.js";
+import { loadEbookContent } from "../scripts/content-utils.js";
+import type { EnrichedChapter } from "../scripts/content-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const ROOT_DIR = join(SCRIPT_DIR, "..");
@@ -71,22 +73,52 @@ for (const ebook of calendar.ebooks) {
 
   console.log(`Generating landing page for: ${ebook.slug}`);
 
-  // Load merged brand config (core + extended + overrides)
-  const brandConfig = loadMergedBrand(ROOT_DIR, ebook.slug);
+  // Load enriched ebook content
+  const ebookContent = loadEbookContent(ROOT_DIR, ebook.slug);
+  const ebookAuthors = ebookContent?.meta?.authors || [];
 
-  // Load per-ebook metadata if available
-  const ebookYmlPath = join(ROOT_DIR, "books", ebook.slug, "ebook.yml");
-  let ebookMeta: { chapters?: Array<{ id: string; title: string; summary?: string }> } = {};
-  if (existsSync(ebookYmlPath)) {
-    ebookMeta = parse(readFileSync(ebookYmlPath, "utf-8"));
-  }
+  // Load merged brand config (core + extended + overrides + author resolution)
+  const brandConfig = loadMergedBrand(ROOT_DIR, ebook.slug, ebookAuthors);
+
+  const chapters: EnrichedChapter[] = ebookContent?.chapters || [];
 
   // Build template data
   const landing = ebook.landing || {};
-  const chapters = (ebookMeta as any).chapters || [];
 
   // Use override CTAs if available, fall back to calendar/defaults
   const ctaText = landing.cta_text || brandConfig.resolved.ctas.primary.text || "Download Free PDF";
+
+  // Map chapters with enriched metadata for template
+  const chapterItems = chapters.map((ch, i) => ({
+    number: i + 1,
+    title: ch.title,
+    summary: ch.summary || "",
+    difficulty: ch.difficulty || null,
+    is_beginner: ch.difficulty === "beginner",
+    is_intermediate: ch.difficulty === "intermediate",
+    is_advanced: ch.difficulty === "advanced",
+    reading_time_minutes: ch.reading_time_minutes || null,
+    has_objectives: ch.learning_objectives && ch.learning_objectives.length > 0,
+    learning_objectives: ch.learning_objectives
+      ? ch.learning_objectives.map((obj) => ({ text: obj }))
+      : null,
+    has_takeaways: ch.key_takeaways && ch.key_takeaways.length > 0,
+    key_takeaways: ch.key_takeaways
+      ? ch.key_takeaways.map((t) => ({ text: t }))
+      : null,
+  }));
+
+  // Map authors for template
+  const authorItems = brandConfig.resolved.authors.map((a) => ({
+    name: a.name,
+    title: a.title || "",
+    bio: a.bio || "",
+    avatar_url: a.avatar_url || null,
+    has_social: a.social && Object.keys(a.social).length > 0,
+    linkedin: a.social?.linkedin || null,
+    github: a.social?.github || null,
+    twitter: a.social?.twitter || null,
+  }));
 
   const data = {
     slug: ebook.slug,
@@ -115,18 +147,8 @@ for (const ebook of calendar.ebooks) {
         : null,
 
     tags: ebook.tags && ebook.tags.length > 0 ? { items: ebook.tags } : null,
-    chapters:
-      chapters.length > 0
-        ? {
-            items: chapters.map(
-              (ch: { id: string; title: string; summary?: string }, i: number) => ({
-                number: i + 1,
-                title: ch.title,
-                summary: ch.summary || "",
-              }),
-            ),
-          }
-        : null,
+    chapters: chapterItems.length > 0 ? { items: chapterItems } : null,
+    authors: authorItems.length > 0 ? { items: authorItems } : null,
     og_image: existsSync(
       join(ROOT_DIR, "_output", "social", ebook.slug, "og", "og-image.png"),
     )

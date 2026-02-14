@@ -6,6 +6,14 @@ title: "{{title}}"
 
 <!-- TODO: Write chapter content -->
 
+## Learning Objectives
+
+By the end of this chapter, you will:
+
+- Objective 1
+- Objective 2
+- Objective 3
+
 ## Overview
 
 Placeholder content for this chapter. Replace with actual content.

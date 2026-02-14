@@ -411,12 +411,18 @@ throw new Error(
   - Landing pages: Mesh gradients, glass-morphism, card hover lifts, 4 responsive breakpoints
   - Social assets: Gradient backgrounds, decorative elements, expanded color palette
 
-### Next (Epic #3)
-- 🚧 **Enhanced Content System**
-  - Rich chapter metadata
-  - Author bios
-  - Call-out boxes
-  - Chapter dependencies
+- ✅ **Epic #3:** Enhanced Content System
+  - Branch: `feature/enhanced-content`
+  - Key files: `scripts/content-utils.ts`, `books/finops-playbook/ebook.yml`, `_brand/_brand-extended.yml`
+  - Rich chapter metadata: difficulty, reading time, learning objectives, key takeaways, tags, prerequisites
+  - Author system: brand-level author profiles, per-ebook author references
+  - Landing page: enriched chapter cards with difficulty badges, reading time, objectives; author section
+  - Validation: difficulty values, prerequisite cross-refs, author ID cross-refs
+
+### Next (Epic #4)
+- 🚧 **Premium PDF Theme**
+  - PDF generation with rich metadata rendering
+  - Design token integration for print
 
 ### Future
 - See `docs/EBOOK_UPGRADE_ROADMAP.md` for full roadmap
@@ -437,10 +443,11 @@ books/{id}/
 └── chapters/              # Markdown content
 
 scripts/
-├── brand-utils.ts         # Brand loading & merging
+├── brand-utils.ts         # Brand loading & merging (incl. author resolution)
+├── content-utils.ts       # Content loading, author resolution, reading time
 ├── theme-tokens.ts        # Design token definitions
 ├── theme-utils.ts         # Token CSS vars & social theme values
-├── validate.ts            # Config validation
+├── validate.ts            # Config validation (incl. content & author validation)
 └── new-ebook.sh          # Scaffolding
 
 _templates/
@@ -459,8 +466,8 @@ _social/
 
 ### Key Functions
 ```typescript
-// Load merged brand config
-loadMergedBrand(ebookId: string): BrandConfig
+// Load merged brand config (with optional author filtering)
+loadMergedBrand(rootDir: string, slug: string, authorIds?: string[]): MergedBrandConfig
 
 // Deep merge two objects
 deepMerge(base: any, override: any): any
@@ -473,6 +480,15 @@ buildDesignTokenCssVars(): Array<{ name: string; value: string }>
 
 // Get Satori-safe social theme values
 getSocialThemeValues(config): SocialThemeColors
+
+// Load ebook content with enriched types
+loadEbookContent(rootDir: string, slug: string): EbookContentMeta | null
+
+// Resolve author ID references to full profiles
+resolveAuthors(authorIds: string[], authors: AuthorRef[]): AuthorRef[]
+
+// Compute reading time from a QMD file (250 wpm)
+computeReadingTime(qmdPath: string): number
 ```
 
 ### Make Commands
@@ -488,4 +504,4 @@ make all                   # Full pipeline
 
 ---
 
-**Last Updated:** 2026-02-14 (after Epic #2 completion)
+**Last Updated:** 2026-02-14 (after Epic #3 completion)
