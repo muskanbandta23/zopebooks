@@ -12,6 +12,10 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { parse } from "yaml";
+import { buildDesignTokenCssVars, getSocialThemeValues } from "./theme-utils.js";
+
+// Re-export theme utilities for convenience
+export { buildDesignTokenCssVars, getSocialThemeValues } from "./theme-utils.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -277,6 +281,9 @@ export function buildCssVars(config: MergedBrandConfig): Array<{ name: string; v
   vars.push({ name: "--color-background", value: config.resolved.colors.background });
   vars.push({ name: "--color-secondary", value: config.resolved.colors.secondary });
   vars.push({ name: "--color-link", value: config.resolved.colors.link });
+
+  // Design tokens (font sizes, spacing, shadows, radii, transitions, etc.)
+  vars.push(...buildDesignTokenCssVars());
 
   return vars;
 }
