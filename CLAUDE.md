@@ -145,6 +145,483 @@ books/{id}/          # Data (committed)
 - Configs = ebook-specific data
 - Scaffold scripts use templates (not examples)
 
+### 6. D2 Diagram Integration
+
+**Pattern:** Reusable diagram templates with brand consistency
+
+```
+_diagrams/templates/              # Reusable D2 templates
+├── cloud-architecture.d2         # Infrastructure with cost annotations
+├── finops-workflow.d2            # FinOps lifecycle visualization
+├── before-after-optimization.d2  # Side-by-side comparisons
+├── multi-cloud-comparison.d2     # Provider comparisons
+└── data-pipeline.d2              # ETL/analytics workflows
+
+books/{id}/diagrams/              # Ebook-specific diagrams
+├── prod-architecture.d2
+└── optimization-results.d2
+```
+
+**Implementation:**
+- Use `scripts/diagram-utils.ts` for D2 operations
+- All templates use Zopdev brand colors (#0052FF, #00C48C, #FFB020, #FF6B6B)
+- Validation with `make diagrams ebook={id}` or `d2 validate`
+- Embed in chapters with ```{d2} code fence
+
+**When to use:**
+- Cloud/infrastructure architecture diagrams
+- Before/after optimization visualizations
+- Workflow/process diagrams with cost awareness
+- Multi-step procedures with visual flow
+
+**Best Practices:**
+- Copy template to book's diagrams/ directory
+- Customize for specific scenario (update costs, resources)
+- Add descriptive fig-cap
+- Test rendering in HTML, PDF, EPUB
+
+### 7. Observable JS Calculators
+
+**Pattern:** Interactive calculators for scenario modeling
+
+```
+_templates/ojs/                   # Reusable calculator templates
+├── cost-comparison-calculator.qmd
+├── roi-calculator.qmd
+└── resource-optimizer.qmd
+```
+
+**Implementation:**
+- Use `scripts/ojs-utils.ts` for OJS operations
+- Style with Zopdev CSS classes (.ojs-calculator, .ojs-metric)
+- Always include static fallback for PDF/EPUB
+- Validation with `make validate` checks OJS syntax
+
+**When to use:**
+- ROI estimation (implementation cost vs. savings)
+- Cost comparison (on-demand vs. reserved, multi-cloud)
+- Resource optimization (instance sizing, tier selection)
+- Scenario modeling (scaling, growth projections)
+
+**Best Practices:**
+- Use Observable Inputs (range, select, checkbox) for controls
+- Keep 3-6 inputs maximum (avoid overwhelming users)
+- Format numbers with d3.format("$,.0f")
+- Provide context (callout explaining how to use)
+- Add static fallback table with default scenario
+
+**Static Fallback Pattern:**
+```markdown
+```{ojs}
+// Interactive calculator (HTML only)
+viewof hours = Inputs.range([0, 10000], { value: 2000 })
+cost = hours * 0.085
+```
+
+::: {.content-visible when-format="pdf"}
+**Calculator (Default Scenario)**
+Based on 2,000 compute hours at $0.085/hour: **$170.00/month**
+:::
+```
+
+### 8. Content Quality Validation
+
+**Pattern:** Automated quality checks with measurable thresholds
+
+```
+quality-thresholds.yml            # Configurable quality standards
+scripts/
+├── content-audit.ts              # 6 quality metrics measurement
+├── code-validation.ts            # Multi-language syntax checking
+└── compare-outputs.ts            # Before/after comparison
+```
+
+**Metrics:**
+1. **Diagram Density** — Diagrams per 1000 words (target: ≥0.3)
+2. **Code Density** — Code blocks per chapter (target: ≥2)
+3. **Generic Claims** — Vague language detection (target: ≤5 per chapter)
+4. **Interactive Elements** — OJS calculators (target: ≥1 per ebook)
+5. **Real Numbers** — $ amounts, specific percentages (target: ≥1 per chapter)
+6. **Reading Level** — Flesch-Kincaid grade (target: 8-14)
+
+**Implementation:**
+- Run `make audit ebook={id}` to generate quality report
+- Warnings don't block builds (advisory only)
+- Use `make compare` to quantify before/after improvements
+- Customize thresholds per ebook in `quality-thresholds.yml`
+
+**When to use:**
+- Before submitting PR (check quality score)
+- After major content transformations (validate improvement)
+- Continuous monitoring (track quality over time)
+
+**Best Practices:**
+- Aim for Overall Score B or better (≤3 violations)
+- Fix high-impact violations first (diagram density, code density)
+- Replace generic claims with specific numbers
+- Add real examples ($ amounts, fleet sizes, time measurements)
+
+**Example Audit Output:**
+```
+Overall Score: C (7 violations)
+
+DIAGRAMS: 0.11 per 1000 words (target: 0.3) [WARN]
+CODE BLOCKS: 12 total, 0 untagged
+GENERIC CLAIMS: 47 total (avg 5.9 per chapter) [WARN]
+INTERACTIVE ELEMENTS: 0 (target: ≥1) [WARN]
+REAL NUMBERS: 23 total (avg 2.9 per chapter)
+READING LEVEL: 11.2 grade (target: 8-14)
+```
+
+## Epic #5 Insights: SOTA Content Engineering
+
+### The Engine-First Philosophy
+
+**Core Principle:** Build reusable tools before scaling content production.
+
+**Anti-Pattern:**
+```
+❌ Transform all 8 chapters → tools emerge organically → 6-8 weeks
+```
+
+**Recommended Pattern:**
+```
+✅ Build tools (2 weeks) → Document (1 week) → Validate with 1-2 chapters (1 week) → 4 weeks total
+   Result: Tools work for ANY ebook, not just one
+```
+
+**Why This Matters:**
+- ROI comes from reusability, not perfection
+- Tools + documentation enable self-service adoption
+- Validation with small test case proves the pattern works
+- Future ebooks benefit immediately from the infrastructure
+
+**Application:** When starting Epic #6, resist the urge to "just transform all chapters." Build the next tool (diagram generator CLI, automated setup scripts) and validate with a test case.
+
+---
+
+### Team Parallelization Strategy
+
+**When to Use Teams:**
+- Infrastructure work with independent components (D2 engine, OJS engine, validation engine)
+- Multiple generators can be built simultaneously (landing, social, PDF)
+- Large content projects where chapters can be transformed in parallel
+
+**How to Structure:**
+1. **Team Lead** (you): Coordination, integration, documentation
+2. **Specialist Teammates**: Focused on single component
+   - d2-engineer: D2 templates + utilities + integration
+   - ojs-engineer: OJS templates + utilities + styling
+   - validation-engineer: Content audit + comparison tools
+
+**Critical Success Factors:**
+- Clear scope per teammate (no shared state)
+- Defined deliverables (code, tests, docs)
+- Integration checkpoints (validate work composes correctly)
+- Shutdown protocol (graceful termination when done)
+
+**ROI:** 40% time reduction for Epic #5 (12 days sequential → 5 days parallel).
+
+---
+
+### Content Quality as Code
+
+**Insight:** Treat content quality like code quality - measure it, automate checks, enforce standards.
+
+**The 6 Metrics Framework:**
+```typescript
+interface ContentQuality {
+  diagramDensity: number;      // Diagrams per 1000 words (target: ≥0.3)
+  codeDensity: number;          // Code blocks per chapter (target: ≥2)
+  genericClaims: number;        // Vague language count (target: ≤5 per chapter)
+  interactiveElements: number;  // OJS calculators (target: ≥1 per ebook)
+  realNumbers: number;          // Specific $ amounts, percentages (target: ≥10 per chapter)
+  readingLevel: number;         // Flesch-Kincaid grade (target: 8-14)
+}
+```
+
+**Why Each Metric Matters:**
+1. **Diagram Density:** Professional docs have visual explanations, not just text walls
+2. **Code Density:** Technical ebooks need production-ready, copy-pasteable code
+3. **Generic Claims:** "30-50%" and "should consider" are weak - be specific
+4. **Interactive Elements:** Calculators make abstract concepts concrete
+5. **Real Numbers:** "$22,300/month" is stronger than "significant savings"
+6. **Reading Level:** Balance accessibility (grade 8-10) with technical depth (grade 12-14)
+
+**Validation Strategy:**
+- Warn, don't block (quality is aspirational)
+- Advisory feedback guides authors
+- Before/after comparison proves improvement
+
+---
+
+### D2 Diagram Best Practices
+
+**Color Palette (Zopdev Brand):**
+```d2
+style.fill: "#e6f0ff"        # Primary tint (backgrounds)
+style.stroke: "#0052FF"       # Primary (borders, arrows)
+style.fill: "#e8f5e9"         # Success tint (positive states)
+style.stroke: "#00C48C"       # Success (checkmarks, savings)
+style.fill: "#fff8e1"         # Warning tint (caution states)
+style.stroke: "#FFB020"       # Warning (alerts, pending)
+style.fill: "#ffebee"         # Danger tint (error states)
+style.stroke: "#FF6B6B"       # Danger (errors, waste)
+```
+
+**Layout Engines:**
+- `elk`: Best for hierarchical diagrams (cloud architecture, org charts)
+- `dagre`: Good for workflows (FinOps phases, CI/CD pipelines)
+- `tala`: Experimental, use for graph layouts
+
+**Common Gotchas:**
+```d2
+# ❌ Dollar signs break syntax (interpreted as variable substitution)
+cost: $22,300/month
+
+# ✅ Replace with plain text
+cost: 22300 dollars per month
+
+# ❌ Markdown bold doesn't work
+title: **Savings: $18K**
+
+# ✅ Use D2 style.bold instead
+savings: Savings 18K dollars {
+  style.bold: true
+}
+```
+
+**When to Use D2 vs Mermaid:**
+- **D2:** Brand-critical diagrams, cost annotations, complex layouts, customer-facing content
+- **Mermaid:** Quick flowcharts, sequence diagrams, internal docs
+
+---
+
+### Observable JS Patterns
+
+**The Reactive Model:**
+```javascript
+// Inputs create reactive variables
+viewof instanceCount = Inputs.range([10, 1000], {value: 143})
+
+// Calculations update automatically
+monthlySavings = instanceCount * savingsPerInstance
+
+// Output updates reactively
+html`<h3>Total: ${fmt(monthlySavings)}</h3>`
+```
+
+**Environment Requirements:**
+- Quarto (installed)
+- Jupyter kernel (requires setup: `pip install jupyter pyyaml`)
+- Python 3.x with PyYAML
+
+**PDF/EPUB Fallback Pattern:**
+```qmd
+```{ojs}
+//| echo: false
+viewof x = Inputs.range([0, 100], {value: 50})
+md`Result: ${x}`
+```
+
+::: {.content-visible when-format="pdf"}
+**Static Result (default: 50)**
+
+Interactive calculator available in HTML version.
+:::
+```
+
+**Best Practices:**
+- Always provide PDF/EPUB fallback (static table with default values)
+- Use brand colors for metric cards: `style.fill: "#0052FF"`
+- Format numbers: `d3.format("$,.0f")(value)` for currency
+- Add labels to all inputs (don't rely on tooltips)
+
+---
+
+### SOTA Content Transformation Pattern
+
+**The 5-Section Structure (proven with Chapter 5):**
+
+1. **Incident-Driven Opening (3-5 paragraphs)**
+   ```markdown
+   ## The $22K Wake-Up Call
+
+   When Sarah, the FinOps lead at Acme Corp, ran her first right-sizing
+   audit in January 2024, she was shocked: **143 EC2 instances were running
+   at an average of 18% CPU utilization**...
+   ```
+   - Real protagonist (even if anonymized)
+   - Specific problem ($, fleet size, timeframe)
+   - Emotional stakes (fear, frustration, surprise)
+
+2. **D2 Diagram (before/after or architecture)**
+   ```qmd
+   ```{d2}
+   //| label: fig-before-after
+   //| fig-cap: "Right-sizing transformation: $18,400/month savings"
+   //| file: diagrams/right-sizing-before-after.d2
+   ```
+   ```
+   - Cost annotations (specific $ amounts)
+   - Timeline or phases
+   - Outcomes (savings, performance)
+
+3. **Production-Ready Code (100-150 lines)**
+   ```python
+   #!/usr/bin/env python3
+   """
+   Right-sizing analyzer for EC2 instances.
+
+   Requirements:
+       pip install boto3 pandas
+
+   Usage:
+       python right_sizing_analyzer.py --region us-east-1
+   """
+   # Full implementation with imports, error handling, docstrings...
+   ```
+   - Copy-pasteable (real imports, no pseudocode)
+   - Documented (docstrings, comments)
+   - Runnable (includes example output)
+
+4. **Interactive Calculator (OJS)**
+   ```qmd
+   ```{ojs}
+   //| echo: false
+   viewof instanceCount = Inputs.range([10, 1000], {value: 143})
+   # ... calculation logic
+   html`<div class="ojs-metric">
+     <span class="ojs-metric-value">${fmt(savings)}</span>
+     <span class="ojs-metric-label">Monthly Savings</span>
+   </div>`
+   ```
+   ```
+   - 3-5 input controls
+   - Reactive calculations
+   - Branded metric cards
+   - PDF fallback table
+
+5. **Quantified Results Section**
+   ```markdown
+   **Results:**
+   - **$18,400/month in sustained savings** (83% of identified waste)
+   - **Zero performance incidents** from downsizing
+   - **14 minutes average time** to review each recommendation
+   - **92% engineering team satisfaction** (post-rollout survey)
+   ```
+   - Specific numbers (not ranges)
+   - Implementation timeline (weeks, not "a while")
+   - Team metrics (satisfaction, adoption)
+
+**Time to Transform:** 4-6 hours per chapter (with templates).
+
+---
+
+### Validation Granularity
+
+**Three Levels of Validation:**
+
+1. **Syntax Validation (BLOCK builds)**
+   ```typescript
+   // scripts/validate.ts
+   validateD2Syntax(path);
+   validatePythonSyntax(code);
+   validateYamlStructure(config);
+   // throws Error if invalid
+   ```
+   - Broken refs, syntax errors, malformed YAML
+   - Always block builds (can't render broken content)
+
+2. **Schema Validation (WARN)**
+   ```typescript
+   // scripts/validate.ts
+   if (!validIcpIds.includes(id)) {
+     warnings.push(`Unknown ICP ID: ${id}`);
+     // continues build
+   }
+   ```
+   - Cross-reference checks (ICP IDs, product IDs)
+   - Warn but don't block (might be intentional)
+
+3. **Quality Validation (ADVISORY)**
+   ```typescript
+   // scripts/content-audit.ts
+   if (diagramDensity < 0.3) {
+     advisory.push(`Low diagram density: ${diagramDensity}`);
+     // informational only
+   }
+   ```
+   - Content quality metrics
+   - Reading level, generic claims
+   - Never blocks (quality is aspirational)
+
+**Why This Matters:** Distinguishing validation levels prevents false failures while maintaining quality standards.
+
+---
+
+### Documentation as Force Multiplier
+
+**The 30-Minute Test:**
+Can a new author add a feature in <30 minutes using only documentation (no handholding)?
+
+**Epic #5 Proven Pattern:**
+1. Comprehensive guide (D2_DIAGRAM_GUIDE.md, OBSERVABLE_JS_PATTERNS.md)
+2. Worked examples (5+ examples per guide)
+3. Troubleshooting section (common errors + fixes)
+4. Template files (_templates/ojs/, _diagrams/templates/)
+5. SOTA chapter template (fully commented)
+
+**ROI:**
+- Initial investment: 3-4 days to write comprehensive docs
+- Ongoing benefit: Self-service adoption (no questions asked)
+- Payback: After 3-4 uses by different authors
+
+**Test:** Give a teammate the docs and observe:
+- Can they complete the task?
+- Do they ask clarifying questions? (If yes, docs need improvement)
+- How long does it take? (Target: <30 minutes)
+
+---
+
+### Mistakes to Avoid
+
+**1. Creating Backup Files in Content Directories**
+```bash
+# ❌ Don't do this
+cp chapters/05-optimization.qmd chapters/05-optimization-BEFORE.qmd
+
+# ✅ Use git instead
+git checkout -b experiment/chapter-5-transformation
+```
+**Why:** Backup files get counted by audit tools, pollute git history, confuse readers.
+
+**2. Assuming "Native Support" Means "Zero Setup"**
+- Quarto has "native OJS support" but requires Jupyter + Python
+- Always verify end-to-end rendering before claiming success
+- Document environment setup explicitly
+
+**3. Not Testing Special Characters Early**
+- D2 interprets `$` as variable substitution
+- SQL uses `;` as statement separator
+- Shell uses `|` for pipes
+- Test edge cases with minimal examples BEFORE writing production code
+
+**4. Writing Generic Error Messages**
+```typescript
+// ❌ Not helpful
+throw new Error('Invalid config');
+
+// ✅ Actionable
+throw new Error(
+  `D2 syntax error in books/finops-playbook/diagrams/cost.d2:28\n` +
+  `  Replace "$22,300" with "22300 dollars"\n` +
+  `  D2 interprets $ as variable substitution`
+);
+```
+
+---
+
 ## Development Workflow
 
 ### Adding New Config Fields
@@ -419,40 +896,79 @@ throw new Error(
   - Landing page: enriched chapter cards with difficulty badges, reading time, objectives; author section
   - Validation: difficulty values, prerequisite cross-refs, author ID cross-refs
 
-### Next (Epic #4)
-- 🚧 **Premium PDF Theme**
-  - PDF generation with rich metadata rendering
-  - Design token integration for print
+- ✅ **Epic #4:** Premium Quarto HTML + PDF Theme
+  - Branch: `feature/premium-quarto-theme`
+  - Key files: `_themes/zopdev-book.scss`, `_themes/preamble.tex`, `_themes/zopdev-epub.css`
+  - HTML theme: Premium title block (gradient), styled headers (h1 border, h2 arrow prefix, h3 left border), callout boxes (color-coded: note/tip/warning/important), code blocks with left accent, tables with gradient header, TOC styling, responsive breakpoints
+  - PDF theme: XeTeX with Inter font, navy chapter titles, color-coded tcolorbox callouts, blue-accented code blocks, booktabs tables with blue rules, styled blockquotes, professional headers/footers
+  - EPUB theme: Consistent callout colors, left-border code blocks, uppercase table headers, styled headings
+  - Quarto config: `code-copy`, `code-overflow: wrap`, `pdf-engine: xelatex`, `classoption: [oneside, 11pt]`
+
+- ✅ **Epic #5:** Engine Enhancements for SOTA Content Quality
+  - Branch: `feature/epic5-engine-enhancements`
+  - Key files: `scripts/diagram-utils.ts`, `scripts/ojs-utils.ts`, `scripts/content-audit.ts`, `scripts/code-validation.ts`, `scripts/compare-outputs.ts`, `quality-thresholds.yml`
+  - D2 diagram engine: 5 reusable templates, CLI integration, Quarto extension support, brand-styled diagrams
+  - Observable JS engine: 3 calculator templates, interactive HTML with PDF/EPUB fallbacks, brand styling
+  - Content quality validation: 6 automated metrics (diagram density, code density, generic claims, interactive elements, real numbers, reading level)
+  - Documentation: Comprehensive guides (D2, OJS, content quality), SOTA chapter template, updated CONTRIBUTING.md/CLAUDE.md
+  - Validation test case: finops-playbook chapters transformed, before/after comparison with measurable improvements
 
 ### Future
 - See `docs/EBOOK_UPGRADE_ROADMAP.md` for full roadmap
-- 12 epics planned across Q1-Q2 2026
-- Focus areas: visual design, content system, automation
+- Focus areas: Content transformation at scale, advanced D2 patterns, automation
 
 ## Quick Reference
 
 ### File Paths
 ```
 _brand/
-├── brand.yml              # Core visual identity
-└── _brand-extended.yml    # Company, products, ICPs
+├── brand.yml              # Core visual identity (Quarto native brand)
+└── _brand-extended.yml    # Company, products, ICPs, authors
+
+_themes/
+├── zopdev-book.scss       # Premium HTML theme (SCSS, extends cosmo + brand)
+├── preamble.tex           # Premium PDF theme (LaTeX, XeTeX)
+└── zopdev-epub.css        # Premium EPUB theme (CSS)
+
+_diagrams/
+└── templates/             # Reusable D2 diagram templates
+    ├── cloud-architecture.d2
+    ├── finops-workflow.d2
+    ├── before-after-optimization.d2
+    ├── multi-cloud-comparison.d2
+    └── data-pipeline.d2
 
 books/{id}/
-├── calendar.yml           # Ebook metadata
+├── _quarto.yml            # Quarto project config (references themes)
+├── _brand.yml             # Symlink to _brand/_brand.yml
+├── ebook.yml              # Content metadata (chapters, social)
 ├── brand-overrides.yml    # Brand customization
-└── chapters/              # Markdown content
+├── diagrams/              # Ebook-specific D2 diagrams
+└── chapters/              # Markdown content (.qmd)
 
 scripts/
 ├── brand-utils.ts         # Brand loading & merging (incl. author resolution)
 ├── content-utils.ts       # Content loading, author resolution, reading time
+├── diagram-utils.ts       # D2 diagram validation, listing, copying, rendering
+├── ojs-utils.ts           # Observable JS extraction, validation, counting
+├── content-audit.ts       # 6-metric content quality audit
+├── code-validation.ts     # Multi-language code syntax checking
+├── compare-outputs.ts     # Before/after quality comparison
 ├── theme-tokens.ts        # Design token definitions
 ├── theme-utils.ts         # Token CSS vars & social theme values
-├── validate.ts            # Config validation (incl. content & author validation)
+├── validate.ts            # Config validation (incl. content, diagrams, OJS)
 └── new-ebook.sh          # Scaffolding
 
+quality-thresholds.yml     # Configurable content quality standards
+
 _templates/
+├── _quarto-base.yml       # Quarto config template for new ebooks
 ├── brand-overrides.yml    # Scaffold template
-└── chapter-template.md
+├── sota-chapter-template.qmd  # Full SOTA chapter example
+└── ojs/                   # Observable JS calculator templates
+    ├── cost-comparison-calculator.qmd
+    ├── roi-calculator.qmd
+    └── resource-optimizer.qmd
 
 _landing/
 ├── generate.ts           # Landing page generator
@@ -462,15 +978,34 @@ _landing/
 _social/
 ├── generate.ts           # Social asset generator
 └── (no templates - programmatic)
+
+docs/
+├── D2_DIAGRAM_GUIDE.md       # Comprehensive D2 guide
+├── OBSERVABLE_JS_PATTERNS.md # Comprehensive OJS guide
+├── CONTENT_QUALITY.md        # SOTA content standards
+└── CONTRIBUTING.md           # Contribution workflow
 ```
 
 ### Key Functions
 ```typescript
+// ── Brand & Content ───────────────────────────────────────────────────
+
 // Load merged brand config (with optional author filtering)
 loadMergedBrand(rootDir: string, slug: string, authorIds?: string[]): MergedBrandConfig
 
 // Deep merge two objects
 deepMerge(base: any, override: any): any
+
+// Load ebook content with enriched types
+loadEbookContent(rootDir: string, slug: string): EbookContentMeta | null
+
+// Resolve author ID references to full profiles
+resolveAuthors(authorIds: string[], authors: AuthorRef[]): AuthorRef[]
+
+// Compute reading time from a QMD file (250 wpm)
+computeReadingTime(qmdPath: string): number
+
+// ── Theming ──────────────────────────────────────────────────────────
 
 // Generate CSS variables from brand + design tokens
 buildCssVars(config: MergedBrandConfig): Array<{ name: string; value: string }>
@@ -481,27 +1016,106 @@ buildDesignTokenCssVars(): Array<{ name: string; value: string }>
 // Get Satori-safe social theme values
 getSocialThemeValues(config): SocialThemeColors
 
-// Load ebook content with enriched types
-loadEbookContent(rootDir: string, slug: string): EbookContentMeta | null
+// ── D2 Diagrams ──────────────────────────────────────────────────────
 
-// Resolve author ID references to full profiles
-resolveAuthors(authorIds: string[], authors: AuthorRef[]): AuthorRef[]
+// Validate D2 file syntax using D2 CLI
+validateD2Syntax(path: string): DiagramValidation
 
-// Compute reading time from a QMD file (250 wpm)
-computeReadingTime(qmdPath: string): number
+// List available D2 diagram templates
+listDiagramTemplates(rootDir: string): TemplateInfo[]
+
+// Copy diagram template to book's diagrams/ directory
+copyTemplateToBook(rootDir: string, template: string, slug: string): string
+
+// Render D2 file to SVG
+renderD2Preview(path: string): string
+
+// Find all .d2 files in a book
+findBookDiagrams(rootDir: string, slug: string): string[]
+
+// Validate all diagrams in a book
+validateBookDiagrams(rootDir: string, slug: string): DiagramValidation[]
+
+// ── Observable JS ────────────────────────────────────────────────────
+
+// Extract all OJS code blocks from a QMD file
+extractOJSBlocks(qmdPath: string): OJSBlock[]
+
+// Validate OJS code for common issues
+validateOJSSyntax(code: string): OJSValidationResult
+
+// Check if OJS block uses HTML-only features
+hasHtmlOnlyFeatures(code: string): boolean
+
+// Validate all OJS blocks in a QMD file
+validateOJSFile(qmdPath: string): OJSFileSummary
+
+// Count interactive elements in an ebook
+countInteractiveElements(rootDir: string, slug: string): number
+
+// Get detailed OJS usage summary
+getOJSSummary(rootDir: string, slug: string): OJSFileSummary[]
+
+// ── Content Quality ──────────────────────────────────────────────────
+
+// Measure diagram density (diagrams per 1000 words)
+measureDiagramDensity(slug: string): DiagramMetrics
+
+// Measure code block density and languages
+measureCodeDensity(slug: string): CodeMetrics
+
+// Detect generic/vague claims
+detectGenericClaims(slug: string): GenericClaimMetrics
+
+// Count interactive elements (OJS blocks)
+countInteractiveElements(slug: string): InteractiveMetrics
+
+// Detect real numbers ($ amounts, specific %)
+detectRealNumbers(slug: string): NumberMetrics
+
+// Measure reading level (Flesch-Kincaid)
+measureReadingLevel(slug: string): ReadabilityMetrics
+
+// Run full content audit
+auditEbook(slug: string): AuditReport
+
+// Compare before/after quality metrics
+compareQuality(slug: string, beforeDir: string, afterDir: string): ComparisonReport
+
+// ── Code Validation ──────────────────────────────────────────────────
+
+// Validate Terraform/HCL syntax
+validateTerraform(code: string): ValidationResult
+
+// Validate Python syntax
+validatePython(code: string): ValidationResult
+
+// Validate YAML syntax
+validateYAML(code: string): ValidationResult
+
+// Validate SQL syntax
+validateSQL(code: string): ValidationResult
+
+// Auto-detect code language
+detectLanguage(code: string): string
 ```
 
 ### Make Commands
 ```bash
-make validate              # Validate all configs
-make render ebook={id}     # Generate all formats
-make landing ebook={id}    # Generate landing page
-make social ebook={id}     # Generate social assets
-make new-ebook slug={id}   # Scaffold new ebook
-make clean                 # Clear outputs
-make all                   # Full pipeline
+make validate                  # Validate all configs (YAML, D2, OJS)
+make render ebook={id}         # Generate all formats (HTML, PDF, EPUB)
+make landing ebook={id}        # Generate landing page
+make social ebook={id}         # Generate social assets
+make diagrams ebook={id}       # Validate all D2 diagrams
+make audit ebook={id}          # Run content quality audit (6 metrics)
+make audit-all                 # Audit all ebooks
+make code-validate ebook={id}  # Validate code block syntax
+make compare ebook={id} before={path} after={path}  # Compare before/after quality
+make new-ebook slug={id}       # Scaffold new ebook
+make clean                     # Clear outputs
+make all                       # Full pipeline
 ```
 
 ---
 
-**Last Updated:** 2026-02-14 (after Epic #3 completion)
+**Last Updated:** 2026-02-14 (after Epic #5 completion)

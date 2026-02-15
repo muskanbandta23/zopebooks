@@ -2,8 +2,6 @@
 title: "Culture & Adoption"
 ---
 
-# Culture & Adoption
-
 FinOps is ultimately a cultural practice. The best tools, dashboards, and automation in the world will not deliver sustainable results without buy-in from engineering, finance, and leadership. This chapter covers the human side of FinOps: building a team, gaining engineering buy-in, creating incentives, training the organization, and measuring maturity.
 
 ## Building a FinOps Team

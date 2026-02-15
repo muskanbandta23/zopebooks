@@ -2,8 +2,6 @@
 title: "Tooling & Automation"
 ---
 
-# Tooling & Automation
-
 Effective FinOps at scale requires tooling that provides visibility, automates routine tasks, and integrates cost awareness into engineering workflows. This chapter surveys the landscape of cloud-native and third-party FinOps tools, explains how to build custom cost dashboards, and covers automated alerting, anomaly detection, and infrastructure-as-code practices for cost control.
 
 ## Cloud-Native Cost Tools

@@ -1,63 +1,180 @@
-% Zopdev PDF Preamble
+% Zopdev PDF Preamble — Premium Edition
 % Included via: include-in-header in _quarto.yml
+%
+% Produces a professionally styled PDF with brand-consistent
+% colors, typography, callout boxes, and polished layout.
 
-% Colors
+% ===== COLORS =====
 \usepackage{xcolor}
 \definecolor{zopdev-blue}{HTML}{0052FF}
 \definecolor{zopdev-navy}{HTML}{0A1628}
 \definecolor{zopdev-gray}{HTML}{475569}
 \definecolor{zopdev-light}{HTML}{F8FAFC}
+\definecolor{zopdev-border}{HTML}{E2E8F0}
+\definecolor{zopdev-success}{HTML}{00C48C}
+\definecolor{zopdev-warning}{HTML}{FFB020}
+\definecolor{zopdev-danger}{HTML}{FF6B6B}
+% Callout tinted backgrounds
+\definecolor{zopdev-note-bg}{HTML}{E3F2FD}
+\definecolor{zopdev-tip-bg}{HTML}{E8F5E9}
+\definecolor{zopdev-warning-bg}{HTML}{FFF3E0}
+\definecolor{zopdev-important-bg}{HTML}{FFEBEE}
 
-% Typography
+% ===== GEOMETRY =====
+\usepackage{geometry}
+\geometry{
+  paperwidth=8.5in,
+  paperheight=11in,
+  margin=1in,
+  headheight=14pt
+}
+
+% ===== TYPOGRAPHY =====
+% Use system-installed fonts (variable font support via XeTeX)
 \usepackage{fontspec}
-\setmainfont{Inter}[
-  UprightFont = *-Regular,
-  BoldFont = *-Bold,
-  ItalicFont = *-Italic,
-  BoldItalicFont = *-BoldItalic
-]
-\setmonofont{JetBrains Mono}[
-  Scale=0.85
-]
+\IfFontExistsTF{Inter}{%
+  \setmainfont{Inter}%
+}{}
+\IfFontExistsTF{JetBrains Mono}{%
+  \setmonofont{JetBrains Mono}[Scale=0.85]%
+}{%
+  \IfFontExistsTF{Menlo}{%
+    \setmonofont{Menlo}[Scale=0.85]%
+  }{}%
+}
 
-% Headers and footers
+% Line spacing — optimized for print readability
+\usepackage{setspace}
+\setstretch{1.3}
+
+% ===== HEADERS AND FOOTERS =====
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small\textcolor{zopdev-gray}{\leftmark}}
 \fancyhead[R]{\small\textcolor{zopdev-gray}{\thepage}}
 \fancyfoot[C]{\small\textcolor{zopdev-gray}{zopdev}}
-\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
 
-% Chapter title formatting
+% Plain style for chapter opening pages
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\small\textcolor{zopdev-gray}{\thepage}}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% ===== CHAPTER & SECTION FORMATTING =====
 \usepackage{titlesec}
+
+% Chapter: Large navy title with blue rule underneath
 \titleformat{\chapter}[display]
   {\normalfont\huge\bfseries\color{zopdev-navy}}
   {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{30pt}
+
+% Section: Bold navy, generous top margin
 \titleformat{\section}
   {\normalfont\Large\bfseries\color{zopdev-navy}}
   {\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{2em}{1em}
+
+% Subsection: Medium navy
 \titleformat{\subsection}
   {\normalfont\large\bfseries\color{zopdev-navy}}
   {\thesubsection}{1em}{}
+\titlespacing*{\subsection}{0pt}{1.5em}{0.75em}
 
-% Code block styling
+% Subsubsection: Smaller, still navy
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\color{zopdev-navy}}
+  {\thesubsubsection}{1em}{}
+\titlespacing*{\subsubsection}{0pt}{1.25em}{0.5em}
+
+% ===== CALLOUT BOXES (tcolorbox) =====
 \usepackage{tcolorbox}
 \tcbuselibrary{listings, skins, breakable}
-\newtcblisting{codebox}{
-  colback=zopdev-light,
+
+% Note callout (blue)
+\newtcolorbox{zopdev-note}[1][Note]{
+  enhanced,
+  breakable,
+  colback=zopdev-note-bg,
   colframe=zopdev-blue,
-  listing only,
-  left=6pt,
-  right=6pt,
-  top=4pt,
-  bottom=4pt,
+  boxrule=0pt,
+  leftrule=5pt,
   arc=4pt,
-  boxrule=0.5pt
+  left=8pt, right=8pt, top=8pt, bottom=8pt,
+  fonttitle=\bfseries\color{zopdev-blue},
+  title=#1,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=white, colframe=white, boxrule=0pt}
 }
 
-% Hyperlink colors
+% Tip callout (green)
+\newtcolorbox{zopdev-tip}[1][Tip]{
+  enhanced,
+  breakable,
+  colback=zopdev-tip-bg,
+  colframe=zopdev-success,
+  boxrule=0pt,
+  leftrule=5pt,
+  arc=4pt,
+  left=8pt, right=8pt, top=8pt, bottom=8pt,
+  fonttitle=\bfseries\color{zopdev-success},
+  title=#1,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=white, colframe=white, boxrule=0pt}
+}
+
+% Warning callout (orange)
+\newtcolorbox{zopdev-warning}[1][Warning]{
+  enhanced,
+  breakable,
+  colback=zopdev-warning-bg,
+  colframe=zopdev-warning,
+  boxrule=0pt,
+  leftrule=5pt,
+  arc=4pt,
+  left=8pt, right=8pt, top=8pt, bottom=8pt,
+  fonttitle=\bfseries\color{zopdev-warning},
+  title=#1,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=white, colframe=white, boxrule=0pt}
+}
+
+% Important callout (red)
+\newtcolorbox{zopdev-important}[1][Important]{
+  enhanced,
+  breakable,
+  colback=zopdev-important-bg,
+  colframe=zopdev-danger,
+  boxrule=0pt,
+  leftrule=5pt,
+  arc=4pt,
+  left=8pt, right=8pt, top=8pt, bottom=8pt,
+  fonttitle=\bfseries\color{zopdev-danger},
+  title=#1,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=white, colframe=white, boxrule=0pt}
+}
+
+% Code listing box (matches HTML left-border accent)
+\newtcblisting{codebox}{
+  enhanced,
+  breakable,
+  colback=zopdev-light,
+  colframe=zopdev-border,
+  boxrule=0.5pt,
+  leftrule=4pt,
+  colframe=zopdev-blue,
+  listing only,
+  left=6pt, right=6pt, top=6pt, bottom=6pt,
+  arc=4pt
+}
+
+% ===== HYPERLINKS =====
 \usepackage{hyperref}
 \hypersetup{
   colorlinks=true,
@@ -66,11 +183,50 @@
   citecolor=zopdev-blue
 }
 
-% Better tables
+% ===== TABLES =====
 \usepackage{booktabs}
 \usepackage{longtable}
+\usepackage{colortbl}
 
-% Tight spacing
+% Blue top rule for tables (applied via booktabs)
+\setlength{\heavyrulewidth}{1.5pt}
+\setlength{\lightrulewidth}{0.5pt}
+\arrayrulecolor{zopdev-blue}
+
+% ===== BLOCKQUOTES =====
+% Quarto renders blockquotes as quote environments
+\usepackage{changepage}
+\renewenvironment{quote}{%
+  \begin{adjustwidth}{0.5cm}{0cm}%
+  \itshape\color{zopdev-gray}%
+  \noindent\textcolor{zopdev-blue}{\vrule width 4pt}\hspace{0.5em}%
+  \begin{minipage}{\dimexpr\linewidth-0.5em-4pt}%
+}{%
+  \end{minipage}%
+  \end{adjustwidth}%
+  \vspace{0.5em}%
+}
+
+% ===== CALCULATOR FALLBACK STYLING =====
+% Static fallback tables for OJS calculators render as standard tables
+% with brand-consistent callout boxes wrapping them.
+
+\newtcolorbox{zopdev-calculator}[1][Calculator]{
+  enhanced,
+  breakable,
+  colback=zopdev-light,
+  colframe=zopdev-blue,
+  boxrule=0pt,
+  leftrule=5pt,
+  arc=4pt,
+  left=8pt, right=8pt, top=8pt, bottom=8pt,
+  fonttitle=\bfseries\color{zopdev-blue},
+  title=#1,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=white, colframe=white, boxrule=0pt}
+}
+
+% ===== PARAGRAPH SPACING =====
 \usepackage{parskip}
 \setlength{\parskip}{0.5em}
 \setlength{\parindent}{0pt}

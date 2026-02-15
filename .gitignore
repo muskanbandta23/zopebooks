@@ -18,6 +18,7 @@ Thumbs.db
 # Quarto render artifacts
 .quarto/
 *_files/
+*.html.md
 
 # Environment
 .env

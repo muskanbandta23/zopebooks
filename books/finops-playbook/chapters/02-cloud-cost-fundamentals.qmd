@@ -2,8 +2,6 @@
 title: "Cloud Cost Fundamentals"
 ---
 
-# Cloud Cost Fundamentals
-
 Before you can optimize cloud spending, you need to understand how cloud providers charge for their services. Cloud pricing is notoriously complex, with dozens of dimensions that affect your final bill. This chapter breaks down the core pricing models, explains the anatomy of a cloud bill, and highlights the hidden costs that catch most organizations off guard.
 
 ## Cloud Pricing Models

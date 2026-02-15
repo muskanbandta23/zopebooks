@@ -2,8 +2,6 @@
 title: "Cost Allocation & Tagging"
 ---
 
-# Cost Allocation & Tagging
-
 Cost allocation is the backbone of FinOps. Without the ability to attribute cloud spending to specific teams, products, and business units, optimization efforts lack direction and accountability has no foundation. This chapter covers why allocation matters, how to design and implement a tagging strategy, and the practical differences between showback and chargeback models.
 
 ## Why Allocation Matters

@@ -29,6 +29,7 @@ echo "Scaffolding new ebook: $SLUG"
 # Create directory structure
 mkdir -p "$BOOK_DIR/chapters"
 mkdir -p "$BOOK_DIR/images"
+mkdir -p "$BOOK_DIR/diagrams"
 
 # Generate _quarto.yml from template
 sed -e "s/{{slug}}/$SLUG/g" \
@@ -42,14 +43,18 @@ sed -e "s/{{slug}}/$SLUG/g" \
     -e "s/{{subtitle}}/$SUBTITLE/g" \
     "$ROOT_DIR/_templates/ebook.yml" > "$BOOK_DIR/ebook.yml"
 
-# Generate index.qmd
+# Generate index.qmd (home page — unnumbered, chapters start at 1)
+# NOTE: Do NOT use 'title:' in YAML for index.qmd. Quarto always counts
+# YAML-titled entries in the sidebar numbering. Using a body-level H1 with
+# {.unnumbered} keeps it out of the chapter count.
 cat > "$BOOK_DIR/index.qmd" << EOF
 ---
-title: "$TITLE"
 subtitle: "$SUBTITLE"
 ---
 
-# Preface {.unnumbered}
+# $TITLE {.unnumbered}
+
+## Preface {.unnumbered}
 
 Welcome to *$TITLE*.
 

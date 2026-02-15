@@ -2,8 +2,6 @@
 title: "The FinOps Framework"
 ---
 
-# The FinOps Framework
-
 The FinOps Framework, maintained by the FinOps Foundation, provides a structured approach to cloud financial management. It defines a continuous lifecycle of three phases — Inform, Optimize, and Operate — along with a maturity model that helps organizations assess their progress and set realistic goals. This chapter walks through each phase in detail and shows how they fit together.
 
 ## The Inform Phase

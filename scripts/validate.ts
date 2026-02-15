@@ -4,10 +4,14 @@
  * Usage: bun run scripts/validate.ts
  */
 
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { parse } from "yaml";
 import { buildDesignTokenCssVars } from "./theme-utils.js";
+import { getOJSSummary } from "./ojs-utils.js";
+import { findBookDiagrams, validateD2Syntax } from "./diagram-utils.js";
+import { auditEbook } from "./content-audit.js";
+import { validateEbookCode } from "./code-validation.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
@@ -447,6 +451,215 @@ const expectedPrefixes = ["--font-size-", "--space-", "--shadow-", "--radius-", 
 for (const prefix of expectedPrefixes) {
   if (!tokenVars.some(v => v.name.startsWith(prefix))) {
     error(`Design tokens missing category: ${prefix}* (check scripts/theme-tokens.ts)`);
+  }
+}
+
+// --- Validate D2 diagrams ---
+
+for (const slug of slugs) {
+  const diagrams = findBookDiagrams(PROJECT_ROOT, slug);
+  if (diagrams.length === 0) continue;
+
+  console.log(`Validating D2 diagrams in books/${slug}/...`);
+
+  for (const diagramPath of diagrams) {
+    const result = validateD2Syntax(diagramPath);
+    const relPath = diagramPath.replace(PROJECT_ROOT + "/", "");
+
+    if (!result.valid) {
+      for (const err of result.errors) {
+        error(`${relPath}: D2 syntax error — ${err}`);
+      }
+    }
+  }
+}
+
+// --- Validate D2 diagram templates ---
+
+const templatesDir = join(PROJECT_ROOT, "_diagrams", "templates");
+if (existsSync(templatesDir)) {
+  console.log("Validating D2 diagram templates...");
+
+  const templateFiles = readdirSync(templatesDir).filter((f) => f.endsWith(".d2"));
+
+  for (const file of templateFiles) {
+    const templatePath = join(templatesDir, file);
+    const result = validateD2Syntax(templatePath);
+
+    if (!result.valid) {
+      for (const err of result.errors) {
+        error(`_diagrams/templates/${file}: D2 syntax error — ${err}`);
+      }
+    }
+  }
+}
+
+// --- Validate OJS (Observable JS) blocks in ebook chapters ---
+
+for (const slug of slugs) {
+  const bookDir = join(PROJECT_ROOT, "books", slug);
+  if (!existsSync(bookDir)) continue;
+
+  const ojsSummaries = getOJSSummary(PROJECT_ROOT, slug);
+
+  if (ojsSummaries.length > 0) {
+    console.log(`Validating OJS blocks in books/${slug}/...`);
+
+    let totalBlocks = 0;
+    let htmlOnlyCount = 0;
+
+    for (const summary of ojsSummaries) {
+      totalBlocks += summary.blockCount;
+
+      if (summary.hasHtmlOnlyFeatures) {
+        htmlOnlyCount++;
+      }
+
+      for (const validation of summary.validations) {
+        const relPath = summary.filePath.replace(PROJECT_ROOT + "/", "");
+        const lineRef = `line ${validation.block.startLine}`;
+
+        for (const err of validation.errors) {
+          error(`${relPath} (${lineRef}): OJS block error — ${err}`);
+        }
+
+        for (const w of validation.warnings) {
+          warn(`${relPath} (${lineRef}): OJS block — ${w}`);
+        }
+      }
+    }
+
+    if (htmlOnlyCount > 0) {
+      warn(
+        `books/${slug}: ${htmlOnlyCount} file(s) with HTML-only OJS features (Inputs/viewof/Plot). ` +
+        `Ensure each has a static fallback for PDF/EPUB using ::: {.content-visible when-format="pdf"}`
+      );
+    }
+  }
+}
+
+// --- Validate chapter files for duplicate H1 headings ---
+
+for (const slug of slugs) {
+  const bookDir = join(PROJECT_ROOT, "books", slug);
+  if (!existsSync(bookDir)) continue;
+
+  const quartoPath = join(bookDir, "_quarto.yml");
+  if (!existsSync(quartoPath)) continue;
+
+  try {
+    const quartoConfig = parse(readFileSync(quartoPath, "utf-8")) as {
+      book?: { chapters?: string[] };
+    };
+    const chapters = quartoConfig?.book?.chapters;
+    if (!chapters || !Array.isArray(chapters)) continue;
+
+    console.log(`Checking for duplicate H1 headings in books/${slug}/...`);
+
+    for (const chapterEntry of chapters) {
+      // Skip part definitions (objects) — only check string file paths
+      if (typeof chapterEntry !== "string") continue;
+
+      const chapterPath = join(bookDir, chapterEntry);
+      if (!existsSync(chapterPath) || !chapterPath.endsWith(".qmd")) continue;
+
+      const content = readFileSync(chapterPath, "utf-8");
+
+      // Check if YAML front matter has a title: field
+      const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      if (!yamlMatch) continue;
+
+      let hasYamlTitle = false;
+      try {
+        const frontMatter = parse(yamlMatch[1]);
+        hasYamlTitle = !!frontMatter?.title;
+      } catch {
+        continue; // YAML parse errors are caught elsewhere
+      }
+
+      // Check if body (after front matter) has a top-level # heading
+      const bodyStart = content.indexOf("---", content.indexOf("---") + 3) + 3;
+      const body = content.slice(bodyStart);
+      const h1Match = body.match(/^# .+/m);
+
+      if (hasYamlTitle && h1Match) {
+        const relPath = chapterPath.replace(PROJECT_ROOT + "/", "");
+        // If the body H1 uses {.unnumbered}, it's the intentional index.qmd pattern — skip
+        if (h1Match[0].includes("{.unnumbered}")) continue;
+
+        error(
+          `${relPath}: has both YAML 'title:' and body-level '${h1Match[0].trim()}'. ` +
+          `This creates duplicate H1 headings and breaks chapter numbering. ` +
+          `Remove the body '# ...' line — YAML 'title:' already generates the chapter heading.`
+        );
+      }
+    }
+  } catch {
+    // Skip if _quarto.yml can't be parsed
+  }
+}
+
+// --- Content quality audit (advisory — warns, never blocks) ---
+
+for (const slug of slugs) {
+  const bookDir = join(PROJECT_ROOT, "books", slug);
+  if (!existsSync(bookDir)) continue;
+
+  const chaptersDir = join(bookDir, "chapters");
+  if (!existsSync(chaptersDir)) continue;
+
+  console.log(`Running content audit on books/${slug}/...`);
+
+  try {
+    const report = auditEbook(slug);
+
+    for (const violation of report.violations) {
+      warn(`books/${slug} content audit: ${violation.message}`);
+    }
+
+    if (report.violations.length === 0) {
+      console.log(`  Content audit passed (score: ${report.summary.overallScore})`);
+    } else {
+      console.log(`  Content audit: ${report.violations.length} advisory warning(s) (score: ${report.summary.overallScore})`);
+    }
+  } catch (e) {
+    warn(`books/${slug}: Content audit failed — ${(e as Error).message}`);
+  }
+}
+
+// --- Code validation (advisory — warns, never blocks) ---
+
+for (const slug of slugs) {
+  const bookDir = join(PROJECT_ROOT, "books", slug);
+  if (!existsSync(bookDir)) continue;
+
+  const chaptersDir = join(bookDir, "chapters");
+  if (!existsSync(chaptersDir)) continue;
+
+  console.log(`Running code validation on books/${slug}/...`);
+
+  try {
+    const report = validateEbookCode(slug);
+
+    if (report.failedBlocks > 0) {
+      for (const result of report.results.filter((r) => !r.valid)) {
+        for (const err of result.errors) {
+          warn(`books/${slug}/${result.file}:${result.startLine} [${result.language}]: ${err}`);
+        }
+      }
+    }
+
+    for (const suggestion of report.suggestions) {
+      warn(`books/${slug}: ${suggestion.reason} at line ${suggestion.line}`);
+    }
+
+    if (report.failedBlocks === 0 && report.suggestions.length === 0) {
+      console.log(`  Code validation passed (${report.validatedBlocks}/${report.totalBlocks} blocks checked)`);
+    } else {
+      console.log(`  Code validation: ${report.failedBlocks} failure(s), ${report.suggestions.length} suggestion(s)`);
+    }
+  } catch (e) {
+    warn(`books/${slug}: Code validation failed — ${(e as Error).message}`);
   }
 }
 

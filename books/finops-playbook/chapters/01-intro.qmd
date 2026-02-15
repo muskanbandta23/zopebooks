@@ -2,8 +2,6 @@
 title: "Introduction to FinOps"
 ---
 
-# Introduction to FinOps
-
 The shift to cloud computing fundamentally changed how organizations consume and pay for technology. Instead of large upfront capital expenditures for physical servers, teams now provision resources on-demand with variable, usage-based pricing. This flexibility is powerful — but it comes with a new set of challenges.
 
 ## The Cloud Cost Problem

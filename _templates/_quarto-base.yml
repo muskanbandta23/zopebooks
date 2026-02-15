@@ -14,6 +14,14 @@ book:
     - index.qmd
     - chapters/01-intro.qmd
 
+filters:
+  - d2
+
+d2:
+  layout: elk
+  theme: NeutralDefault
+  pad: 20
+
 format:
   html:
     theme: [cosmo, brand, ../../_themes/zopdev-book.scss]
@@ -21,8 +29,12 @@ format:
     toc-depth: 3
     number-sections: true
     code-link: true
+    code-copy: true
+    code-overflow: wrap
   pdf:
     documentclass: book
+    classoption: [oneside, 11pt]
+    pdf-engine: xelatex
     include-in-header: ../../_themes/preamble.tex
     toc: true
     number-sections: true

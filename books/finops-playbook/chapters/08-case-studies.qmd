@@ -2,8 +2,6 @@
 title: "Case Studies"
 ---
 
-# Case Studies
-
 Theory is valuable, but real-world examples bring FinOps to life. This chapter presents three case studies that illustrate how organizations at different stages and scales have applied FinOps practices to achieve measurable outcomes. Each case study describes the starting situation, the approach taken, and the results achieved. We conclude with cross-cutting lessons learned.
 
 ## Case Study 1 — SaaS Startup Reduces Cloud Spend by 40%

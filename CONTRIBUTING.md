@@ -1,650 +1,580 @@
-# Contributing to Zopdev Ebook Engine
-
-## Development Workflow
-
-### 1. Working with the Repository
-
-```bash
-# Clone the repo
-git clone https://github.com/talvinder/ebooks.git
-cd ebooks
-
-# Install dependencies
-make install
-
-# Validate configuration
-make validate
-
-# Test rendering
-make render ebook=finops-playbook
-```
-
-### 2. Creating a New Ebook
-
-```bash
-# Scaffold a new ebook
-make new-ebook slug=my-ebook title="My Ebook Title" subtitle="Optional Subtitle"
-
-# Add entry to calendar.yml
-# Edit books/my-ebook/chapters/
-# Test build
-make render ebook=my-ebook
-```
-
-### 3. Git Workflow
-
-- **Main branch**: Production-ready code only
-- **Feature branches**: Use `feature/<epic-name>` for epics, `feat/<description>` for stories
-- **Commits**: Follow [Conventional Commits](https://www.conventionalcommits.org/)
-  - `feat:` new features
-  - `fix:` bug fixes
-  - `docs:` documentation updates
-  - `refactor:` code refactoring
-  - `chore:` maintenance tasks
-
-```bash
-# Example workflow
-git checkout -b feature/brand-system
-# Make changes
-git add -A
-git commit -m "feat: implement hierarchical brand configuration
-
-- Add _brand-extended.yml for company/product/ICP metadata
-- Create brand-overrides.yml schema for per-ebook customization
-- Update generators to merge brand + overrides
-
-Closes #1"
-git push origin feature/brand-system
-# Open PR on GitHub
-```
-
-## Development Best Practices
-
-These practices were discovered during Epic #1 implementation and should be followed for all future work:
-
-### 1. Shared Utilities Pattern
-
-**✅ Do:** Create shared utility modules when multiple generators/scripts need the same logic
-
-```typescript
-// scripts/brand-utils.ts
-export function loadMergedBrand(ebookId: string): BrandConfig {
-  // Shared merge logic used by landing, social, PDF generators
-}
-```
-
-**❌ Don't:** Duplicate merge logic across multiple generator files
-
-**Why:**
-- Single source of truth for complex logic
-- Easier to test and debug
-- Consistent behavior across all generators
-- TypeScript types can be shared
-
-### 2. TypeScript Types for YAML Schemas
-
-**✅ Do:** Define TypeScript interfaces alongside YAML schema
-
-```typescript
-interface BrandExtended {
-  company: {
-    name: string;
-    website: string;
-  };
-  products: Product[];
-  default_icps: ICP[];
-}
-```
-
-**❌ Don't:** Work with untyped YAML objects
-
-**Why:**
-- Compile-time validation catches errors early
-- IDE autocomplete improves developer experience
-- Self-documenting code structure
-- Easier refactoring
-
-### 3. Template Files for Scaffolding
-
-**✅ Do:** Create template files in `_templates/` for repeated structures
-
-```bash
-cp _templates/brand-overrides.yml books/new-ebook/brand-overrides.yml
-```
-
-**❌ Don't:** Copy-paste from existing ebooks (may have customizations)
-
-**Why:**
-- Templates are canonical examples
-- Reduces copy-paste errors
-- Makes scaffolding scripts simpler
-- Clear separation: template vs real config
-
-### 4. Deep Merge Logic Documentation
-
-**✅ Do:** Document merge behavior explicitly with examples
-
-```yaml
-# Merge Rules:
-# - Scalars (strings, numbers): Last value wins
-# - Objects: Deep merge recursively
-# - Arrays: Complete replacement (no merge)
-```
-
-**❌ Don't:** Assume users understand implicit merge behavior
-
-**Why:**
-- Prevents confusion about override behavior
-- Reduces support questions
-- Makes testing clear (expected behavior)
-- Enables better validation
-
-### 5. Validation Cross-References
-
-**✅ Do:** Validate references between related configs
-
-```typescript
-// Validate that ICP IDs in overrides exist in brand defaults
-const validIcpIds = brandExtended.default_icps.map(icp => icp.id);
-for (const icpId of overrides.target_icps) {
-  if (!validIcpIds.includes(icpId)) {
-    throw new Error(`Unknown ICP ID: ${icpId}`);
-  }
-}
-```
-
-**❌ Don't:** Just validate YAML syntax
-
-**Why:**
-- Catches typos at build time (not runtime)
-- Prevents broken references in production
-- Provides helpful error messages
-- Enforces consistency
-
-### 6. Generator Updates Should Be Minimal
-
-**✅ Do:** Use utility functions to minimize generator changes
-
-```typescript
-// Before: generator loads brand directly
-// After: one-line change to use utility
-const brand = loadMergedBrand(ebookId);
-```
-
-**❌ Don't:** Rewrite entire generators for new features
-
-**Why:**
-- Reduces risk of breaking existing functionality
-- Easier code review
-- Preserves working code
-- Faster implementation
-
-### 7. Example-Driven Documentation
-
-**✅ Do:** Provide real, working examples (not just schema)
-
-```bash
-books/finops-playbook/brand-overrides.yml  # Real example
-_templates/brand-overrides.yml              # Scaffold template
-```
-
-**❌ Don't:** Only document schema structure
-
-**Why:**
-- Examples are faster to understand than specs
-- Copy-paste-modify workflow
-- Shows realistic usage patterns
-- Tests serve as documentation
-
-### 8. Build Script Integration
-
-**✅ Do:** Update scaffold scripts when adding new config files
-
-```bash
-# scripts/new-ebook.sh should scaffold brand-overrides.yml
-cp _templates/brand-overrides.yml "$book_dir/"
-```
-
-**❌ Don't:** Require manual file creation
-
-**Why:**
-- Prevents forgotten config files
-- Ensures consistency across ebooks
-- Reduces onboarding friction
-- Less documentation needed
-
-### 9. Backward Compatibility
-
-**✅ Do:** Make new configs optional with sensible defaults
-
-```typescript
-const overrides = existsSync(overridesPath)
-  ? loadYaml(overridesPath)
-  : {};  // Empty overrides = use all brand defaults
-```
-
-**❌ Don't:** Break existing ebooks when adding new features
-
-**Why:**
-- Gradual adoption
-- Reduces migration burden
-- Tests remain passing
-- Safer deployments
-
-### 10. Commit Granularity
-
-**✅ Do:** Make atomic, focused commits
-
-```bash
-git commit -m "feat: add brand-utils.ts with deep merge logic"
-git commit -m "feat: update landing generator to use loadMergedBrand()"
-git commit -m "feat: add validation for brand overrides"
-```
-
-**❌ Don't:** Commit everything in one giant commit
-
-**Why:**
-- Easier code review
-- Better git history for debugging
-- Easier to revert specific changes
-- Clear separation of concerns
-
-## Brand Configuration System
-
-### Hierarchy Overview
-
-The ebook engine uses a **tiered brand configuration system** that allows brand-level defaults with ebook-level overrides. This ensures consistency while enabling customization.
-
-```
-Brand Level (Default)           Per-Ebook Level (Override)
-─────────────────────          ──────────────────────────
-_brand/_brand.yml       ──┐
-                          ├──→ MERGED ──→ Final Config
-books/<slug>/                │                    ↓
-  brand-overrides.yml   ──┘             Rendered Ebook
-```
-
-### Brand-Level Configuration
-
-**Location:** `_brand/_brand.yml` (existing) + `_brand/_brand-extended.yml` ✅ **Implemented in Epic #1**
-
-**What's Defined:**
-- **Core Brand**: Colors, typography, logos (current `_brand.yml`)
-- **Company Info**: Name, tagline, website, social links
-- **Product Catalog**: ZopNight, ZopCloud, services offered
-- **Default ICPs**: Target personas (DevOps Engineers, CTOs, FinOps Practitioners)
-- **Tone & Voice**: Brand guidelines for messaging
-
-**Example** (`_brand/_brand-extended.yml`):
-
-```yaml
-company:
-  name: "Zopdev"
-  tagline: "Cloud Engineering Excellence"
-  website: "https://zopdev.com"
-  linkedin: "https://linkedin.com/company/zopdev"
-
-products:
-  - name: "ZopNight"
-    description: "FinOps automation platform"
-    url: "https://zopnight.com"
-  - name: "ZopCloud"
-    description: "Cloud migration services"
-    url: "https://zopcloud.com"
-
-default_icps:
-  - id: "devops-engineer"
-    title: "DevOps Engineer"
-    pain_points:
-      - "Cloud costs spiraling out of control"
-      - "No visibility into who's spending what"
-    goals:
-      - "Reduce cloud spend by 30%"
-      - "Implement automated cost controls"
-
-  - id: "cto"
-    title: "CTO / Engineering Leader"
-    pain_points:
-      - "Board asking hard questions about cloud ROI"
-      - "Teams don't understand cost impact"
-    goals:
-      - "Build cost-aware engineering culture"
-      - "Demonstrate cloud value to business"
-
-tone:
-  voice: "Technical, authoritative, practical"
-  avoid: "Marketing fluff, generic advice, buzzwords"
-```
-
-### Ebook-Level Overrides
-
-**Location:** `books/<slug>/brand-overrides.yml` ✅ **Implemented in Epic #1**
-
-**What Can Be Overridden:**
-- **Target ICP**: Narrow to specific persona (e.g., only DevOps, only CTOs)
-- **Color Palette**: Adjust colors for specific audience (e.g., darker for developers, brighter for executives)
-- **Messaging Tone**: Adjust technical depth (deep technical vs executive summary)
-- **CTAs**: Customize calls-to-action (e.g., "Try ZopNight" vs "Book Consultation")
-- **Product Focus**: Highlight specific products
-
-**Example** (`books/finops-playbook/brand-overrides.yml`):
-
-```yaml
-# Override brand defaults for FinOps Playbook
-# This ebook targets DevOps Engineers specifically
-
-target_icps:
-  - "devops-engineer"  # Only this ICP (from brand defaults)
-
-# Slightly darker color scheme for technical audience
-colors:
-  primary: "#003DBF"  # Darker blue (brand default: #0052FF)
-  # Other colors inherit from brand
-
-# Adjust tone for hands-on practitioners
-tone:
-  voice: "Deeply technical, code-heavy, field-tested"
-  depth: "production-ready implementations"
-
-# Product emphasis
-featured_products:
-  - "ZopNight"  # Focus on ZopNight for FinOps automation
-
-# Custom CTAs for this ebook
-ctas:
-  primary: "Try ZopNight Free"
-  secondary: "Download Code Examples"
-
-# Landing page customization
-landing:
-  headline: "Master Cloud Financial Operations"  # From calendar.yml
-  form_fields:
-    - "name"
-    - "email"
-    - "company"
-    - "cloud_spend_monthly"  # Additional field for qualification
-```
-
-### Override Rules
-
-1. **Explicit Override**: If a field is defined in `brand-overrides.yml`, it completely replaces the brand default
-2. **Deep Merge**: For nested objects (colors, typography), only specified fields are overridden
-3. **Array Replace**: Arrays (like ICPs, products) are replaced entirely, not merged
-4. **Validation**: The system warns if overrides drift too far from brand (e.g., completely different color scheme)
-
-**Example Merge Logic:**
-
-```yaml
-# _brand/_brand.yml
-colors:
-  primary: "#0052FF"
-  secondary: "#002D8E"
-  success: "#00C48C"
-
-# books/x/brand-overrides.yml
-colors:
-  primary: "#003DBF"  # Override primary only
-
-# Final Merged Config
-colors:
-  primary: "#003DBF"    # From override
-  secondary: "#002D8E"  # From brand (inherited)
-  success: "#00C48C"    # From brand (inherited)
-```
-
-### Responsible Override Guidelines
-
-**✅ Good Overrides:**
-- Adjust color brightness for different audiences (engineers vs executives)
-- Narrow ICP to one persona for focused messaging
-- Add ebook-specific form fields for lead qualification
-- Emphasize relevant products (ZopNight for FinOps, ZopCloud for migration)
-
-**⚠️ Use Caution:**
-- Changing brand colors dramatically (keep hue consistent)
-- Overly technical tone for executive-focused ebooks
-- CTAs that conflict with brand strategy
-
-**❌ Avoid:**
-- Completely different color scheme (breaking brand identity)
-- Contradicting brand values or messaging
-- Using competitor products in featured list
-- Generic "Download Now" CTAs (be specific)
-
-### Implementation ✅ **Complete (Epic #1)**
-
-The hierarchical brand system now:
-
-1. **Generator Scripts** (`_landing/generate.ts`, `_social/generate.ts`):
-   - Use `loadMergedBrand()` from `scripts/brand-utils.ts`
-   - Automatically merge brand defaults + ebook overrides
-   - Deep merge logic: scalars override, objects merge recursively, arrays replace
-   - Pass merged config to templates
-
-2. **Validation** (`scripts/validate.ts`):
-   - Validates `_brand/_brand-extended.yml` structure (company, products, ICPs)
-   - Validates `brand-overrides.yml` in each ebook
-   - Cross-references ICP IDs and product IDs against brand defaults
-   - Provides helpful error messages with file paths
-
-3. **Build Tools**:
-   - `scripts/new-ebook.sh` scaffolds `brand-overrides.yml` from template
-   - `_templates/brand-overrides.yml` provides starter template
-   - See example implementation in `books/finops-playbook/brand-overrides.yml`
-
-## Enhanced Content System
-
-### Overview
-
-The enhanced content system (Epic #3) adds rich chapter metadata, an author system, and content utilities. All new fields are **optional** — existing ebooks without them continue to work.
-
-### Enriched Chapter Metadata
-
-Chapters in `ebook.yml` support the following optional fields:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `difficulty` | `"beginner"` \| `"intermediate"` \| `"advanced"` | Chapter difficulty level |
-| `reading_time_minutes` | number (positive) | Estimated reading time |
-| `learning_objectives` | string[] | What readers will learn |
-| `key_takeaways` | string[] | Key points to remember |
-| `tags` | string[] | Topic tags for categorization |
-| `prerequisites` | string[] | Chapter IDs that should be read first |
-
-**Example:**
-
-```yaml
-chapters:
-  - id: "01-intro"
-    title: "Introduction"
-    summary: "Overview of the topic."
-    difficulty: beginner
-    reading_time_minutes: 5
-    learning_objectives:
-      - "Understand the core concepts"
-    key_takeaways:
-      - "Key insight from this chapter"
-    tags: [introduction, fundamentals]
-    prerequisites: []
-```
-
-### Author System
-
-Authors are defined at the brand level in `_brand/_brand-extended.yml` and referenced by ID in each ebook's `ebook.yml`.
-
-**Defining authors** (`_brand/_brand-extended.yml`):
-
-```yaml
-authors:
-  - id: "zopdev-team"
-    name: "Zopdev Team"
-    title: "Cloud Engineering"
-    bio: "Description of the author or team."
-    avatar_url: "/assets/authors/zopdev-team.png"
-    social:
-      linkedin: "https://linkedin.com/company/zopdev"
-      github: "https://github.com/zopdev"
-```
-
-**Referencing authors** (`books/{slug}/ebook.yml`):
-
-```yaml
-meta:
-  slug: "my-ebook"
-  title: "My Ebook"
-  authors: ["zopdev-team"]  # References author IDs from _brand-extended.yml
-```
-
-### Content Utilities (`scripts/content-utils.ts`)
-
-| Function | Description |
-|----------|-------------|
-| `loadEbookContent(rootDir, slug)` | Loads `ebook.yml` with enriched types |
-| `resolveAuthors(authorIds, authors)` | Resolves author ID refs to full profiles |
-| `computeReadingTime(qmdPath)` | Estimates reading time from a QMD file (250 wpm) |
-
-### Validation
-
-The validation script checks all enhanced content fields:
-- `difficulty` must be one of: `beginner`, `intermediate`, `advanced`
-- `reading_time_minutes` must be a positive number
-- `prerequisites` must reference valid chapter IDs within the same ebook
-- `meta.authors` must reference valid author IDs from `_brand-extended.yml`
-- Empty `learning_objectives` or `key_takeaways` arrays trigger warnings
-
-## Design Token System
-
-### Overview
-
-The design token system provides consistent, reusable design primitives across all output formats. Tokens are defined once in `scripts/theme-tokens.ts` and consumed through format-specific utilities.
-
-### Token Categories
-
-| Category | Prefix | Example | File |
-|----------|--------|---------|------|
-| Type scale | `--font-size-*` | `--font-size-2xl` → `1.728rem` | `theme-tokens.ts` |
-| Spacing | `--space-*` | `--space-8` → `2rem` | `theme-tokens.ts` |
-| Shadows | `--shadow-*` | `--shadow-lg` → complex box-shadow | `theme-tokens.ts` |
-| Border radius | `--radius-*` | `--radius-lg` → `0.75rem` | `theme-tokens.ts` |
-| Transitions | `--transition-*` | `--transition-fast` → `150ms ease` | `theme-tokens.ts` |
-| Letter spacing | `--letter-spacing-*` | `--letter-spacing-tight` → `-0.025em` | `theme-tokens.ts` |
-| Line height | `--line-height-*` | `--line-height-relaxed` → `1.625` | `theme-tokens.ts` |
-
-### How Tokens Flow
-
-```
-scripts/theme-tokens.ts        Pure data definitions (no I/O)
-        ↓
-scripts/theme-utils.ts         Consumer utilities
-        ↓
-┌───────────────────────────────────────────────────┐
-│                                                   │
-│  Landing pages:                                   │
-│    buildDesignTokenCssVars() → CSS custom props    │
-│    Appended via buildCssVars() in brand-utils.ts  │
-│    Used in styles.css as var(--font-size-xl, ...)  │
-│                                                   │
-│  Social templates:                                │
-│    getSocialThemeValues() → flat object            │
-│    No CSS vars (Satori doesn't support them)      │
-│    Adds darkPrimary, lightBackground from primary │
-│                                                   │
-└───────────────────────────────────────────────────┘
-```
-
-### Adding New Tokens
-
-1. Add the token values to the appropriate constant in `scripts/theme-tokens.ts`
-2. If it's a new category, add it to the `designTokens` bundle
-3. Add CSS variable generation in `scripts/theme-utils.ts` → `buildDesignTokenCssVars()`
-4. If social templates need it, update `getSocialThemeValues()` in `theme-utils.ts`
-5. Use the new tokens in CSS (`var(--your-token)`) or social templates (direct values)
-6. Validation automatically checks that all token categories produce CSS variables
-
-### Key Files
-
-```
-scripts/
-├── theme-tokens.ts     # Token definitions (pure data)
-├── theme-utils.ts      # buildDesignTokenCssVars(), getSocialThemeValues()
-└── brand-utils.ts      # Imports & re-exports theme utils, integrates into buildCssVars()
-```
-
-## Issue Workflow
-
-### Epics
-Epics represent major features spanning multiple stories. They're tracked as GitHub issues with the `epic` label.
-
-### Stories
-Stories are smaller, implementable tasks. They close with `Closes #<epic-number>` when the epic is complete.
-
-### Example
-
-```markdown
-# Story: Implement brand-overrides.yml schema
-
-## Description
-Create the YAML schema for per-ebook brand overrides.
-
-## Tasks
-- [ ] Define schema structure
-- [ ] Add TypeScript types
-- [ ] Create example override file
-- [ ] Update validation script
-
-## Acceptance Criteria
-- Schema documented in CONTRIBUTING.md
-- Example file in books/finops-playbook/
-- Validation passes with overrides
-
-Part of: #1 (Brand System Epic)
-```
-
-## Testing
-
-### Validation
-```bash
-make validate  # Check all configs are valid
-```
-
-### Rendering
-```bash
-make render ebook=<slug>        # Test all formats
-make render-html ebook=<slug>   # Test HTML only
-make render-pdf ebook=<slug>    # Test PDF only
-```
-
-### Landing Pages
-```bash
-make landing ebook=<slug>  # Test landing page generation
-open _output/landing/<slug>/index.html
-```
-
-### Social Assets
-```bash
-make social ebook=<slug>  # Test social asset generation
-open _output/social/<slug>/
-```
-
-### Full Pipeline
-```bash
-make clean  # Clear outputs
-make all    # Run complete pipeline
-```
-
-## Documentation Standards
-
-- **Code comments**: Explain *why*, not *what*
-- **README sections**: Keep concise, link to issues for details
-- **Issue descriptions**: Include examples, acceptance criteria, dependencies
-- **Commit messages**: Follow Conventional Commits format
-
-## Questions?
-
-- **Roadmap questions**: Comment on [#7](https://github.com/talvinder/ebooks/issues/7)
-- **Technical issues**: Open a new issue with the `question` label
-- **Brand system**: See [Epic #1](https://github.com/talvinder/ebooks/issues/1)
+# Contributing to Zopdev Ebooks
+
+This guide covers how to contribute to the Zopdev Ebook Engine and create high-quality ebook content.
+
+## Table of Contents
+
+1. [Quick Start](#quick-start)
+2. [Development Workflow](#development-workflow)
+3. [Adding Content](#adding-content)
+4. [Adding Diagrams](#adding-diagrams)
+5. [Adding Calculators](#adding-calculators)
+6. [Content Quality Standards](#content-quality-standards)
+7. [Validation and Testing](#validation-and-testing)
+8. [Git Workflow](#git-workflow)
+9. [Code Style](#code-style)
 
 ---
 
-Thank you for contributing to the Zopdev Ebook Engine! 🚀
+## Quick Start
+
+### Prerequisites
+
+- **Bun** v1.0+ (JavaScript runtime)
+- **Quarto** v1.4+ (document rendering engine)
+- **D2** v0.7+ (diagram tool) — `brew install d2`
+- **Git** (version control)
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/zopdev/ebooks.git
+cd ebooks
+
+# Install D2 diagram tool
+brew install d2
+
+# Verify setup
+make validate
+```
+
+### Create a New Ebook
+
+```bash
+# Scaffold a new ebook
+make new-ebook slug=my-new-ebook
+
+# This creates:
+#   books/my-new-ebook/
+#   ├── _quarto.yml           # Quarto config
+#   ├── _brand.yml            # Symlink to _brand/brand.yml
+#   ├── ebook.yml             # Content metadata
+#   ├── brand-overrides.yml   # Brand customization (optional)
+#   └── chapters/             # Markdown content
+```
+
+---
+
+## Development Workflow
+
+### Daily Workflow
+
+```bash
+# 1. Create feature branch
+git checkout -b feature/my-feature
+
+# 2. Make changes to content or engine
+
+# 3. Validate changes
+make validate
+
+# 4. Render ebook to preview
+make render ebook=<slug>
+open books/<slug>/_output/html/index.html
+
+# 5. Run content audit
+make audit ebook=<slug>
+
+# 6. Commit changes
+git add .
+git commit -m "feat: add chapter on right-sizing"
+
+# 7. Push and create PR
+git push origin feature/my-feature
+gh pr create
+```
+
+### Make Targets
+
+| Command | Purpose |
+|---------|---------|
+| `make validate` | Validate all YAML configs, D2 diagrams, OJS blocks |
+| `make render ebook=<slug>` | Render all formats (HTML, PDF, EPUB) |
+| `make audit ebook=<slug>` | Run content quality audit |
+| `make diagrams ebook=<slug>` | Validate all D2 diagrams |
+| `make landing ebook=<slug>` | Generate landing page |
+| `make social ebook=<slug>` | Generate social media assets |
+| `make compare ebook=<slug> before=<path> after=<path>` | Compare before/after quality |
+| `make clean` | Clear all outputs |
+
+---
+
+## Adding Content
+
+### Chapter Structure
+
+Use the SOTA chapter template as a starting point:
+
+```bash
+cp _templates/sota-chapter-template.qmd books/<slug>/chapters/05-my-chapter.qmd
+```
+
+### Content Checklist
+
+Every chapter should include:
+
+- ✅ **Incident-driven opening** — Real scenario with specific numbers
+- ✅ **Production-ready code** — Copy-pasteable examples (2+ blocks)
+- ✅ **Diagrams** — Architecture, workflow, or before/after (≥1 per chapter)
+- ✅ **Interactive elements** — Calculator or interactive visualization (optional but recommended)
+- ✅ **Quantified outcomes** — Dollar amounts, percentages, fleet sizes
+- ✅ **Call to action** — Clear next steps for readers
+
+**See:** [guides/CONTENT_QUALITY.md](guides/CONTENT_QUALITY.md) for full SOTA content standards.
+
+### Example Chapter Outline
+
+```markdown
+# Chapter Title: Concrete Problem Statement
+
+## The $X Wake-Up Call
+[Incident-driven opening with specific numbers...]
+
+## Why [Problem] Happens
+[Background context...]
+
+## The [Solution] Framework
+[Architecture diagram showing current state...]
+[Production-ready code examples...]
+[Interactive calculator...]
+
+## Optimized Architecture
+[After-state diagram showing improvements...]
+
+## Results After [Time Period]
+[Quantified outcomes...]
+
+## Next Steps
+[Clear call to action...]
+```
+
+---
+
+## Adding Diagrams
+
+### Quick Start
+
+1. **Copy a template** from `_diagrams/templates/`
+2. **Edit the D2 file** with your content
+3. **Embed in chapter** using D2 code fence
+
+### Available Templates
+
+| Template | Purpose |
+|----------|---------|
+| `cloud-architecture.d2` | Infrastructure with cost annotations |
+| `finops-workflow.d2` | FinOps lifecycle (Inform → Optimize → Operate) |
+| `before-after-optimization.d2` | Side-by-side cost optimization |
+| `multi-cloud-comparison.d2` | AWS vs GCP vs Azure |
+| `data-pipeline.d2` | ETL/analytics workflows |
+
+### Example Usage
+
+```bash
+# Copy template
+cp _diagrams/templates/cloud-architecture.d2 books/<slug>/diagrams/my-architecture.d2
+
+# Edit the D2 file
+vim books/<slug>/diagrams/my-architecture.d2
+
+# Validate syntax
+d2 validate books/<slug>/diagrams/my-architecture.d2
+
+# Embed in chapter
+```
+
+````markdown
+```{d2}
+//| file: diagrams/my-architecture.d2
+//| fig-cap: "Production infrastructure with cost breakdown"
+//| fig-width: 8
+```
+````
+
+### Zopdev Brand Colors
+
+Always use these colors in diagrams:
+
+- **Primary Blue**: `#0052FF` — Main elements, Zopdev products
+- **Success Green**: `#00C48C` — Savings, optimization wins
+- **Warning Orange**: `#FFB020` — Alerts, moderate issues
+- **Danger Red**: `#FF6B6B` — Problems, waste
+
+**See:** [guides/D2_DIAGRAM_GUIDE.md](guides/D2_DIAGRAM_GUIDE.md) for comprehensive D2 guide.
+
+---
+
+## Adding Calculators
+
+### Quick Start
+
+1. **Copy a calculator template** from `_templates/ojs/`
+2. **Customize inputs and formulas** for your scenario
+3. **Add static fallback** for PDF/EPUB
+
+### Available Templates
+
+| Template | Purpose |
+|----------|---------|
+| `cost-comparison-calculator.qmd` | Compare 2+ options side-by-side |
+| `roi-calculator.qmd` | Investment vs savings over time |
+| `resource-optimizer.qmd` | Find optimal resource tier |
+
+### Example Usage
+
+````markdown
+## ROI Calculator
+
+::: {.callout-note}
+## How to Use
+Adjust the inputs below to model your scenario.
+:::
+
+```{ojs}
+//| echo: false
+
+viewof investment = Inputs.range([10000, 500000], {
+  value: 50000,
+  label: "Implementation cost ($)"
+})
+
+viewof savings = Inputs.range([1000, 50000], {
+  value: 15000,
+  label: "Monthly savings ($)"
+})
+
+roi = ((savings * 12) / investment * 100).toFixed(0)
+
+html`<div class="ojs-calculator">
+  <div class="ojs-metric">
+    <span class="ojs-metric-value">${roi}%</span>
+    <span class="ojs-metric-label">Annual ROI</span>
+  </div>
+</div>`
+```
+
+::: {.content-visible when-format="pdf"}
+**ROI Calculator (Default Scenario)**
+
+Investment: $50,000 | Monthly Savings: $15,000
+
+**Annual ROI: 360%**
+:::
+````
+
+**Important:** Always provide static fallback for PDF/EPUB using `content-visible` blocks.
+
+**See:** [guides/OBSERVABLE_JS_PATTERNS.md](guides/OBSERVABLE_JS_PATTERNS.md) for comprehensive OJS guide.
+
+---
+
+## Content Quality Standards
+
+### SOTA (State-of-the-Art) Quality
+
+Zopdev ebooks target professional quality that readers would pay $200+ for. Every chapter should meet these standards:
+
+#### 1. Incident-Driven Narratives
+
+**❌ Generic:** "Many organizations struggle with cloud costs."
+
+**✅ SOTA:** "When Acme Corp's AWS bill hit $450K/month, the CTO escalated to the board..."
+
+#### 2. Production-Ready Code
+
+**❌ Pseudocode:** `costs = get_costs(); analyze(costs)`
+
+**✅ SOTA:** Full Python scripts with imports, error handling, and sample output
+
+#### 3. Numerical Specificity
+
+**❌ Vague:** "Significant savings", "30-50% reduction"
+
+**✅ SOTA:** "$18,242/month savings (38.4% reduction)", "143 overprovisioned instances"
+
+#### 4. Visual Density
+
+**Target:** ≥0.3 diagrams per 1000 words
+
+**Why:** Complex concepts are easier to understand visually
+
+#### 5. Interactive Elements
+
+**Target:** ≥1 calculator per ebook
+
+**Why:** Readers want to model their own scenarios
+
+**See:** [docs/CONTENT_QUALITY.md](./CONTENT_QUALITY.md) for full SOTA standards.
+
+---
+
+## Validation and Testing
+
+### Content Audit
+
+Run automated quality checks before submitting:
+
+```bash
+# Audit a specific ebook
+make audit ebook=<slug>
+
+# Sample output:
+# Overall Score: C (7 violations)
+#
+# DIAGRAMS: 0.11 per 1000 words (target: 0.3) [WARN]
+# CODE BLOCKS: 12 total (target: 2 per chapter)
+# GENERIC CLAIMS: 47 total (target: ≤5 per chapter) [WARN]
+# INTERACTIVE ELEMENTS: 0 (target: ≥1) [WARN]
+# REAL NUMBERS: 23 total
+# READING LEVEL: 11.2 grade (target: 8-14)
+```
+
+**Action items:**
+1. Add diagrams to chapters with 0.00 density
+2. Replace generic claims with specific numbers
+3. Add production-ready code examples
+4. Include an interactive calculator
+
+### Validation Workflow
+
+```bash
+# 1. Validate configs and syntax
+make validate
+
+# Expected: 0 errors
+# If errors: Fix YAML syntax, D2 syntax, OJS syntax
+
+# 2. Run content audit
+make audit ebook=<slug>
+
+# Expected: Overall Score B or better
+# If violations: Follow recommendations in output
+
+# 3. Test all formats
+make render ebook=<slug>
+open books/<slug>/_output/html/index.html      # Interactive version
+open books/<slug>/_output/<slug>.pdf            # PDF version
+```
+
+### Quality Metrics
+
+The content audit measures 6 metrics:
+
+| Metric | Target | What It Measures |
+|--------|--------|------------------|
+| **Diagram Density** | ≥0.3/1000 words | D2, Mermaid, images |
+| **Code Density** | ≥2 blocks/chapter | Fenced code blocks |
+| **Generic Claims** | ≤5/chapter | "should", "many", "typically", vague % |
+| **Interactive Elements** | ≥1/ebook | OJS calculators |
+| **Real Numbers** | ≥1/chapter | $ amounts, specific %, fleet sizes |
+| **Reading Level** | 8-14 grade | Flesch-Kincaid |
+
+### Before/After Comparison
+
+When making major content improvements, compare before/after quality:
+
+```bash
+# Save current state
+cp -r books/<slug>/_output /tmp/before-changes
+
+# Make improvements
+# ...
+
+# Generate new output
+make render ebook=<slug>
+
+# Compare
+make compare ebook=<slug> before=/tmp/before-changes after=books/<slug>/_output
+
+# Opens HTML report showing:
+# - Diagram density delta
+# - Code density delta
+# - Generic claims delta
+# - Interactive elements added
+# - Real numbers delta
+```
+
+---
+
+## Git Workflow
+
+### Branch Naming
+
+- **feature/** — New features or content (`feature/add-chapter-5`)
+- **fix/** — Bug fixes (`fix/broken-diagram-rendering`)
+- **docs/** — Documentation updates (`docs/update-ojs-guide`)
+- **chore/** — Maintenance (`chore/update-dependencies`)
+
+### Commit Messages
+
+Follow conventional commits format:
+
+```
+<type>: <description>
+
+[optional body]
+```
+
+**Types:**
+- `feat:` — New feature or content
+- `fix:` — Bug fix
+- `docs:` — Documentation changes
+- `chore:` — Maintenance tasks
+- `style:` — Code formatting (no functional changes)
+- `refactor:` — Code restructuring (no functional changes)
+- `test:` — Test additions or fixes
+
+**Examples:**
+
+```bash
+git commit -m "feat: add chapter 5 on right-sizing"
+git commit -m "fix: correct D2 syntax in cloud-architecture diagram"
+git commit -m "docs: update Observable JS patterns guide"
+git commit -m "chore: upgrade Quarto to v1.4.5"
+```
+
+### Pull Request Process
+
+1. **Create feature branch**
+   ```bash
+   git checkout -b feature/my-feature
+   ```
+
+2. **Make changes and commit**
+   ```bash
+   git add .
+   git commit -m "feat: add interactive cost calculator"
+   ```
+
+3. **Push to remote**
+   ```bash
+   git push origin feature/my-feature
+   ```
+
+4. **Create pull request**
+   ```bash
+   gh pr create --title "Add interactive cost calculator" --body "$(cat <<'EOF'
+   ## Summary
+   - Added ROI calculator to chapter 5
+   - Uses Observable JS with Zopdev brand styling
+   - Includes static fallback for PDF/EPUB
+
+   ## Test Plan
+   - [x] Calculator works interactively in HTML
+   - [x] PDF shows static fallback table
+   - [x] All validation passes
+   - [x] Content audit score improved from C to B
+
+   🤖 Generated with [Claude Code](https://claude.com/claude-code)
+   EOF
+   )"
+   ```
+
+5. **Review and merge**
+   - Request review from team
+   - Address feedback
+   - Merge when approved
+
+---
+
+## Code Style
+
+### TypeScript/JavaScript
+
+```typescript
+// Use explicit types
+interface BrandConfig {
+  company: CompanyInfo;
+  products: Product[];
+}
+
+// Prefer named exports
+export function loadBrand(path: string): BrandConfig { }
+
+// Use const for immutable data
+const brand = loadBrand('_brand/brand.yml');
+
+// Destructure for clarity
+const { company, products } = brand;
+```
+
+### YAML
+
+```yaml
+# Use comments to explain non-obvious fields
+products:
+  - id: "zopnight"  # Referenced by brand-overrides.yml
+    name: "ZopNight"
+
+# Group related fields
+company:
+  name: "Zopdev"
+  website: "https://zopdev.com"
+
+# Use lists for repeated items
+default_icps:
+  - id: "devops-engineer"
+  - id: "cto"
+```
+
+### Markdown/Quarto
+
+```markdown
+# Use ATX-style headings (not Setext)
+## Level 2 Heading
+
+# Prefer fenced code blocks with language tags
+```python
+def example():
+    pass
+```
+
+# Use descriptive figure captions
+```{d2}
+//| fig-cap: "Production infrastructure before optimization"
+```
+
+# Add callouts for tips/notes/warnings
+::: {.callout-note}
+## Pro Tip
+Use ZopNight's scheduling to save 40% on non-prod resources.
+:::
+```
+
+---
+
+## Additional Resources
+
+### Documentation
+
+- **[D2 Diagram Guide](./D2_DIAGRAM_GUIDE.md)** — How to create professional diagrams
+- **[Observable JS Patterns](./OBSERVABLE_JS_PATTERNS.md)** — How to add interactive calculators
+- **[Content Quality Guide](./CONTENT_QUALITY.md)** — SOTA content standards
+- **[SOTA Chapter Template](_templates/sota-chapter-template.qmd)** — Full example chapter
+
+### Tools
+
+- **[Quarto Documentation](https://quarto.org/docs/)** — Quarto features and syntax
+- **[D2 Playground](https://play.d2lang.com/)** — Test D2 diagrams online
+- **[Observable Documentation](https://observablehq.com/@observablehq/documentation)** — Learn Observable JS
+
+### Scripts
+
+- **`scripts/diagram-utils.ts`** — D2 diagram utilities
+- **`scripts/ojs-utils.ts`** — Observable JS utilities
+- **`scripts/content-audit.ts`** — Content quality validation
+- **`scripts/code-validation.ts`** — Code syntax checking
+- **`scripts/compare-outputs.ts`** — Before/after comparison
+
+---
+
+## Questions?
+
+- **Slack:** #ebook-engine
+- **Issues:** https://github.com/zopdev/ebooks/issues
+- **Email:** engineering@zopdev.com
+
+---
+
+**Last Updated:** 2026-02-14 (after Epic #5 completion)

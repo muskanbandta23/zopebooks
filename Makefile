@@ -9,6 +9,11 @@ BOOKS_DIR   := books
 OUTPUT_DIR  := _output
 SCRIPTS_DIR := scripts
 
+# Quarto needs a Python with jupyter + PyYAML for OJS support.
+# Auto-detect .venv if present; override with: make render ebook=x QUARTO_PYTHON=/path/to/python
+QUARTO_PYTHON ?= $(shell [ -x .venv/bin/python3 ] && echo .venv/bin/python3 || echo "")
+export QUARTO_PYTHON
+
 # ─── Help ────────────────────────────────────────────────────────────────────
 
 .PHONY: help
@@ -133,6 +138,60 @@ ifndef ebook
 	$(error Usage: make social-og ebook=<slug>)
 endif
 	bun run _social/generate.ts $(ebook) og
+
+# ─── Diagrams ──────────────────────────────────────────────────────────────
+
+.PHONY: diagrams
+diagrams: ## Validate D2 diagrams — ebook=<slug>
+ifndef ebook
+	$(error Usage: make diagrams ebook=<slug>)
+endif
+	@echo "Validating D2 diagrams for $(ebook)..."
+	@if [ -d "$(BOOKS_DIR)/$(ebook)/diagrams" ]; then \
+		for f in $(BOOKS_DIR)/$(ebook)/diagrams/*.d2; do \
+			[ -f "$$f" ] || continue; \
+			if d2 validate "$$f" > /dev/null 2>&1; then \
+				echo "  OK  $$f"; \
+			else \
+				echo "  FAIL $$f"; \
+				d2 validate "$$f" 2>&1 | sed 's/^/       /'; \
+				exit 1; \
+			fi; \
+		done; \
+		echo "All diagrams valid."; \
+	else \
+		echo "  No diagrams/ directory found for $(ebook) (skipping)"; \
+	fi
+
+# ─── Content Quality Audit ──────────────────────────────────────────────────
+
+.PHONY: audit
+audit: ## Run content quality audit — ebook=<slug>
+ifndef ebook
+	$(error Usage: make audit ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/content-audit.ts $(ebook)
+
+.PHONY: audit-all
+audit-all: ## Run content quality audit on all ebooks
+	bun run $(SCRIPTS_DIR)/content-audit.ts
+
+.PHONY: code-validate
+code-validate: ## Run code validation — ebook=<slug>
+ifndef ebook
+	$(error Usage: make code-validate ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/code-validation.ts $(ebook)
+
+.PHONY: compare
+compare: ## Compare before/after quality — ebook=<slug> before=<path> after=<path>
+ifndef ebook
+	$(error Usage: make compare ebook=<slug> before=<path> [after=<path>])
+endif
+ifndef before
+	$(error Usage: make compare ebook=<slug> before=<path> [after=<path>])
+endif
+	bun run $(SCRIPTS_DIR)/compare-outputs.ts $(ebook) $(before) $(after)
 
 # ─── Scaffold ────────────────────────────────────────────────────────────────
 
