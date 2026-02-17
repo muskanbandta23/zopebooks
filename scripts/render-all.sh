@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Renders all non-archived ebooks listed in calendar.yml.
-# Usage: ./scripts/render-all.sh [format]
+# Usage: ./scripts/render-all.sh [format] [-j jobs]
 # format: html, pdf, epub, or empty for all formats
+# -j jobs: number of parallel jobs (default: number of CPU cores)
 
 set -euo pipefail
 
@@ -14,7 +15,26 @@ if [ ! -f "$CALENDAR" ]; then
   exit 1
 fi
 
-FORMAT="${1:-}"
+# Parse arguments
+FORMAT=""
+PARALLEL_JOBS=1
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -j)
+      PARALLEL_JOBS="$2"
+      shift 2
+      ;;
+    -j*)
+      PARALLEL_JOBS="${1#-j}"
+      shift
+      ;;
+    *)
+      FORMAT="$1"
+      shift
+      ;;
+  esac
+done
 
 # Parse ebook slugs from calendar.yml, skipping archived ones
 # Uses a simple grep/awk approach to avoid requiring yq
@@ -51,41 +71,85 @@ if [ ${#SLUGS[@]} -eq 0 ]; then
   exit 0
 fi
 
-echo "Rendering ${#SLUGS[@]} ebook(s)..."
+echo "Rendering ${#SLUGS[@]} ebook(s) with $PARALLEL_JOBS job(s)..."
 echo ""
 
-FAILED=0
+# Function to render a single ebook
+render_one() {
+  local SLUG="$1"
+  local FORMAT="$2"
+  local ROOT_DIR="$3"
 
-for SLUG in "${SLUGS[@]}"; do
-  BOOK_DIR="$ROOT_DIR/books/$SLUG"
+  local BOOK_DIR="$ROOT_DIR/books/$SLUG"
+  local OUTPUT_DIR="$ROOT_DIR/_output/$SLUG"
 
   if [ ! -d "$BOOK_DIR" ]; then
     echo "Warning: Book directory not found for '$SLUG', skipping"
-    continue
+    return 1
   fi
 
-  echo "--- Rendering: $SLUG ---"
-
+  local FMT_ARG=""
   if [ -n "$FORMAT" ]; then
-    echo "  Format: $FORMAT"
-    if ! quarto render "$BOOK_DIR" --to "$FORMAT"; then
-      echo "  FAILED: $SLUG ($FORMAT)"
-      FAILED=$((FAILED + 1))
-    fi
-  else
-    echo "  Format: all"
-    if ! quarto render "$BOOK_DIR"; then
-      echo "  FAILED: $SLUG"
-      FAILED=$((FAILED + 1))
-    fi
+    FMT_ARG="--to $FORMAT"
   fi
 
-  echo ""
-done
+  # Create output directory
+  mkdir -p "$OUTPUT_DIR"
 
+  # Run quarto render
+  if quarto render "$BOOK_DIR" $FMT_ARG 2>&1; then
+    echo "SUCCESS: $SLUG"
+    return 0
+  else
+    echo "FAILED: $SLUG"
+    return 1
+  fi
+}
+
+export -f render_one
+export ROOT_DIR FORMAT
+
+FAILED=0
+PASSED=0
+PIDS=()
+
+if [ "$PARALLEL_JOBS" -eq 1 ]; then
+  # Sequential mode (original behavior)
+  for SLUG in "${SLUGS[@]}"; do
+    echo "--- Rendering: $SLUG ---"
+    if render_one "$SLUG" "$FORMAT" "$ROOT_DIR"; then
+      PASSED=$((PASSED + 1))
+    else
+      FAILED=$((FAILED + 1))
+    fi
+    echo ""
+  done
+else
+  # Parallel mode
+  for SLUG in "${SLUGS[@]}"; do
+    render_one "$SLUG" "$FORMAT" "$ROOT_DIR" &
+    PIDS+=($!)
+  done
+
+  # Wait for all jobs with progress
+  while [ ${#PIDS[@]} -gt 0 ]; do
+    NEW_PIDS=()
+    for PID in "${PIDS[@]}"; do
+      if kill -0 "$PID" 2>/dev/null; then
+        NEW_PIDS+=("$PID")
+      else
+        wait "$PID" && PASSED=$((PASSED + 1)) || FAILED=$((FAILED + 1))
+      fi
+    done
+    PIDS=("${NEW_PIDS[@]}")
+    sleep 1
+  done
+fi
+
+echo ""
 if [ $FAILED -gt 0 ]; then
-  echo "Completed with $FAILED failure(s)"
+  echo "Completed: $PASSED succeeded, $FAILED failed"
   exit 1
 else
-  echo "All ebooks rendered successfully"
+  echo "All ${#SLUGS[@]} ebooks rendered successfully"
 fi

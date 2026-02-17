@@ -27,5 +27,5 @@ Thumbs.db
 # Bun
 bun.lockb
 
-# Documentation (work in progress, not for version control)
-docs/
+# Python virtual environments
+.venv/

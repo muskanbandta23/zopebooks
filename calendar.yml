@@ -22,4 +22,23 @@ ebooks:
       headline: "Master Cloud Financial Operations"
       description: "Learn practical strategies to optimize cloud costs, implement FinOps practices, and build a culture of financial accountability across your engineering teams."
       cta_text: "Download Free PDF"
-      form_action: "https://YOUR_WEBHOOK_URL/ebook-signup"  # placeholder — wire up later
+      form_action: "#"  # TODO: replace with real webhook URL when ready
+
+  - slug: k8s-cost-guide
+    title: "Kubernetes Cost Guide"
+    subtitle: "Optimizing Container Spending"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [kubernetes, cost-optimization, containers, finops]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      og_image: true
+    landing:
+      headline: "Take Control of Kubernetes Costs"
+      description: "Learn practical strategies to optimize Kubernetes spending, right-size workloads, and implement FinOps practices for container environments."
+      cta_text: "Download Free PDF"
+      form_action: "#"  # TODO: replace with real webhook URL when ready

@@ -2,6 +2,22 @@
 
 This document contains patterns, practices, and architectural decisions for AI agents working on the Zopdev Ebook Engine.
 
+## Critical Rules
+
+### Engine-First, Not Content-First
+
+**When working on generation engines (pipeline stages, providers, content transforms), ALWAYS focus on engine quality and validation — NOT on improving past generations.**
+
+- Do NOT re-run pipelines repeatedly to polish a single ebook's content
+- Do NOT manually fix generated output; fix the engine that produced it
+- When a generation defect is found, fix the code, then validate with an A/B comparison (old output vs new output) to prove the engine improved
+- Build automated quality comparison tooling (before/after metrics) rather than eyeballing individual chapters
+- Use existing ebooks as **test fixtures** for engine validation, not as content to be perfected
+- The measure of success is: "does the engine produce better output for ANY topic?" — not "does this one chapter read well?"
+
+**Anti-pattern:** Run pipeline → read output → tweak prompts → re-run → read again → repeat
+**Correct pattern:** Run pipeline → measure quality metrics → fix engine code → run A/B comparison → validate improvement is systematic
+
 ## Project Architecture
 
 ### Core Philosophy

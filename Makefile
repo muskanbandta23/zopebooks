@@ -14,6 +14,10 @@ SCRIPTS_DIR := scripts
 QUARTO_PYTHON ?= $(shell [ -x .venv/bin/python3 ] && echo .venv/bin/python3 || echo "")
 export QUARTO_PYTHON
 
+# Parallelization: set to number of CPU cores for parallel builds
+# Use: make render-all PARALLEL=4
+PARALLEL ?= 1
+
 # ─── Help ────────────────────────────────────────────────────────────────────
 
 .PHONY: help
@@ -39,6 +43,12 @@ setup: ## Symlink brand into all ebooks
 		slug=$$(basename "$$dir"); \
 		$(SCRIPTS_DIR)/setup-ebook.sh "$$slug"; \
 	done
+
+# ─── Testing ─────────────────────────────────────────────────────────────────
+
+.PHONY: test
+test: ## Run unit tests
+	bun test $(SCRIPTS_DIR)/tests/
 
 # ─── Validation ──────────────────────────────────────────────────────────────
 
@@ -93,8 +103,8 @@ endif
 	quarto render $(BOOKS_DIR)/$(ebook) --to epub
 
 .PHONY: render-all
-render-all: ## Render all non-archived ebooks
-	$(SCRIPTS_DIR)/render-all.sh
+render-all: ## Render all non-archived ebooks — PARALLEL=n for parallel (default: 1)
+	$(SCRIPTS_DIR)/render-all.sh -j $(PARALLEL)
 
 # ─── Landing Pages ───────────────────────────────────────────────────────────
 
@@ -205,15 +215,82 @@ ifndef title
 endif
 	$(SCRIPTS_DIR)/new-ebook.sh "$(slug)" "$(title)" "$(subtitle)"
 
+# ─── Content Pipeline ────────────────────────────────────────────────────────
+
+.PHONY: research
+research: ## Research topic and generate research.yml — ebook=<slug>
+ifndef ebook
+	$(error Usage: make research ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/research-topic.ts $(ebook)
+
+.PHONY: outline
+outline: ## Generate book outline from topic.yml — ebook=<slug>
+ifndef ebook
+	$(error Usage: make outline ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/generate-outline.ts $(ebook)
+
+.PHONY: plan
+plan: ## Generate chapter plans with visual recs — ebook=<slug> [chapter=<id>]
+ifndef ebook
+	$(error Usage: make plan ebook=<slug> [chapter=<id>])
+endif
+	bun run $(SCRIPTS_DIR)/plan-chapters.ts $(ebook) $(chapter)
+
+.PHONY: transform
+transform: ## Generate dense .qmd from plans — ebook=<slug> [chapter=<id>]
+ifndef ebook
+	$(error Usage: make transform ebook=<slug> [chapter=<id>])
+endif
+	bun run $(SCRIPTS_DIR)/transform-chapter.ts $(ebook) $(chapter)
+
+.PHONY: pipeline
+pipeline: ## Full content pipeline: research → outline → plan → transform — ebook=<slug>
+ifndef ebook
+	$(error Usage: make pipeline ebook=<slug>)
+endif
+	@echo "Stage 0: Researching topic..."
+	bun run $(SCRIPTS_DIR)/research-topic.ts $(ebook)
+	@echo "Stage 1: Generating outline..."
+	bun run $(SCRIPTS_DIR)/generate-outline.ts $(ebook)
+	@echo "Stage 2: Planning chapters..."
+	bun run $(SCRIPTS_DIR)/plan-chapters.ts $(ebook)
+	@echo "Stage 3: Transforming chapters..."
+	bun run $(SCRIPTS_DIR)/transform-chapter.ts $(ebook)
+	@echo ""
+	@echo "Pipeline complete. Next: review .qmd files, then run: make audit ebook=$(ebook)"
+
+# ─── Engine Evaluation ──────────────────────────────────────────────────
+
+.PHONY: eval
+eval: ## A/B eval: template vs LLM engine — ebook=<slug>
+ifndef ebook
+	$(error Usage: make eval ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/engine-eval.ts $(ebook)
+
+.PHONY: eval-report
+eval-report: ## Re-run eval report from existing snapshots — ebook=<slug>
+ifndef ebook
+	$(error Usage: make eval-report ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/engine-eval.ts $(ebook) --report-only
+
 # ─── Full Pipeline ───────────────────────────────────────────────────────────
 
 .PHONY: all
-all: validate render-all landing-all ## Full pipeline: validate → render → landing → social
+all: validate render-all landing-all ## Full pipeline: validate → render → landing → social (use PARALLEL=n)
 	@echo ""
 	@echo "Generating social assets for all ebooks..."
 	bun run _social/generate.ts
 	@echo ""
 	@echo "Full pipeline complete."
+
+# Alias for parallel build
+.PHONY: build
+build: ## Alias for 'all' — PARALLEL=n for parallel rendering
+	$(MAKE) all PARALLEL=$(PARALLEL)
 
 # ─── Clean ───────────────────────────────────────────────────────────────────
 

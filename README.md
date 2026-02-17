@@ -179,7 +179,7 @@ ebooks/
        headline: "Your compelling headline"
        description: "Lead capture description"
        cta_text: "Download Free PDF"
-       form_action: "https://YOUR_WEBHOOK_URL"
+       form_action: "#"  # Replace with your webhook URL
    ```
 
 3. **Write content** in `books/my-ebook/chapters/`

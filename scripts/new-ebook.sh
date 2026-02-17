@@ -72,6 +72,18 @@ touch "$BOOK_DIR/references.bib"
 sed -e "s/{{title}}/$TITLE/g" \
     "$ROOT_DIR/_templates/brand-overrides.yml" > "$BOOK_DIR/brand-overrides.yml"
 
+# Copy Quarto extensions (e.g., D2 filter) from the first existing ebook
+EXTENSIONS_SRC=""
+for existing in "$ROOT_DIR/books"/*/_extensions; do
+  if [ -d "$existing" ]; then
+    EXTENSIONS_SRC="$existing"
+    break
+  fi
+done
+if [ -n "$EXTENSIONS_SRC" ]; then
+  cp -r "$EXTENSIONS_SRC" "$BOOK_DIR/_extensions"
+fi
+
 # Setup brand symlink
 "$SCRIPT_DIR/setup-ebook.sh" "$SLUG"
 

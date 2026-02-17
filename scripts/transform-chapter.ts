@@ -1,0 +1,852 @@
+#!/usr/bin/env bun
+/**
+ * Stage 3: Research-Grounded Chapter Generator.
+ * Reads per-chapter .plan.yml, research.yml, and context.yml to produce
+ * dense .qmd files with real industry data, config examples (not scripts),
+ * D2 diagrams, OJS calculators, and citation-backed narrative.
+ *
+ * When an LLM provider is configured (via env vars or topic.yml pipeline section),
+ * generates actual prose for each section. Otherwise falls back to template-based
+ * rendering.
+ *
+ * Key principles:
+ *   - No fabricated stories or fictional characters
+ *   - Only config-level code (YAML/HCL) unless code_policy is "full"
+ *   - All claims backed by research data with sources
+ *   - Product tie-ins from context.yml (not marketing copy)
+ *
+ * Usage:
+ *   bun run scripts/transform-chapter.ts <slug>                # all chapters
+ *   bun run scripts/transform-chapter.ts <slug> <chapter-id>   # one chapter
+ */
+
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "fs";
+import { join, dirname } from "path";
+import { parse } from "yaml";
+import type {
+  ChapterPlan,
+  PlanSection,
+  VisualRecommendation,
+  ContentSeed,
+  ResearchData,
+  ContextConfig,
+  ResearchClaim,
+  ResearchPattern,
+  ResearchConfigExample,
+  BookOutline,
+  OutlineChapter,
+} from "./pipeline-types.js";
+import { copyTemplateToBook } from "./diagram-utils.js";
+import { loadPipelineConfig, type PipelineConfig } from "./provider-config.js";
+import { sectionProsePrompt, imagePromptForSection } from "./prompt-templates.js";
+
+const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
+const PROJECT_ROOT = join(SCRIPT_DIR, "..");
+
+// ── File loading ────────────────────────────────────────────────────────────
+
+function loadResearch(slug: string): ResearchData | null {
+  const path = join(PROJECT_ROOT, "books", slug, "research.yml");
+  if (!existsSync(path)) return null;
+  return parse(readFileSync(path, "utf-8")) as ResearchData;
+}
+
+function loadContext(slug: string): ContextConfig | null {
+  const path = join(PROJECT_ROOT, "books", slug, "context.yml");
+  if (!existsSync(path)) return null;
+  return parse(readFileSync(path, "utf-8")) as ContextConfig;
+}
+
+function loadOutline(slug: string): BookOutline | null {
+  const path = join(PROJECT_ROOT, "books", slug, "outline.yml");
+  if (!existsSync(path)) return null;
+  return parse(readFileSync(path, "utf-8")) as BookOutline;
+}
+
+// ── OJS template loader ─────────────────────────────────────────────────────
+
+function loadOJSTemplate(templateName: string): string {
+  const templatePath = join(PROJECT_ROOT, "_templates", "ojs", `${templateName}.qmd`);
+  if (!existsSync(templatePath)) {
+    return `<!-- OJS template "${templateName}" not found at ${templatePath} -->`;
+  }
+  const content = readFileSync(templatePath, "utf-8");
+  // Extract only the OJS blocks and fallbacks (skip YAML frontmatter and HTML comments)
+  const lines = content.split("\n");
+  const outputLines: string[] = [];
+  let inFrontmatter = false;
+  let frontmatterCount = 0;
+
+  for (const line of lines) {
+    if (line.trim() === "---") {
+      frontmatterCount++;
+      if (frontmatterCount <= 2) {
+        inFrontmatter = frontmatterCount === 1;
+        continue;
+      }
+    }
+    if (inFrontmatter) continue;
+    if (line.trim().startsWith("<!--") && line.trim().endsWith("-->")) continue;
+    outputLines.push(line);
+  }
+
+  let result = outputLines.join("\n");
+  result = result.replace(/<!--[\s\S]*?-->/g, "");
+  result = result.replace(/\n{3,}/g, "\n\n");
+  return result.trim();
+}
+
+// ── D2 diagram embedding ────────────────────────────────────────────────────
+
+function embedDiagram(
+  slug: string,
+  templateName: string,
+  purpose: string,
+): string {
+  try {
+    copyTemplateToBook(PROJECT_ROOT, templateName, slug);
+  } catch (err) {
+    return `<!-- D2 template "${templateName}" not available: ${(err as Error).message} -->\n`;
+  }
+
+  const relPath = `../diagrams/${templateName}.d2`;
+
+  return [
+    `\`\`\`{.d2 width="100%" file="${relPath}"}`,
+    `\`\`\``,
+    ``,
+    `*${purpose}*`,
+  ].join("\n");
+}
+
+// ── Config block generation (replaces Python script generation) ─────────────
+
+const CONFIG_TEMPLATES: Record<string, string> = {
+  ResourceQuota: `# ResourceQuota: caps total namespace resource consumption
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-platform-quota
+  namespace: platform
+  labels:
+    cost-center: "platform-engineering"
+spec:
+  hard:
+    requests.cpu: "12"
+    requests.memory: 24Gi
+    limits.cpu: "24"
+    limits.memory: 48Gi
+    pods: "50"
+    persistentvolumeclaims: "20"`,
+
+  LimitRange: `# LimitRange: ensures every pod has resource requests
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+  namespace: platform
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "250m"
+        memory: "256Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"`,
+
+  VerticalPodAutoscaler: `# VPA in recommendation mode — analyzes usage, suggests right-sized requests
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-gateway-vpa
+  namespace: production
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  updatePolicy:
+    updateMode: "Off"  # Recommendation mode — no automatic changes
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: "100m"
+          memory: "128Mi"
+        maxAllowed:
+          cpu: "4"
+          memory: "8Gi"`,
+
+  HorizontalPodAutoscaler: `# HPA: scales replicas based on CPU/memory utilization
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-gateway-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70`,
+
+  PodDisruptionBudget: `# PDB: ensures minimum availability during node drains / spot interruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: api-gateway`,
+};
+
+/**
+ * Match a section heading/purpose to a CONFIG_TEMPLATES key.
+ * Tries exact match first, then keyword-based fuzzy match.
+ */
+function findConfigTemplateName(heading: string, purpose: string): string {
+  const combined = `${heading} ${purpose}`.toLowerCase();
+  const keys = Object.keys(CONFIG_TEMPLATES);
+
+  // Exact match (case-insensitive)
+  for (const key of keys) {
+    if (combined.includes(key.toLowerCase())) return key;
+  }
+
+  // Keyword matching
+  const keywordMap: Record<string, string[]> = {
+    VerticalPodAutoscaler: ["vpa", "vertical pod", "autoscal", "right-siz"],
+    HorizontalPodAutoscaler: ["hpa", "horizontal pod", "replica"],
+    ResourceQuota: ["quota", "resource quota", "namespace quota"],
+    LimitRange: ["limit range", "limitrange", "default limit"],
+    PodDisruptionBudget: ["pdb", "disruption", "availability"],
+  };
+
+  for (const [key, keywords] of Object.entries(keywordMap)) {
+    if (keywords.some(kw => combined.includes(kw))) return key;
+  }
+
+  return heading;
+}
+
+function generateConfigBlock(configName: string, description: string): string {
+  const template = CONFIG_TEMPLATES[configName];
+  if (template) {
+    return [
+      `\`\`\`yaml`,
+      template,
+      `\`\`\``,
+    ].join("\n");
+  }
+
+  // Generic config fallback
+  return [
+    `\`\`\`yaml`,
+    `# ${configName}: ${description}`,
+    `apiVersion: v1`,
+    `kind: ConfigMap`,
+    `metadata:`,
+    `  name: ${configName.toLowerCase().replace(/\s+/g, "-")}`,
+    `  namespace: production`,
+    `data:`,
+    `  # Configure ${configName.toLowerCase()} settings here`,
+    `  enabled: "true"`,
+    `\`\`\``,
+  ].join("\n");
+}
+
+// ── Pattern comparison table generation ─────────────────────────────────────
+
+function generatePatternTable(patterns: ResearchPattern[]): string {
+  if (patterns.length === 0) return "";
+
+  const rows = patterns.map((p) => {
+    const savings = p.typical_savings || "Varies";
+    const effort = p.implementation_effort || "Varies";
+    const risk = p.risk || "Low";
+    return `| ${p.name} | ${savings} | ${effort} | ${risk} |`;
+  });
+
+  return [
+    `| Pattern | Typical Savings | Effort | Risk |`,
+    `|---------|----------------|--------|------|`,
+    ...rows,
+  ].join("\n");
+}
+
+// ── Callout generation ──────────────────────────────────────────────────────
+
+function generateCallout(
+  visual: VisualRecommendation & { style?: string },
+  section: PlanSection,
+  contentSeeds?: ContentSeed,
+): string {
+  const style = visual.style || "tip";
+
+  // Build tip content from research
+  const patternTip = contentSeeds?.patterns?.[0];
+  const tipContent = patternTip
+    ? `**${patternTip.name} in practice:** ${patternTip.description}${patternTip.typical_savings ? ` Typical savings: ${patternTip.typical_savings}.` : ""}`
+    : section.notes || "Specific, actionable advice from real implementations.";
+
+  return [
+    `::: {.callout-${style}}`,
+    `## ${section.heading}`,
+    ``,
+    tipContent,
+    `:::`,
+  ].join("\n");
+}
+
+// ── LLM-powered section rendering ───────────────────────────────────────────
+
+async function renderSectionWithLLM(
+  section: PlanSection,
+  plan: ChapterPlan,
+  slug: string,
+  chapterTitle: string,
+  research: ResearchData | null,
+  context: ContextConfig | null,
+  chapterInfo: OutlineChapter | null,
+  pipelineConfig: PipelineConfig,
+  previousSections: string[],
+): Promise<string> {
+  const parts: string[] = [];
+  const llm = pipelineConfig.llm!;
+  const editorial = context?.editorial_direction;
+
+  // Generate prose via LLM
+  const messages = sectionProsePrompt(
+    section,
+    plan,
+    chapterTitle,
+    research,
+    context,
+    previousSections,
+    editorial,
+  );
+
+  const startTime = Date.now();
+  const result = await llm.complete({
+    messages,
+    temperature: 0.7,
+    maxTokens: Math.max(2048, section.word_target * 4), // ~4 tokens per word margin to prevent truncation
+  });
+  const durationMs = Date.now() - startTime;
+
+  pipelineConfig.costTracker.addCall({
+    stage: "transform",
+    provider: llm.name,
+    model: llm.model,
+    promptTokens: result.usage.promptTokens,
+    completionTokens: result.usage.completionTokens,
+    durationMs,
+  });
+
+  // Strip reasoning model artifacts (<think>...</think> blocks, common in DeepSeek, MiniMax, etc.)
+  const prose = result.content
+    .replace(/<think>[\s\S]*?<\/think>/g, "")
+    .replace(/^---\s*$/gm, "")  // Strip stray horizontal rules from reasoning
+    .replace(/^\*{1,3}\s*$/gm, "")  // Strip orphaned bold/italic markers on their own line
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  // ── Assemble section with heading + prose + visuals ──
+
+  if (section.id === "opening") {
+    // No heading for opening (density comment already in frontmatter area)
+    parts.push(prose);
+  } else if (section.id === "field_notes") {
+    // Callout wrapper
+    const style = section.visual?.style || "tip";
+    parts.push(`::: {.callout-${style}}`);
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+    parts.push(prose);
+    parts.push(`:::`);
+  } else {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+    parts.push(prose);
+  }
+
+  parts.push(``);
+
+  // ── Embed visual elements (these stay template-driven) ──
+  // NOTE: When LLM generates prose, it often includes tables and code inline.
+  // We skip template-generated tables/code to avoid duplication, but still
+  // embed D2 diagrams, OJS calculators, and illustrations which are external assets.
+  if (section.visual) {
+    const v = section.visual;
+
+    if (v.type === "d2" && v.template) {
+      parts.push(embedDiagram(slug, v.template, v.purpose || section.heading));
+      parts.push(``);
+    } else if (v.type === "code") {
+      // Only embed config block if the LLM prose doesn't already contain a YAML block
+      const proseHasYaml = /```yaml/i.test(prose) || /```yml/i.test(prose);
+      if (!proseHasYaml) {
+        // Try to match config kind from heading, purpose, or plan metadata
+        const configName = findConfigTemplateName(section.heading, v.purpose || "");
+        parts.push(generateConfigBlock(configName, v.purpose || section.heading));
+        parts.push(``);
+      }
+    } else if (v.type === "ojs" && v.template) {
+      parts.push(`::: {.callout-note}`);
+      parts.push(`## Interactive Calculator`);
+      parts.push(`Adjust the inputs below to model your scenario. Static table shown in PDF/EPUB.`);
+      parts.push(`:::`);
+      parts.push(``);
+      parts.push(loadOJSTemplate(v.template));
+      parts.push(``);
+    } else if (v.type === "table") {
+      // Skip — LLM prose typically generates its own inline tables with specific data.
+      // Template tables use generic "Varies" values which are lower quality.
+    } else if (v.type === "illustration" && pipelineConfig.image) {
+      // Generate image via image provider
+      const imagePrompt = v.image_prompt || imagePromptForSection(
+        chapterTitle,
+        section.heading,
+        v.purpose,
+        research?.topic || "technology",
+        v.image_style || pipelineConfig.imageConfig.style,
+      );
+      const filename = v.image_filename || `${plan.chapter_id}-${section.id}.png`;
+      const imagesDir = join(PROJECT_ROOT, "books", slug, "images");
+      if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });
+
+      try {
+        const imgResult = await pipelineConfig.image.generate({
+          prompt: imagePrompt,
+          style: v.image_style || pipelineConfig.imageConfig.style,
+        });
+        const imgPath = join(imagesDir, filename);
+        writeFileSync(imgPath, imgResult.imageBuffer);
+        parts.push(`![${v.purpose || section.heading}](images/${filename})`);
+        parts.push(``);
+        console.log(`    Generated image: ${filename}`);
+      } catch (err) {
+        parts.push(`<!-- Image generation failed: ${(err as Error).message} -->`);
+        parts.push(``);
+      }
+    }
+  }
+
+  return parts.join("\n");
+}
+
+// ── Section rendering (research-grounded, template fallback) ────────────────
+
+function renderSection(
+  section: PlanSection,
+  plan: ChapterPlan,
+  slug: string,
+  chapterTitle: string,
+  research: ResearchData | null,
+  context: ContextConfig | null,
+  chapterInfo: OutlineChapter | null,
+): string {
+  const parts: string[] = [];
+  const seeds = plan.content_seeds;
+  const codePolicy = context?.editorial_direction?.code_policy || "config-only";
+
+  // ── Opening section: industry data, not fictional stories ──
+  if (section.id === "opening") {
+    // No heading for opening — it flows naturally
+    parts.push(`<!-- Density: ${plan.density_level} | Word target: ${plan.word_target[0]}-${plan.word_target[1]} -->`);
+    parts.push(``);
+
+    // Opening hook from research
+    if (seeds?.opening_hook) {
+      parts.push(seeds.opening_hook);
+      parts.push(``);
+    }
+
+    // Add supporting claims
+    const claims = seeds?.key_claims || [];
+    if (claims.length > 1) {
+      for (const claim of claims.slice(1, 3)) {
+        parts.push(`${claim.claim} (${claim.source}).`);
+        parts.push(``);
+      }
+    }
+
+    // Frame the chapter's purpose
+    if (chapterInfo) {
+      parts.push(`This chapter covers ${chapterInfo.summary.toLowerCase()}.`);
+      parts.push(``);
+    }
+  }
+  // ── Background / explanation section ──
+  else if (section.id === "background") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    // Use section notes as guidance, generate prose from research
+    if (section.notes) {
+      parts.push(section.notes);
+      parts.push(``);
+    }
+
+    // Embed D2 diagram if specified
+    if (section.visual && section.visual.type === "d2" && section.visual.template) {
+      parts.push(embedDiagram(slug, section.visual.template, section.visual.purpose || section.heading));
+      parts.push(``);
+    }
+  }
+  // ── Config sections (code_policy aware) ──
+  else if (section.id.startsWith("config_") || section.id === "configuration") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    if (section.notes) {
+      parts.push(section.notes);
+      parts.push(``);
+    }
+
+    // Generate config block
+    if (section.visual && section.visual.type === "code") {
+      const configName = section.heading;
+      const purpose = section.visual.purpose || section.heading;
+      parts.push(generateConfigBlock(configName, purpose));
+      parts.push(``);
+    }
+  }
+  // ── Implementation section (only if code_policy allows) ──
+  else if (section.id === "implementation") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    if (codePolicy === "full" && section.visual && section.visual.type === "code") {
+      // Only in "full" mode do we include longer code
+      const lang = section.visual.language || "yaml";
+      parts.push(`\`\`\`${lang}`);
+      parts.push(`# ${section.visual.purpose || section.heading}`);
+      parts.push(`# Production implementation`);
+      parts.push(`\`\`\``);
+    } else {
+      // Config-only or minimal: show relevant configs instead
+      const configs = seeds?.configs || [];
+      if (configs.length > 0) {
+        for (const cfg of configs.slice(0, 2)) {
+          parts.push(`### ${cfg.name}`);
+          parts.push(``);
+          parts.push(cfg.description);
+          parts.push(``);
+          parts.push(generateConfigBlock(cfg.name, cfg.description));
+          parts.push(``);
+        }
+      } else {
+        parts.push(section.notes || "");
+        parts.push(``);
+      }
+    }
+  }
+  // ── Decision framework table ──
+  else if (section.id === "decision_framework") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    const patterns = seeds?.patterns || research?.common_patterns || [];
+    if (patterns.length >= 2) {
+      parts.push(generatePatternTable(patterns));
+      parts.push(``);
+
+      // Add brief guidance
+      for (const p of patterns.slice(0, 3)) {
+        if (p.eligibility) {
+          parts.push(`**${p.name}** is best suited for: ${p.eligibility}.`);
+          parts.push(``);
+        }
+      }
+    } else if (section.notes) {
+      parts.push(section.notes);
+      parts.push(``);
+    }
+  }
+  // ── Calculator section ──
+  else if (section.id === "calculator") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    if (section.visual && section.visual.type === "ojs" && section.visual.template) {
+      parts.push(`::: {.callout-note}`);
+      parts.push(`## Interactive Calculator`);
+      parts.push(`Adjust the inputs below to model your scenario. Static table shown in PDF/EPUB.`);
+      parts.push(`:::`);
+      parts.push(``);
+      parts.push(loadOJSTemplate(section.visual.template));
+    }
+  }
+  // ── Impact / results section ──
+  else if (section.id === "impact") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    // Use research patterns for quantified outcomes
+    const patterns = seeds?.patterns || [];
+    if (patterns.length > 0) {
+      parts.push(`Implementing these strategies typically yields:`);
+      parts.push(``);
+      for (const p of patterns) {
+        if (p.typical_savings) {
+          parts.push(`- **${p.name}**: ${p.typical_savings} (effort: ${p.implementation_effort || "varies"})`);
+        }
+      }
+      parts.push(``);
+    }
+
+    // Add customer story data if available
+    const stories = context?.customer_stories || [];
+    if (stories.length > 0) {
+      const story = stories[0];
+      parts.push(`In practice, a ${story.industry} organization with ${story.cluster_size || "production clusters"} reduced spend from ${story.before} to ${story.after} in ${story.timeline}.`);
+      parts.push(``);
+    }
+
+    // Product tie-in (subtle, not marketing)
+    if (seeds?.product_tie_in) {
+      parts.push(`Tools like ${seeds.product_tie_in} can accelerate this process by automating the analysis and recommendation workflow.`);
+      parts.push(``);
+    }
+  }
+  // ── Field notes callout ──
+  else if (section.id === "field_notes") {
+    if (section.visual) {
+      parts.push(generateCallout(
+        section.visual as VisualRecommendation & { style?: string },
+        section,
+        seeds,
+      ));
+    } else {
+      parts.push(`::: {.callout-tip}`);
+      parts.push(`## ${section.heading}`);
+      parts.push(``);
+      parts.push(section.notes || "Specific, actionable advice from real implementations.");
+      parts.push(`:::`);
+    }
+  }
+  // ── Summary section ──
+  else if (section.id === "summary") {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+    parts.push(`**Key takeaways:**`);
+    parts.push(``);
+
+    // Generate takeaways from research
+    const claims = seeds?.key_claims || [];
+    const patterns = seeds?.patterns || [];
+
+    if (claims.length > 0) {
+      parts.push(`1. ${claims[0].claim} (${claims[0].source})`);
+    }
+    if (patterns.length > 0) {
+      parts.push(`${claims.length > 0 ? "2" : "1"}. ${patterns[0].name} can deliver ${patterns[0].typical_savings || "significant savings"} with ${patterns[0].implementation_effort || "moderate"} effort`);
+    }
+    if (patterns.length > 1) {
+      parts.push(`${claims.length > 0 ? "3" : "2"}. Combine ${patterns.slice(0, 3).map((p) => p.name).join(", ")} for cumulative impact`);
+    }
+    parts.push(``);
+
+    // Cross-reference to next chapter
+    if (chapterInfo?.sets_up?.length) {
+      parts.push(`In the next chapter, we'll build on these foundations with more advanced optimization strategies.`);
+      parts.push(``);
+    }
+  }
+  // ── Generic section fallback ──
+  else {
+    parts.push(`## ${section.heading}`);
+    parts.push(``);
+
+    if (section.notes) {
+      parts.push(section.notes);
+      parts.push(``);
+    }
+
+    // Embed visual if present
+    if (section.visual) {
+      const v = section.visual as VisualRecommendation & { language?: string; lines?: string; style?: string };
+
+      if (v.type === "d2" && v.template) {
+        parts.push(embedDiagram(slug, v.template, v.purpose || section.heading));
+      } else if (v.type === "code") {
+        const configName = section.heading;
+        parts.push(generateConfigBlock(configName, v.purpose || section.heading));
+      } else if (v.type === "ojs" && v.template) {
+        parts.push(`::: {.callout-note}`);
+        parts.push(`## Interactive Calculator`);
+        parts.push(`Adjust the inputs below to model your scenario.`);
+        parts.push(`:::`);
+        parts.push(``);
+        parts.push(loadOJSTemplate(v.template));
+      } else if (v.type === "callout") {
+        parts.push(generateCallout(v, section, seeds));
+      } else if (v.type === "table") {
+        const patterns = seeds?.patterns || research?.common_patterns || [];
+        if (patterns.length >= 2) {
+          parts.push(generatePatternTable(patterns));
+        }
+      }
+    }
+  }
+
+  parts.push(``);
+  return parts.join("\n");
+}
+
+// ── Main transform function ─────────────────────────────────────────────────
+
+async function transformChapter(
+  slug: string,
+  planPath: string,
+  research: ResearchData | null,
+  context: ContextConfig | null,
+  outline: BookOutline | null,
+  pipelineConfig?: PipelineConfig,
+): Promise<string> {
+  const planContent = readFileSync(planPath, "utf-8");
+  const plan = parse(planContent) as ChapterPlan;
+
+  // Find chapter info from outline
+  const chapterInfo = outline?.chapters?.find((c) => c.id === plan.chapter_id) || null;
+  const chapterTitle = chapterInfo?.title || plan.chapter_id;
+
+  const useLLM = pipelineConfig?.llm != null;
+
+  const parts: string[] = [];
+
+  // YAML frontmatter
+  parts.push(`---`);
+  parts.push(`title: "${chapterTitle}"`);
+  parts.push(`---`);
+  parts.push(``);
+
+  if (useLLM) {
+    parts.push(`<!-- Generated by transform-chapter.ts with ${pipelineConfig!.llm!.name}/${pipelineConfig!.llm!.model} -->`);
+  } else {
+    parts.push(`<!-- Generated by transform-chapter.ts, filled by author -->`);
+  }
+  parts.push(`<!-- Density: ${plan.density_level} | Word target: ${plan.word_target[0]}-${plan.word_target[1]} -->`);
+  parts.push(``);
+
+  // Render each section
+  if (useLLM) {
+    // LLM path: generate prose section by section, passing previous sections for continuity
+    const previousSections: string[] = [];
+    for (const section of plan.sections) {
+      const rendered = await renderSectionWithLLM(
+        section, plan, slug, chapterTitle, research, context, chapterInfo,
+        pipelineConfig!, previousSections,
+      );
+      parts.push(rendered);
+      previousSections.push(rendered);
+    }
+  } else {
+    // Template fallback path (original behavior)
+    for (const section of plan.sections) {
+      parts.push(renderSection(section, plan, slug, chapterTitle, research, context, chapterInfo));
+    }
+  }
+
+  return parts.join("\n");
+}
+
+// ── CLI ─────────────────────────────────────────────────────────────────────
+
+if (import.meta.main) {
+  const slug = process.argv[2];
+  const chapterId = process.argv[3];
+
+  if (!slug) {
+    console.error("Usage: bun run scripts/transform-chapter.ts <slug> [chapter-id]");
+    process.exit(1);
+  }
+
+  const bookDir = join(PROJECT_ROOT, "books", slug);
+  const chaptersDir = join(bookDir, "chapters");
+
+  if (!existsSync(chaptersDir)) {
+    console.error(`Chapters directory not found: books/${slug}/chapters/`);
+    console.error(`Run first: make plan ebook=${slug}`);
+    process.exit(1);
+  }
+
+  // Load shared data
+  const research = loadResearch(slug);
+  const context = loadContext(slug);
+  const outline = loadOutline(slug);
+
+  // Load pipeline config (LLM, search, image providers)
+  const pipelineConfig = loadPipelineConfig(PROJECT_ROOT, slug);
+
+  const codePolicy = context?.editorial_direction?.code_policy || "not set";
+  console.log(`\nTransforming chapters for "${slug}"...`);
+  if (research) console.log(`  Research: ${research.industry_data.length} claims, ${research.common_patterns.length} patterns`);
+  if (context) console.log(`  Context: code_policy=${codePolicy}`);
+  if (pipelineConfig.llm) console.log(`  LLM: ${pipelineConfig.llm.name}/${pipelineConfig.llm.model}`);
+  else console.log(`  LLM: none (template fallback)`);
+  console.log();
+
+  // Find .plan.yml files
+  const planFiles = readdirSync(chaptersDir)
+    .filter((f) => f.endsWith(".plan.yml"))
+    .filter((f) => !chapterId || f.startsWith(chapterId));
+
+  if (planFiles.length === 0) {
+    console.error(`No .plan.yml files found${chapterId ? ` for "${chapterId}"` : ""}.`);
+    console.error(`Run first: make plan ebook=${slug}`);
+    process.exit(1);
+  }
+
+  for (const planFile of planFiles) {
+    const planPath = join(chaptersDir, planFile);
+    const qmdFile = planFile.replace(".plan.yml", ".qmd");
+    const qmdPath = join(chaptersDir, qmdFile);
+
+    const content = await transformChapter(slug, planPath, research, context, outline, pipelineConfig);
+    writeFileSync(qmdPath, content);
+
+    // Count stats
+    const wordCount = content.split(/\s+/).length;
+    const d2Count = (content.match(/```\{\.d2/g) || []).length;
+    const ojsCount = (content.match(/```\{ojs/g) || []).length;
+    const configCount = (content.match(/```yaml/g) || []).length;
+    const tableCount = (content.match(/^\|.*\|.*\|/gm) || []).length;
+
+    console.log(`  ${qmdFile}:`);
+    console.log(`    Words: ~${wordCount}`);
+    console.log(`    D2 diagrams: ${d2Count}`);
+    console.log(`    OJS calculators: ${ojsCount}`);
+    console.log(`    Config blocks: ${configCount}`);
+    console.log(`    Tables: ${tableCount > 0 ? "yes" : "none"}`);
+    console.log(`    Output: ${qmdPath}`);
+    console.log();
+  }
+
+  // Print cost summary
+  const cost = pipelineConfig.costTracker.summary();
+  if (cost.totalCalls > 0) {
+    console.log(`  API usage: ${cost.totalCalls} calls, ~${cost.totalTokens} tokens, ~$${cost.estimatedCostUsd}`);
+  }
+
+  console.log(`Next: Review .qmd files, then run: make audit ebook=${slug}`);
+}

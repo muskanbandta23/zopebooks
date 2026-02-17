@@ -578,9 +578,11 @@ for (const slug of slugs) {
       }
 
       // Check if body (after front matter) has a top-level # heading
+      // Strip fenced code blocks first to avoid matching comments inside code
       const bodyStart = content.indexOf("---", content.indexOf("---") + 3) + 3;
       const body = content.slice(bodyStart);
-      const h1Match = body.match(/^# .+/m);
+      const bodyNoCode = body.replace(/^```[^\n]*\n[\s\S]*?^```\s*$/gm, "");
+      const h1Match = bodyNoCode.match(/^# .+/m);
 
       if (hasYamlTitle && h1Match) {
         const relPath = chapterPath.replace(PROJECT_ROOT + "/", "");

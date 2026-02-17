@@ -1,0 +1,24 @@
+# Pre-commit hooks for ebook validation
+# Install: brew install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Validate YAML files
+  - repo: local
+    hooks:
+      - id: yaml-validate
+        name: Validate YAML
+        entry: bun run scripts/validate-yaml.ts
+        language: system
+        types: [yaml]
+        pass_filenames: true
+
+  # Validate D2 diagrams
+  - repo: local
+    hooks:
+      - id: d2-validate
+        name: Validate D2 diagrams
+        entry: d2 validate
+        language: system
+        types: [d2]
+        pass_filenames: true
