@@ -24,13 +24,19 @@ d2:
 
 format:
   html:
-    theme: [cosmo, brand, ../../_themes/zopdev-book.scss]
+    theme:
+      light: [cosmo, brand, ../../_themes/zopdev-book.scss]
+      dark: [darkly, brand, ../../_themes/zopdev-book.scss]
     toc: true
     toc-depth: 3
     number-sections: true
     code-link: true
     code-copy: true
     code-overflow: wrap
+    include-after-body:
+      text: |
+        <div class="reading-progress"></div>
+        <script>window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-window.innerHeight;if(h>0)document.querySelector('.reading-progress').style.width=(window.scrollY/h*100)+'%';});</script>
   pdf:
     documentclass: book
     classoption: [oneside, 11pt]

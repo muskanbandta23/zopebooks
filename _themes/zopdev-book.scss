@@ -1,159 +1,173 @@
 /*-- scss:defaults --*/
 
-// Zopdev Book Theme — Premium Edition
+// Zopdev Book Theme — Modern Edition (2026)
 // Applied via: theme: [cosmo, brand, ../../_themes/zopdev-book.scss]
 //
-// NOTE: Color variables ($primary, $secondary, etc.) are provided by
-// the Quarto brand layer from _brand/_brand.yml. We only define
-// non-color defaults and supplementary colors here.
+// Design philosophy: restraint over decoration.
+// Typography and whitespace create hierarchy, not borders and gradients.
 
-// Supplementary colors (not in brand palette)
-$success: #00C48C;
-$warning: #FFB020;
-$danger: #FF6B6B;
+// Supplementary semantic colors
+$success: #10B981;
+$warning: #F59E0B;
+$danger: #EF4444;
 
-// Typography — aligned with _brand/_brand.yml
-$font-size-base: 1rem;       // 16px (brand default)
-$line-height-base: 1.7;      // brand default
-$headings-font-weight: 700;
-$headings-line-height: 1.3;
-$headings-margin-bottom: 1.5rem;
-$paragraph-margin-bottom: 1.25rem;
+// Typography — optimized for long-form reading (Medium-inspired)
+$font-size-base: 1.125rem; // 18px — optimal for sustained reading
+$line-height-base: 1.75;
+$headings-font-weight: 600;
+$headings-line-height: 1.2;
+$headings-margin-bottom: 1rem;
+$paragraph-margin-bottom: 1.5rem; // generous spacing between paragraphs
 
-// Code — aligned with brand palette
-$code-font-size: 0.875em;    // brand monospace size
-$code-bg: #F8FAFC;           // brand gray-50
-$code-border: #E2E8F0;       // brand gray-200
+// Code — dark background
+$code-font-size: 0.875em;
+$code-bg: #1E1E2E;
+$code-color: #CDD6F4;
 
-// Layout — aligned with brand palette
-$border-color: #E2E8F0;      // brand gray-200
+// Borders — opacity-based
+$border-color: rgba(0, 0, 0, 0.08);
 
 // Links
 $link-decoration: none;
 
 /*-- scss:rules --*/
 
-// ===== PREMIUM TITLE BLOCK =====
+// ===== BODY — READING OPTIMIZATIONS =====
+body {
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+// ===== PROSE COLUMN WIDTH =====
+// Constrain content to ~680px (Medium-style) for comfortable line scanning
+// ~65-75 characters per line — the optimal range for readability
+#quarto-content .content,
+.page-columns .content {
+  max-width: 720px;
+}
+
+// ===== TITLE BLOCK / COVER PAGE =====
 .quarto-title-block {
-  background: linear-gradient(135deg, $primary 0%, darken($primary, 20%) 100%);
-  color: white;
-  padding: 4rem 2rem;
-  margin: -2rem -2rem 3rem -2rem;
-  border-radius: 0 0 8px 8px;
+  padding: 6rem 0 4rem 0;
+  border-bottom: 1px solid $border-color;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 
   .quarto-title {
     font-size: 3rem;
-    font-weight: 800;
-    letter-spacing: -0.025em;  // canonical tight
+    font-weight: 700;
+    letter-spacing: -0.04em;
     margin-bottom: 1rem;
-    line-height: 1.1;
+    line-height: 1.05;
+    max-width: 720px;
   }
 
   .quarto-title-meta {
-    font-size: 1.1rem;
-    opacity: 0.9;
+    font-size: 0.9rem;
+    color: var(--bs-secondary-color);
+    margin-top: 2rem;
 
     .quarto-title-meta-heading {
-      font-weight: 600;
+      font-weight: 500;
       margin-right: 0.5rem;
     }
   }
 
-  .description {
+  .description,
+  .subtitle {
     font-size: 1.25rem;
     margin-top: 1rem;
-    opacity: 0.95;
-    max-width: 800px;
+    color: var(--bs-secondary-color);
+    max-width: 640px;
+    line-height: 1.6;
   }
 }
 
-// ===== CHAPTER HEADERS =====
+// ===== HEADINGS =====
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  letter-spacing: -0.015em;  // canonical snug
-  margin-top: 2.5rem;
-  margin-bottom: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 3.5rem;
+  margin-bottom: 1rem;
   scroll-margin-top: 80px;
 }
 
 h1 {
-  font-size: 2.5rem;
-  border-bottom: 3px solid $primary;
-  padding-bottom: 0.5rem;
-  margin-bottom: 2rem;
+  font-size: 2.25rem;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 1.875rem;
-
-  &::before {
-    content: "\25B8 "; // ▸
-    color: $primary;
-    font-weight: 900;
-    margin-right: 0.5rem;
-  }
+  font-size: 1.625rem; // clear separation from 18px body
 }
 
 h3 {
-  font-size: 1.5rem;
-  border-left: 4px solid $primary;
-  padding-left: 1rem;
+  font-size: 1.3125rem;
 }
 
 h4 {
-  font-size: 1.25rem;
+  font-size: 1.0625rem;
   font-weight: 600;
 }
 
 h5 {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  color: var(--bs-secondary-color);
 }
 
-// ===== PREMIUM CODE BLOCKS =====
+// ===== CODE BLOCKS =====
 pre.sourceCode {
   background: $code-bg;
-  border: 1px solid $code-border;
-  border-left: 4px solid $primary;
-  border-radius: 6px;
+  color: $code-color;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
   padding: 1.25rem;
   font-size: $code-font-size;
-  line-height: 1.6;
+  line-height: 1.65;
   overflow-x: auto;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);  // canonical shadow-sm
-  margin: 1.5rem 0;
+  margin: 2rem 0;
 
   code {
     background: transparent;
+    color: inherit;
     padding: 0;
     font-size: inherit;
+    border: none;
   }
 }
 
 // Inline code
 code {
-  background: #f1f3f5;
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.04);
+  color: inherit;
+  padding: 0.15em 0.35em;
+  border-radius: 5px;
   font-size: 0.9em;
-  font-weight: 500;
+  font-weight: 450;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-// Code copy button
+// Code copy button (styled for dark background)
 .code-copy-button {
-  background: $primary;
-  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
   border: none;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
   opacity: 0;
-  transition: opacity 150ms ease;  // canonical fast
+  transition: opacity 150ms ease;
 
   &:hover {
-    background: darken($primary, 10%);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
   }
 }
 
@@ -164,69 +178,65 @@ pre:hover .code-copy-button {
 // ===== CALLOUT BOXES =====
 .callout {
   border-radius: 8px;
-  padding: 1.25rem;
-  margin: 1.5rem 0;
-  border-left: 5px solid;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);  // canonical shadow-md
+  padding: 1rem 1.25rem;
+  margin: 2rem 0;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-left: 3px solid;
 
   .callout-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .callout-icon {
-    font-size: 1.5rem;
+    font-size: 1.125rem;
+    opacity: 0.8;
   }
 
   .callout-title {
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
     margin: 0;
   }
 
   .callout-body {
-    p:last-child {
-      margin-bottom: 0;
-    }
+    font-size: 0.9375rem;
+    p:last-child { margin-bottom: 0; }
   }
 }
 
 .callout-tip,
 .callout.callout-style-default.callout-tip {
-  background: #e8f5e9;
+  background: rgba(16, 185, 129, 0.05);
   border-left-color: $success;
-
   .callout-icon { color: $success; }
-  .callout-title { color: darken($success, 20%); }
+  .callout-title { color: darken($success, 15%); }
 }
 
 .callout-note,
 .callout.callout-style-default.callout-note {
-  background: #e3f2fd;
+  background: rgba($primary, 0.04);
   border-left-color: $primary;
-
   .callout-icon { color: $primary; }
-  .callout-title { color: darken($primary, 20%); }
+  .callout-title { color: $primary; }
 }
 
 .callout-warning,
 .callout.callout-style-default.callout-warning {
-  background: #fff3e0;
+  background: rgba(245, 158, 11, 0.05);
   border-left-color: $warning;
-
   .callout-icon { color: $warning; }
-  .callout-title { color: darken($warning, 20%); }
+  .callout-title { color: darken($warning, 15%); }
 }
 
 .callout-important,
 .callout.callout-style-default.callout-important {
-  background: #ffebee;
+  background: rgba(239, 68, 68, 0.05);
   border-left-color: $danger;
-
   .callout-icon { color: $danger; }
-  .callout-title { color: darken($danger, 20%); }
+  .callout-title { color: darken($danger, 10%); }
 }
 
 // ===== TABLES =====
@@ -234,40 +244,30 @@ table {
   border-collapse: collapse;
   width: 100%;
   margin: 2rem 0;
-  font-size: 0.95rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);  // canonical shadow-sm
-  border-radius: 8px;
-  overflow: hidden;
+  font-size: 0.9375rem;
 
   thead {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 2px solid $primary;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
     th {
-      padding: 1rem;
+      padding: 0.75rem 1rem;
       text-align: left;
-      font-weight: 700;
-      text-transform: uppercase;
+      font-weight: 500;
       font-size: 0.875rem;
-      letter-spacing: 0.05em;
+      color: var(--bs-secondary-color);
     }
   }
 
   tbody {
     tr {
-      border-bottom: 1px solid $border-color;
-      transition: background 150ms ease;  // canonical fast
-
-      &:hover {
-        background: #f8f9fa;
-      }
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 
       &:last-child {
         border-bottom: none;
       }
 
       td {
-        padding: 1rem;
+        padding: 0.75rem 1rem;
       }
     }
   }
@@ -276,23 +276,20 @@ table {
 // ===== LINKS =====
 a {
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: all 150ms ease;  // canonical fast
+  transition: color 150ms ease;
 
   &:hover {
-    border-bottom-color: $primary;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 }
 
 // ===== BLOCKQUOTES =====
 blockquote {
-  border-left: 4px solid $primary;
+  border-left: 2px solid rgba(0, 0, 0, 0.08);
   margin: 2rem 0;
-  font-style: italic;
-  color: #495057;
-  background: #f8f9fa;
-  padding: 1rem 1.5rem;
-  border-radius: 0 4px 4px 0;
+  color: var(--bs-secondary-color);
+  padding: 0 0 0 1.5rem;
 
   p:last-child {
     margin-bottom: 0;
@@ -301,12 +298,11 @@ blockquote {
   cite {
     display: block;
     margin-top: 0.5rem;
-    font-style: normal;
     font-size: 0.875rem;
-    color: $gray-500;
+    color: var(--bs-secondary-color);
 
     &::before {
-      content: "\2014 "; // —
+      content: "\2014 ";
     }
   }
 }
@@ -314,22 +310,18 @@ blockquote {
 // ===== FIGURE CAPTIONS =====
 figcaption {
   text-align: center;
-  font-style: italic;
-  color: $gray-500;
+  color: var(--bs-secondary-color);
   margin-top: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 
   strong {
-    font-style: normal;
+    color: var(--bs-body-color);
   }
 }
 
 // ===== TOC STYLING =====
 #TOC {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid $border-color;
+  font-size: 0.875rem;
 
   .toc-actions {
     border-bottom: 1px solid $border-color;
@@ -342,34 +334,34 @@ figcaption {
     padding-left: 0;
 
     li {
-      margin: 0.5rem 0;
+      margin: 0.25rem 0;
 
       a {
         border-bottom: none;
         display: block;
-        padding: 0.25rem 0.5rem;
+        padding: 0.2rem 0.5rem;
         border-radius: 4px;
-        transition: all 150ms ease;  // canonical fast
+        color: var(--bs-secondary-color);
+        font-size: 0.8125rem;
+        transition: color 150ms ease;
 
         &:hover {
-          background: white;
-          color: $primary;
-          transform: translateX(4px);
+          color: var(--bs-body-color);
+          text-decoration: none;
         }
 
         &.active {
-          font-weight: 600;
-          color: $primary;
-          background: white;
+          font-weight: 500;
+          color: var(--bs-body-color);
+          background: rgba(0, 0, 0, 0.03);
         }
       }
     }
 
     ul {
-      padding-left: 1rem;
-      border-left: 2px solid $border-color;
+      padding-left: 0.75rem;
       margin-left: 0.5rem;
-      margin-top: 0.25rem;
+      margin-top: 0.125rem;
     }
   }
 }
@@ -380,12 +372,11 @@ ul, ol {
   padding-left: 1.5rem;
 
   li {
-    margin: 0.5rem 0;
-    line-height: 1.7;
+    margin: 0.375rem 0;
+    line-height: 1.75;
 
     &::marker {
-      color: $primary;
-      font-weight: 600;
+      color: var(--bs-secondary-color);
     }
   }
 
@@ -398,33 +389,31 @@ ul, ol {
 // ===== HORIZONTAL RULES =====
 hr {
   border: none;
-  height: 2px;
-  background: linear-gradient(to right, transparent, $border-color, transparent);
-  margin: 3rem 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 4rem 0;
 }
 
 // ===== IMAGES =====
 .quarto-figure {
-  margin: 2rem 0;
+  margin: 2.5rem 0;
   text-align: center;
 
   img {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);  // canonical shadow-md
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 }
 
 // ===== SIDEBAR =====
 .sidebar {
-  background: #f8f9fa;
   border-right: 1px solid $border-color;
 
   .sidebar-title {
-    font-weight: 700;
+    font-weight: 600;
     padding: 1rem;
-    border-bottom: 2px solid $primary;
   }
 }
 
@@ -432,8 +421,8 @@ hr {
 .footer {
   margin-top: 4rem;
   padding: 2rem 0;
-  border-top: 2px solid $border-color;
-  color: $gray-500;
+  border-top: 1px solid $border-color;
+  color: var(--bs-secondary-color);
   font-size: 0.875rem;
 
   .footer-branding {
@@ -443,92 +432,89 @@ hr {
 }
 
 // ===== D2 DIAGRAM CONTAINERS =====
-
-// D2 diagrams rendered via quarto-d2 extension
 .cell[data-engine="d2"] {
-  margin: 2rem 0;
+  margin: 2.5rem 0;
 
   .cell-output-display {
     text-align: center;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 
     img, svg {
       max-width: 100%;
       height: auto;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      min-height: 200px; // prevent vertical squishing
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
     }
   }
 }
 
-// D2 diagram captions (via Quarto cross-reference figures)
+// Full-width breakout for wide diagrams (before/after, multi-column)
+// Use with ::: {.column-page} or ::: {.column-screen-inset} in .qmd
+.column-page .cell[data-engine="d2"],
+.column-screen-inset .cell[data-engine="d2"],
+.column-screen .cell[data-engine="d2"] {
+  .cell-output-display {
+    img, svg {
+      max-width: 100%;
+      width: 100%;
+      min-height: 300px;
+    }
+  }
+}
+
+// Auto-breakout: diagrams wider than prose column get extra space
+.cell[data-engine="d2"] .cell-output-display {
+  // Allow diagrams to overflow the prose column slightly
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
 .d2-diagram-caption,
 .cell[data-engine="d2"] + figcaption,
 figure:has(.cell[data-engine="d2"]) figcaption {
   text-align: center;
-  font-style: italic;
-  color: $gray-500;
+  color: var(--bs-secondary-color);
   margin-top: 0.75rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 
   strong {
-    font-style: normal;
     color: $primary;
   }
 }
 
-// Full-width diagram layout (use with ::: {.column-page})
-.column-page .cell[data-engine="d2"] .cell-output-display {
-  img, svg {
-    max-width: 100%;
-    width: 100%;
-  }
-}
-
 // ===== OJS CALCULATOR COMPONENTS =====
-
-// Calculator container
 .ojs-calculator {
-  margin: 2rem 0;
+  margin: 2.5rem 0;
   font-size: 0.95rem;
 }
 
-// Results table within calculators
 .ojs-results-table {
   width: 100%;
   border-collapse: collapse;
   margin: 1.5rem 0;
-  font-size: 0.95rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  overflow: hidden;
+  font-size: 0.9375rem;
 
   thead {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 2px solid $primary;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
     th {
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 1rem;
       text-align: left;
-      font-weight: 700;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-weight: 500;
+      font-size: 0.875rem;
+      color: var(--bs-secondary-color);
     }
   }
 
   tbody {
     tr {
-      border-bottom: 1px solid $border-color;
-      transition: background 150ms ease;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 
-      &:hover {
-        background: #f8f9fa;
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
+      &:last-child { border-bottom: none; }
 
       td {
         padding: 0.75rem 1rem;
@@ -537,31 +523,23 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   }
 
   .ojs-total-row {
-    background: #f8f9fa;
     font-weight: 600;
 
     td {
-      border-top: 2px solid $border-color;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
     }
   }
 }
 
-// Highlight row (recommended tier, etc.)
 .ojs-highlight-row {
-  background: rgba($primary, 0.05) !important;
+  background: rgba($primary, 0.04) !important;
   border-left: 3px solid $primary;
-
-  &:hover {
-    background: rgba($primary, 0.08) !important;
-  }
 }
 
-// Insufficient/under-provisioned row
 .ojs-insufficient-row {
   opacity: 0.5;
 }
 
-// Positive/negative value indicators
 .ojs-positive {
   color: $success;
   font-weight: 600;
@@ -572,7 +550,6 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   font-weight: 600;
 }
 
-// Summary metrics grid
 .ojs-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -581,21 +558,16 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 }
 
 .ojs-metric {
-  background: #f8f9fa;
+  background: var(--bs-body-bg);
   border: 1px solid $border-color;
   border-radius: 8px;
   padding: 1.25rem;
   text-align: center;
-  transition: box-shadow 150ms ease;
-
-  &:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  }
 
   .ojs-metric-value {
     display: block;
     font-size: 1.75rem;
-    font-weight: 800;
+    font-weight: 700;
     color: $primary;
     letter-spacing: -0.025em;
     line-height: 1.2;
@@ -604,31 +576,25 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
   .ojs-metric-label {
     display: block;
-    font-size: 0.8rem;
-    color: #64748B;
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 500;
   }
 }
 
-// Recommendation badge / card
 .ojs-recommendation {
-  background: linear-gradient(135deg, rgba($primary, 0.04) 0%, rgba($primary, 0.08) 100%);
-  border: 2px solid $primary;
+  background: rgba($primary, 0.03);
+  border: 1px solid $primary;
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1.5rem 0;
-  position: relative;
 
   h4 {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
     color: $primary;
-
-    &::before {
-      content: none;
-    }
   }
 
   .ojs-recommendation-badge {
@@ -636,34 +602,33 @@ figure:has(.cell[data-engine="d2"]) figcaption {
     background: $primary;
     color: white;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.25rem 0.75rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 4px;
   }
 
   .ojs-recommendation-price {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 700;
     color: $primary;
     margin: 0.5rem 0;
   }
 
   .ojs-recommendation-detail {
-    color: #64748B;
+    color: var(--bs-secondary-color);
     font-size: 0.9rem;
     margin-bottom: 0;
   }
 }
 
-// Badge within tables
 .ojs-badge {
   display: inline-block;
   background: $primary;
   color: white;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.15rem 0.5rem;
@@ -672,7 +637,6 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   margin-left: 0.25rem;
 }
 
-// Savings / note text
 .ojs-savings {
   font-size: 1rem;
   color: $success;
@@ -682,39 +646,35 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
 .ojs-note {
   font-size: 0.85rem;
-  color: #94A3B8;
-  font-style: italic;
+  color: var(--bs-secondary-color);
   margin-top: 0.5rem;
 }
 
-// Style Quarto OJS input controls with brand colors
+// OJS input controls
 .observablehq {
-  // Range sliders
   input[type="range"] {
     accent-color: $primary;
     width: 100%;
     margin: 0.25rem 0;
   }
 
-  // Select dropdowns
   select {
     border: 1px solid $border-color;
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
     font-family: inherit;
-    color: #0A1628;
-    background: white;
+    color: var(--bs-body-color);
+    background: var(--bs-body-bg);
     transition: border-color 150ms ease;
 
     &:focus {
       outline: none;
       border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.15);
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
     }
   }
 
-  // Number / text inputs
   input[type="number"],
   input[type="text"] {
     border: 1px solid $border-color;
@@ -727,61 +687,113 @@ figure:has(.cell[data-engine="d2"]) figcaption {
     &:focus {
       outline: none;
       border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.15);
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
     }
   }
 
-  // Labels
   label {
     font-weight: 500;
     font-size: 0.9rem;
-    color: #334155;
+    color: var(--bs-secondary-color);
     display: block;
     margin-bottom: 0.25rem;
   }
 
-  // Form containers
   form {
     margin: 0.75rem 0;
   }
 
-  // Output values
   output {
     font-weight: 600;
     color: $primary;
   }
 }
 
+// ===== READING PROGRESS BAR =====
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: $primary;
+  z-index: 9999;
+  transition: width 100ms linear;
+}
+
+// ===== DARK MODE ADAPTATIONS =====
+[data-bs-theme="dark"] {
+  pre.sourceCode {
+    background: #0D0D14;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  code {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .callout {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  table thead {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  table tbody tr {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+  }
+
+  blockquote {
+    border-left-color: rgba(255, 255, 255, 0.08);
+  }
+
+  hr {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .ojs-metric {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
 // ===== RESPONSIVE =====
 @media (max-width: 768px) {
   .quarto-title-block {
-    padding: 2rem 1rem;
-    margin: -1rem -1rem 2rem -1rem;
+    padding: 2.5rem 0 2rem 0;
 
     .quarto-title {
       font-size: 2rem;
     }
   }
 
-  h1 { font-size: 2rem; }
+  h1 { font-size: 1.875rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }
 
-  // D2 diagram responsive
+  h1, h2, h3 {
+    margin-top: 2.5rem;
+  }
+
   .cell[data-engine="d2"] {
     margin: 1.5rem 0;
 
     .cell-output-display {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
 
       img, svg {
         min-width: 400px;
+        min-height: 180px;
       }
     }
   }
 
-  // Calculator responsive
   .ojs-summary-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
@@ -817,34 +829,33 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 // ===== PRINT STYLES =====
 @media print {
   .quarto-title-block {
-    background: none !important;
-    color: black !important;
-    border-bottom: 3px solid black;
+    border-bottom: 2px solid black;
   }
 
   pre.sourceCode {
-    border-color: black;
-    box-shadow: none;
+    background: #f5f5f5 !important;
+    color: black !important;
+    border: 1px solid #d4d4d4;
   }
 
   .callout {
-    border: 1px solid black;
-    box-shadow: none;
+    border: 1px solid #d4d4d4;
   }
 
   .sidebar, .navbar {
     display: none !important;
   }
 
-  // D2 diagrams in print
+  .reading-progress {
+    display: none !important;
+  }
+
   .cell[data-engine="d2"] .cell-output-display {
     img, svg {
-      box-shadow: none;
-      border: 1px solid black;
+      border: 1px solid #d4d4d4;
     }
   }
 
-  // Hide interactive elements in print
   .observablehq input,
   .observablehq select,
   .observablehq form {
@@ -852,16 +863,11 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   }
 
   .ojs-recommendation {
-    border: 2px solid black;
+    border: 1px solid #d4d4d4;
     background: none !important;
   }
 
   .ojs-metric {
-    box-shadow: none;
-    border: 1px solid black;
-  }
-
-  .ojs-results-table {
-    box-shadow: none;
+    border: 1px solid #d4d4d4;
   }
 }

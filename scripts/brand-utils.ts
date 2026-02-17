@@ -220,11 +220,11 @@ export function loadMergedBrand(rootDir: string, slug: string, authorIds?: strin
   };
 
   const resolvedColors = {
-    primary: resolveSemantic("primary", "#0052FF"),
+    primary: resolveSemantic("primary", "#4F46E5"),
     foreground: resolveSemantic("foreground", "#0A1628"),
-    background: resolveSemantic("background", "#FFFFFF"),
-    secondary: resolveSemantic("secondary", "#475569"),
-    link: resolveSemantic("link", "#0052FF"),
+    background: resolveSemantic("background", "#FAFAFA"),
+    secondary: resolveSemantic("secondary", "#737373"),
+    link: resolveSemantic("link", "#4F46E5"),
     palette,
   };
 

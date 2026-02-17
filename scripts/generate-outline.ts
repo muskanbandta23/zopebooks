@@ -231,11 +231,15 @@ function generateOutline(topic: TopicConfig, existingTitle?: string, existingSub
     }
   }
 
-  // Compute target word count
+  // Compute target word count (shorter chapters, more of them)
+  // Targeting 1,200-1,500 words per chapter for modern reading patterns (5-7 min reads)
   const wordTargets: Record<string, string> = {
-    "3": "6000-10000",
-    "4": "8000-14000",
-    "5": "10000-18000",
+    "3": "3600-4500",
+    "4": "4800-6000",
+    "5": "6000-7500",
+    "6": "7200-9000",
+    "7": "8400-10500",
+    "8": "9600-12000",
   };
 
   // Build narrative arc from roles
@@ -246,7 +250,7 @@ function generateOutline(topic: TopicConfig, existingTitle?: string, existingSub
     title: existingTitle || topic.topic,
     subtitle: existingSubtitle || `A Practical Guide to ${topic.topic}`,
     narrative_arc: arc,
-    target_word_count: wordTargets[String(clampedCount)] || "8000-12000",
+    target_word_count: wordTargets[String(clampedCount)] || "6000-9000",
     chapters,
   };
 }

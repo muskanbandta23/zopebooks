@@ -40,18 +40,18 @@ export const spacing = {
 // ── Shadows ───────────────────────────────────────────────────────────────
 
 export const shadows = {
-  sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-  md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
-  lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
-  xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-  "2xl": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-  glow: "0 0 20px rgba(0, 82, 255, 0.15)",
+  sm: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+  md: "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04)",
+  lg: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03)",
+  xl: "0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.03)",
+  "2xl": "0 16px 32px -8px rgba(0, 0, 0, 0.08)",
+  glow: "0 0 0 1px rgba(79, 70, 229, 0.1)",
 } as const;
 
 // ── Border Radius ─────────────────────────────────────────────────────────
 
 export const radii = {
-  sm: "0.25rem",   // 4px
+  sm: "0.375rem",  // 6px
   md: "0.5rem",    // 8px
   lg: "0.75rem",   // 12px
   xl: "1rem",      // 16px

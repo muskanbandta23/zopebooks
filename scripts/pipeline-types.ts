@@ -250,10 +250,10 @@ export function buildDensityProfile(
   const profiles: Record<DensityLevel, DensityProfile> = {
     light: {
       level: "light",
-      wordTarget: [1500, 2500],
+      wordTarget: [800, 1200],
       minVisuals: 1,
       minCodeBlocks: 1,
-      minDiagrams: 1,
+      minDiagrams: 0,
       hasCalculator: false,
       hasSecondaryCode: false,
       hasPhasedImplementation: false,
@@ -261,9 +261,9 @@ export function buildDensityProfile(
     },
     standard: {
       level: "standard",
-      wordTarget: [2500, 3500],
+      wordTarget: [1200, 1800],
       minVisuals: 2,
-      minCodeBlocks: 2,
+      minCodeBlocks: 1,
       minDiagrams: 1,
       hasCalculator: hasCodeHeavyTag,
       hasSecondaryCode: hasCodeHeavyTag,
@@ -272,10 +272,10 @@ export function buildDensityProfile(
     },
     full: {
       level: "full",
-      wordTarget: [3500, 5000],
+      wordTarget: [1800, 2500],
       minVisuals: 3,
-      minCodeBlocks: 3,
-      minDiagrams: 2,
+      minCodeBlocks: 2,
+      minDiagrams: 1,
       hasCalculator: true,
       hasSecondaryCode: true,
       hasPhasedImplementation: true,

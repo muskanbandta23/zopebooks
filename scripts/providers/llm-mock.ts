@@ -76,7 +76,7 @@ export class MockLLMProvider extends BaseLLMProvider {
         title: "[MOCK] Cost Optimization Guide",
         subtitle: "A practical guide to reducing cloud waste",
         narrative_arc: "Problem → Understanding → Solutions",
-        target_word_count: "6000-10000",
+        target_word_count: "3600-4500",
         chapters: [
           { id: "01-the-cost-problem", title: "[MOCK] The Cost Problem", role: "intro", difficulty: "beginner", summary: "Why costs spiral out of control", builds_on: [], sets_up: ["02-understanding-costs"], key_concepts: ["cost visibility", "resource waste"], suggested_tags: ["introduction", "overview"] },
           { id: "02-understanding-costs", title: "[MOCK] Understanding Cost Drivers", role: "foundation", difficulty: "intermediate", summary: "How costs flow through infrastructure", builds_on: ["01-the-cost-problem"], sets_up: ["03-optimization-strategies"], key_concepts: ["cost attribution", "resource allocation"], suggested_tags: ["cost-model", "fundamentals"] },

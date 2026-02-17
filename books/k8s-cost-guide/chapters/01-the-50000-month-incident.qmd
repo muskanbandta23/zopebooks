@@ -25,8 +25,10 @@ The customer data makes this concrete: that $89,000 monthly e-commerce bill cont
 
 zopnight makes this Request vs. Actual Usage Gap visible at a glance across every namespace, turning what was invisible waste into actionable optimization data.
 
+::: {.column-page}
 ```{.d2 width="100%" file="../diagrams/before-after-optimization.d2"}
 ```
+:::
 
 *Visualize the gap between requested resources (requests) and actual consumption (usage) showing how much is wasted*
 

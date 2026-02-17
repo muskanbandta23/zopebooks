@@ -92,6 +92,6 @@ export class BananaProProvider implements ImageProvider {
     };
 
     const prefix = stylePrefix[options.style || "illustration"];
-    return `${prefix} ${options.prompt}. Brand colors: blue (#0052FF), green (#00C48C). White background. No text overlays.`;
+    return `${prefix} ${options.prompt}. Brand colors: indigo (#4F46E5), emerald (#10B981). Off-white background. No text overlays.`;
   }
 }

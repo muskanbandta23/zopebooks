@@ -58,7 +58,7 @@ describe("no-override ebook vs overridden ebook", () => {
   const finops = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
 
   test("no-override gets default primary color", () => {
-    expect(noOverride.resolved.colors.primary).toBe("#0052FF");
+    expect(noOverride.resolved.colors.primary).toBe("#4F46E5");
     expect(finops.resolved.colors.primary).toBe("#003DBF");
   });
 

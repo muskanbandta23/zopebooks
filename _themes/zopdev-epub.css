@@ -1,16 +1,16 @@
-/* Zopdev EPUB Theme — Premium Edition
+/* Zopdev EPUB Theme — Modern Edition
  *
- * Consistent with the HTML book theme styling:
- * brand colors, typography, callout boxes, code blocks, tables.
+ * Clean, restrained styling with muted indigo accent.
  * EPUB readers vary in CSS support, so we keep to safe properties.
+ * Light code blocks (dark bg unreliable across e-readers).
  */
 
 /* ===== BASE TYPOGRAPHY ===== */
 
 body {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-  font-size: 1em; /* 16px — brand default */
-  line-height: 1.7;
+  font-size: 1em;
+  line-height: 1.75;
   color: #0A1628;
 }
 
@@ -18,28 +18,23 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   color: #0A1628;
-  line-height: 1.3;
-  margin-top: 2em;
+  line-height: 1.2;
+  margin-top: 2.5em;
   margin-bottom: 0.75em;
 }
 
 h1 {
   font-size: 2em;
-  border-bottom: 3px solid #0052FF;
-  padding-bottom: 0.4em;
 }
 
 h2 {
   font-size: 1.5em;
-  color: #0A1628;
 }
 
 h3 {
   font-size: 1.25em;
-  border-left: 4px solid #0052FF;
-  padding-left: 0.75em;
 }
 
 h4 {
@@ -52,6 +47,7 @@ h5 {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: #525252;
 }
 
 /* ===== CODE BLOCKS ===== */
@@ -59,22 +55,21 @@ h5 {
 code {
   font-family: "JetBrains Mono", "Courier New", Courier, monospace;
   font-size: 0.875em;
-  color: #0052FF;
-  background: #f1f3f5;
+  color: inherit;
+  background: #F5F5F5;
   padding: 0.15em 0.35em;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 pre {
-  background-color: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-left: 4px solid #0052FF;
-  border-radius: 4px;
+  background-color: #F5F5F5;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
   padding: 1em;
   overflow-x: auto;
   font-size: 0.85em;
-  line-height: 1.6;
-  margin: 1.5em 0;
+  line-height: 1.65;
+  margin: 2em 0;
 }
 
 pre code {
@@ -87,12 +82,10 @@ pre code {
 /* ===== BLOCKQUOTES ===== */
 
 blockquote {
-  border-left: 4px solid #0052FF;
-  margin: 1.5em 0;
-  padding: 0.75em 1em;
-  color: #475569;
-  font-style: italic;
-  background: #F8FAFC;
+  border-left: 2px solid #E5E5E5;
+  margin: 2em 0;
+  padding: 0 0 0 1.25em;
+  color: #525252;
 }
 
 blockquote p:last-child {
@@ -104,78 +97,77 @@ blockquote p:last-child {
 table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5em 0;
-  font-size: 0.95em;
+  margin: 2em 0;
+  font-size: 0.9375em;
 }
 
 thead {
-  border-bottom: 2px solid #0052FF;
+  border-bottom: 1px solid #D4D4D4;
 }
 
 th {
   padding: 0.75em;
   text-align: left;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.85em;
-  letter-spacing: 0.05em;
-  color: #0A1628;
+  font-weight: 500;
+  font-size: 0.875em;
+  color: #525252;
 }
 
 td {
   padding: 0.75em;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid #F5F5F5;
 }
 
 /* ===== CALLOUT BOXES ===== */
 
 .callout {
-  border: 1px solid #E2E8F0;
-  border-radius: 4px;
+  border: 1px solid #E5E5E5;
+  border-radius: 6px;
   padding: 1em;
-  margin: 1.5em 0;
-  border-left-width: 5px;
+  margin: 2em 0;
+  border-left-width: 3px;
   border-left-style: solid;
 }
 
-/* Note (blue) */
+/* Note (indigo) */
 .callout-note {
-  border-left-color: #0052FF;
-  background: #E3F2FD;
+  border-left-color: #4F46E5;
+  background: #F5F3FF;
 }
 
 /* Tip (green) */
 .callout-tip {
-  border-left-color: #00C48C;
-  background: #E8F5E9;
+  border-left-color: #10B981;
+  background: #ECFDF5;
 }
 
-/* Warning (orange) */
+/* Warning (amber) */
 .callout-warning {
-  border-left-color: #FFB020;
-  background: #FFF3E0;
+  border-left-color: #F59E0B;
+  background: #FFFBEB;
 }
 
 /* Important (red) */
 .callout-important {
-  border-left-color: #FF6B6B;
-  background: #FFEBEE;
+  border-left-color: #EF4444;
+  background: #FEF2F2;
 }
 
 .callout-title {
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.9em;
   margin-bottom: 0.5em;
 }
 
-.callout-note .callout-title { color: #0052FF; }
-.callout-tip .callout-title { color: #00C48C; }
-.callout-warning .callout-title { color: #FFB020; }
-.callout-important .callout-title { color: #FF6B6B; }
+.callout-note .callout-title { color: #4F46E5; }
+.callout-tip .callout-title { color: #10B981; }
+.callout-warning .callout-title { color: #F59E0B; }
+.callout-important .callout-title { color: #EF4444; }
 
 /* ===== LINKS ===== */
 
 a {
-  color: #0052FF;
+  color: #4F46E5;
   text-decoration: none;
 }
 
@@ -192,10 +184,9 @@ img {
 
 figcaption {
   font-size: 0.875em;
-  color: #64748B;
+  color: #737373;
   text-align: center;
   margin-top: 0.5em;
-  font-style: italic;
 }
 
 /* ===== LISTS ===== */
@@ -207,14 +198,13 @@ ul, ol {
 
 li {
   margin: 0.4em 0;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 /* ===== CALCULATOR FALLBACK STYLING ===== */
-/* Static fallback for OJS calculators in EPUB format */
 
 .ojs-calculator {
-  margin: 1.5em 0;
+  margin: 2em 0;
 }
 
 .ojs-results-table {
@@ -225,26 +215,25 @@ li {
 }
 
 .ojs-results-table thead {
-  border-bottom: 2px solid #0052FF;
+  border-bottom: 1px solid #D4D4D4;
 }
 
 .ojs-results-table th {
   padding: 0.6em;
   text-align: left;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.85em;
-  letter-spacing: 0.03em;
+  font-weight: 500;
+  font-size: 0.875em;
+  color: #525252;
 }
 
 .ojs-results-table td {
   padding: 0.6em;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid #F5F5F5;
 }
 
 .ojs-total-row {
-  font-weight: 700;
-  border-top: 2px solid #E2E8F0;
+  font-weight: 600;
+  border-top: 1px solid #D4D4D4;
 }
 
 .ojs-summary-grid {
@@ -252,8 +241,8 @@ li {
 }
 
 .ojs-metric {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  background: #FAFAFA;
+  border: 1px solid #E5E5E5;
   padding: 1em;
   margin: 0.5em 0;
   text-align: center;
@@ -263,68 +252,67 @@ li {
   display: block;
   font-size: 1.5em;
   font-weight: 700;
-  color: #0052FF;
+  color: #4F46E5;
 }
 
 .ojs-metric-label {
   display: block;
   font-size: 0.8em;
-  color: #64748B;
+  color: #737373;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .ojs-recommendation {
-  border: 2px solid #0052FF;
+  border: 1px solid #4F46E5;
   padding: 1em;
   margin: 1em 0;
-  background: #F8FAFC;
+  background: #F5F3FF;
 }
 
 .ojs-recommendation-badge {
   display: inline-block;
-  background: #0052FF;
+  background: #4F46E5;
   color: #FFFFFF;
   font-size: 0.75em;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   padding: 0.2em 0.6em;
 }
 
 .ojs-positive {
-  color: #00C48C;
+  color: #10B981;
   font-weight: 600;
 }
 
 .ojs-negative {
-  color: #FF6B6B;
+  color: #EF4444;
   font-weight: 600;
 }
 
 .ojs-badge {
   display: inline-block;
-  background: #0052FF;
+  background: #4F46E5;
   color: #FFFFFF;
   font-size: 0.7em;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.1em 0.4em;
 }
 
 .ojs-savings {
-  color: #00C48C;
+  color: #10B981;
   font-weight: 600;
 }
 
 .ojs-note {
   font-size: 0.85em;
-  color: #94A3B8;
-  font-style: italic;
+  color: #A3A3A3;
 }
 
 /* ===== HORIZONTAL RULES ===== */
 
 hr {
   border: none;
-  border-top: 2px solid #E2E8F0;
-  margin: 2em 0;
+  border-top: 1px solid #E5E5E5;
+  margin: 3em 0;
 }

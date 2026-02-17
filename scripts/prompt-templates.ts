@@ -109,7 +109,7 @@ Output format: JSON object with these fields:
 - title: string (compelling, specific — not generic)
 - subtitle: string (clarifies the value proposition)
 - narrative_arc: string (one sentence describing the journey: "From X to Y")
-- target_word_count: string (e.g., "8000-12000")
+- target_word_count: string (e.g., "6000-9000")
 - chapters: Array of chapter objects
 
 Each chapter object:
@@ -124,6 +124,8 @@ Each chapter object:
 - suggested_tags: string[] (2-4 tags for visual/content recommendations)
 
 Rules:
+- Each chapter should be a focused, scannable lesson of 1,200-1,500 words (5-7 minute read)
+- Prefer more shorter chapters over fewer long ones — modern readers scan, not read linearly
 - Difficulty must progress: beginner → intermediate → advanced
 - First chapter is always "intro" role with "beginner" difficulty
 - Last chapter should be either "advanced" or "conclusion"
@@ -373,7 +375,7 @@ export function imagePromptForSection(
     illustration: "Professional technical illustration with modern, flat design aesthetic.",
   };
 
-  return `${styleGuide[style]} Topic: ${bookTopic}. Chapter: ${chapterTitle}. Section: ${sectionHeading}. Purpose: ${sectionPurpose}. Style: professional, modern, suitable for a technical ebook. Color palette: blues and greens. No text in the image.`;
+  return `${styleGuide[style]} Topic: ${bookTopic}. Chapter: ${chapterTitle}. Section: ${sectionHeading}. Purpose: ${sectionPurpose}. Style: professional, modern, suitable for a technical ebook. Color palette: indigo and emerald tones. No text in the image.`;
 }
 
 // ── Search Query Generation ─────────────────────────────────────────────────

@@ -22,8 +22,10 @@ Right-sizing is the practice of matching resource allocation to actual workload 
 
 The following diagram shows Acme Corp's infrastructure before optimization. The 143 m5.2xlarge instances, originally sized for a product launch that never materialized the expected traffic spike, were hemorrhaging $22,300/month.
 
+::: {.column-page}
 ```{.d2 file="../diagrams/right-sizing-before-after.d2" width="100%"}
 ```
+:::
 
 *Acme Corp's right-sizing transformation: $18,400/month savings*
 

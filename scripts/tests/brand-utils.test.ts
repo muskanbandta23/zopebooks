@@ -50,16 +50,16 @@ describe("loadBrandCore", () => {
     const core = loadBrandCore(PROJECT_ROOT);
     expect(core.color).toBeDefined();
     expect(core.color.palette).toBeDefined();
-    expect(core.color.palette.blue).toBe("#0052FF");
-    expect(core.color.palette["dark-blue"]).toBe("#003DBF");
+    expect(core.color.palette.blue).toBe("#4F46E5");
+    expect(core.color.palette["dark-blue"]).toBe("#3730A3");
   });
 
   test("loads semantic color references", () => {
     const core = loadBrandCore(PROJECT_ROOT);
     expect(core.color.primary).toBe("blue");
     expect(core.color.foreground).toBe("navy");
-    expect(core.color.background).toBe("white");
-    expect(core.color.secondary).toBe("gray-600");
+    expect(core.color.background).toBe("off-white");
+    expect(core.color.secondary).toBe("gray-500");
     expect(core.color.link).toBe("blue");
   });
 
@@ -188,18 +188,18 @@ describe("loadMergedBrand", () => {
 
   test("resolves background from core (not overridden)", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.resolved.colors.background).toBe("#FFFFFF");
+    expect(merged.resolved.colors.background).toBe("#FAFAFA");
   });
 
   test("resolves secondary from core palette", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.resolved.colors.secondary).toBe("#475569");
+    expect(merged.resolved.colors.secondary).toBe("#737373");
   });
 
   test("palette includes overridden primary alongside base colors", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
     expect(merged.resolved.colors.palette.primary).toBe("#003DBF");
-    expect(merged.resolved.colors.palette.blue).toBe("#0052FF");
+    expect(merged.resolved.colors.palette.blue).toBe("#4F46E5");
     expect(merged.resolved.colors.palette.navy).toBe("#0A1628");
   });
 
@@ -292,7 +292,7 @@ describe("loadMergedBrand", () => {
   // Raw layer access
   test("exposes raw core, extended, and overrides", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.core.color.palette.blue).toBe("#0052FF");
+    expect(merged.core.color.palette.blue).toBe("#4F46E5");
     expect(merged.extended.company.name).toBe("Zopdev");
     expect(merged.overrides).not.toBeNull();
     expect(merged.overrides!.colors?.primary).toBe("#003DBF");
@@ -302,7 +302,7 @@ describe("loadMergedBrand", () => {
   test("works with nonexistent slug (overrides null, base data intact)", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "nonexistent-book");
     expect(merged.overrides).toBeNull();
-    expect(merged.resolved.colors.primary).toBe("#0052FF");
+    expect(merged.resolved.colors.primary).toBe("#4F46E5");
     expect(merged.resolved.icps).toHaveLength(3);
     expect(merged.resolved.products).toHaveLength(2);
     expect(merged.resolved.featuredProducts).toHaveLength(2);
