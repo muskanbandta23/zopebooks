@@ -261,6 +261,35 @@ endif
 	@echo ""
 	@echo "Pipeline complete. Next: review .qmd files, then run: make audit ebook=$(ebook)"
 
+# ─── Blog Posts ────────────────────────────────────────────────────────────
+
+.PHONY: blog
+blog: ## Generate blog posts — ebook=<slug>
+ifndef ebook
+	$(error Usage: make blog ebook=<slug>)
+endif
+	bun run _blog/generate.ts $(ebook)
+
+.PHONY: blog-all
+blog-all: ## Generate blog posts for all ebooks
+	bun run _blog/generate.ts
+
+# ─── Unified Eval & Self-Healing ──────────────────────────────────────────
+
+.PHONY: eval-all
+eval-all: ## Unified eval across all modalities (dry-run) — ebook=<slug>
+ifndef ebook
+	$(error Usage: make eval-all ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/eval-loop.ts $(ebook) --dry-run
+
+.PHONY: heal
+heal: ## Self-healing loop: evaluate → fix → re-evaluate — ebook=<slug> [max-iter=N]
+ifndef ebook
+	$(error Usage: make heal ebook=<slug> [max-iter=N])
+endif
+	bun run $(SCRIPTS_DIR)/eval-loop.ts $(ebook) $(if $(max-iter),--max-iter=$(max-iter),)
+
 # ─── Engine Evaluation ──────────────────────────────────────────────────
 
 .PHONY: eval

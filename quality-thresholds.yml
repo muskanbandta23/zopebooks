@@ -31,3 +31,29 @@ defaults:
 # finops-playbook:
 #   min_code_blocks_per_chapter: 1
 #   max_generic_claims_per_chapter: 8
+
+# ── Multi-Modality Thresholds ─────────────────────────────────────────────
+# Used by the self-healing eval loop (scripts/eval-loop.ts)
+
+modalities:
+  landing:
+    require_meta_description: true
+    require_og_tags: true
+    require_cta: true
+    max_file_size_kb: 500
+
+  social:
+    require_og_image: true
+    min_linkedin_slides: 1
+    min_instagram_posts: 1
+
+  blog:
+    min_word_count: 300
+    max_generic_claims: 3
+    require_seo_title: true
+    require_meta_description: true
+    require_cta: true
+
+  heal:
+    max_iterations: 3
+    max_cost_usd: 5.0

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{seo_title}}</title>
+  <meta name="description" content="{{meta_description}}">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="color-scheme" content="light">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{chapter_title}}">
+  <meta property="og:description" content="{{meta_description}}">
+  <meta property="og:type" content="article">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{chapter_title}}">
+  <meta name="twitter:description" content="{{meta_description}}">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      {{#css_vars}}
+      {{name}}: {{value}};
+      {{/css_vars}}
+    }
+  </style>
+</head>
+<body>
+  <header class="blog-header">
+    <div class="container">
+      <a href="{{company_website}}" class="blog-logo">{{company_name}}</a>
+      <nav class="blog-nav">
+        <span class="nav-series">{{ebook_title}}</span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="blog-main">
+    <article class="blog-article">
+      <div class="container">
+        <div class="article-meta">
+          <span class="meta-reading-time">{{reading_time}} min read</span>
+          <span class="meta-separator">&middot;</span>
+          <span class="meta-series">From: <em>{{ebook_title}}</em></span>
+        </div>
+
+        <h1 class="article-title">{{chapter_title}}</h1>
+
+        {{#ebook_subtitle}}
+        <p class="article-subtitle">{{ebook_subtitle}}</p>
+        {{/ebook_subtitle}}
+
+        <div class="article-body">
+          {{{article_html}}}
+        </div>
+      </div>
+    </article>
+
+    <!-- CTA Banner -->
+    <section class="blog-cta">
+      <div class="container">
+        <div class="cta-card">
+          <div class="cta-content">
+            <h2>Read the full guide</h2>
+            <p>This post is one chapter from <strong>{{ebook_title}}</strong>. Download the complete ebook for all chapters, interactive calculators, and production-ready code examples.</p>
+          </div>
+          <a href="{{company_website}}" class="cta-button">Download Free Ebook</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="blog-footer">
+    <div class="container">
+      <p>&copy; {{year}} <a href="{{company_website}}">{{company_name}}</a>. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

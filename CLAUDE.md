@@ -359,6 +359,80 @@ make eval ebook=terraform-cloud-costs
 #    Did any other metrics regress?
 ```
 
+### 11. Self-Healing Eval Loop
+
+**Pattern:** Autonomous quality assurance across all output modalities
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  eval-loop.ts                        │
+│                (Orchestrator)                         │
+│                                                       │
+│  ┌──────────┐   ┌──────────┐   ┌────────────────┐   │
+│  │ Evaluate  │──▶│ Identify │──▶│ Dispatch Fixes │   │
+│  │ All Mods  │   │ Failures │   │ (heal strats)  │   │
+│  └──────────┘   └──────────┘   └────────────────┘   │
+│       ▲                               │              │
+│       └───────── re-evaluate ─────────┘              │
+│                                                       │
+│  Exit: all pass │ no healable │ no improvement │ max │
+└─────────────────────────────────────────────────────┘
+```
+
+**Modalities evaluated:**
+- **Ebook chapters** — wraps existing `auditEbook()` (6 metrics: diagrams, code, generic claims, numbers, reading level, interactive)
+- **Landing pages** — checks HTML for title, meta description, OG tags, CTA, file size
+- **Social assets** — checks OG image, LinkedIn slides, Instagram posts existence
+- **Blog posts** — checks post count, SEO title, meta description, CTA, word count
+
+**Heal strategies:**
+| Strategy | Modality | Action |
+|----------|----------|--------|
+| `strengthen_fact_sheet` | ebook | Re-transform chapter with anti-vagueness prompt |
+| `add_diagram_directive` | ebook | Re-transform with diagram inclusion directive |
+| `add_code_block` | ebook | Re-transform with code block requirement |
+| `enrich_numbers` | ebook | Re-transform with specific numbers requirement |
+| `simplify_prose` | ebook | Re-transform with readability constraints |
+| `regenerate_landing` | landing | Re-run `_landing/generate.ts` |
+| `regenerate_social` | social | Re-run `_social/generate.ts` |
+| `regenerate_blog` | blog | Re-run `_blog/generate.ts` |
+
+**Loop exit conditions:**
+1. All modalities pass
+2. No healable violations remain
+3. No improvement between iterations (convergence detection)
+4. Max iterations reached (default: 3)
+5. Cost limit exceeded (default: $5)
+
+**Usage:**
+```bash
+make eval-all ebook=k8s-cost-guide    # Dry-run eval across all modalities
+make heal ebook=k8s-cost-guide        # Full self-healing loop
+make heal ebook=k8s-cost-guide max-iter=5  # Custom max iterations
+make blog ebook=k8s-cost-guide        # Generate blog posts only
+```
+
+**Key files:**
+- `scripts/eval-modalities.ts` — per-modality evaluators + unified types
+- `scripts/heal-strategies.ts` — fix strategy dispatch table
+- `scripts/eval-loop.ts` — orchestrator (the agentic loop)
+- `_blog/generate.ts` — blog post generator (new modality)
+- `_blog/template.html` + `_blog/styles.css` — blog presentation
+
+### 12. Blog Post Generation
+
+**Pattern:** Extract standalone blog posts from ebook chapters
+
+Each chapter in `books/{slug}/chapters/` becomes one HTML blog post with:
+- SEO title (≤60 chars), meta description (≤155 chars)
+- Reading time estimate (250 wpm)
+- Lightweight Markdown-to-HTML conversion (code blocks, callouts, tables, lists)
+- D2 and OJS blocks → placeholder divs with "see full ebook" message
+- CTA banner linking to the full ebook download
+- Brand-consistent styling via CSS custom properties
+
+**Output:** `_output/blog/{slug}/{chapter-slug}.html` + `styles.css`
+
 ## Epic #5 Insights: SOTA Content Engineering
 
 ### The Engine-First Philosophy
@@ -1009,6 +1083,14 @@ throw new Error(
   - **Bonus:** extractJSON() strips `<think>` blocks from reasoning models (MiniMax, DeepSeek)
   - Validation fixture: `books/terraform-cloud-costs/` (new ebook generated end-to-end)
 
+- ✅ **Epic #7:** Theme Modernization + Self-Healing Eval Loop
+  - Branch: `main`
+  - **Theme fixes:** Typography readability (18px, 720px column, font smoothing), D2 diagram vertical layout, PDF cover page (TikZ), chapter length strategy (1,200-1,500 words), responsive diagrams
+  - **Self-healing eval loop:** `scripts/eval-modalities.ts` (4 modality evaluators), `scripts/heal-strategies.ts` (8 fix strategies), `scripts/eval-loop.ts` (agentic orchestrator with convergence detection + cost guard)
+  - **Blog modality (new):** `_blog/generate.ts` + template + styles — extracts ebook chapters to standalone SEO-optimized HTML blog posts
+  - **Config:** `quality-thresholds.yml` extended with `modalities:` section; Makefile gains `blog`, `eval-all`, `heal` targets
+  - Key files: `scripts/eval-loop.ts`, `scripts/eval-modalities.ts`, `scripts/heal-strategies.ts`, `_blog/generate.ts`, `_themes/zopdev-book.scss`, `_themes/preamble.tex`
+
 ### Future
 - See `docs/EBOOK_UPGRADE_ROADMAP.md` for full roadmap
 - Focus areas: Content transformation at scale, advanced D2 patterns, automation
@@ -1062,6 +1144,9 @@ scripts/
 ├── plan-chapters.ts       # Stage 2: Section-level chapter planning
 ├── transform-chapter.ts   # Stage 3: LLM prose generation + assembly
 ├── engine-eval.ts         # A/B eval tool (template vs LLM, 11 metrics)
+├── eval-modalities.ts     # Unified eval for all modalities (ebook, landing, social, blog)
+├── heal-strategies.ts     # Self-healing fix dispatch table
+├── eval-loop.ts           # Self-healing orchestrator (agentic loop)
 └── providers/
     ├── llm.ts             # Base LLM interface + retry + JSON extraction
     ├── llm-anthropic.ts   # Claude provider
@@ -1088,6 +1173,11 @@ _landing/
 _social/
 ├── generate.ts           # Social asset generator
 └── (no templates - programmatic)
+
+_blog/
+├── generate.ts           # Blog post generator (chapter → standalone HTML)
+├── template.html         # Mustache template for blog posts
+└── styles.css            # Blog-specific styles (Medium-inspired)
 
 docs/
 ├── D2_DIAGRAM_GUIDE.md       # Comprehensive D2 guide
@@ -1238,6 +1328,28 @@ detectTruncation(content: string): string[]
 // Full A/B evaluation: template engine vs LLM engine (11 metrics)
 // Usage: bun run scripts/engine-eval.ts <slug> [--report-only]
 compare(template: EngineSnapshot, llm: EngineSnapshot): EvalReport
+
+// ── Self-Healing Eval Loop ──────────────────────────────────────────
+
+// Evaluate a single modality
+evalEbookChapters(slug: string): ModalityEvalResult
+evalLandingPage(slug: string): ModalityEvalResult
+evalSocialAssets(slug: string): ModalityEvalResult
+evalBlogPosts(slug: string): ModalityEvalResult
+
+// Evaluate all modalities at once
+evaluateAll(slug: string, modalities?: Modality[]): ModalityEvalResult[]
+
+// Dispatch heal strategies for violations
+dispatchHeals(slug: string, violations: ModalityViolation[]): Promise<HealResult>
+
+// Run the full self-healing loop (orchestrator)
+runHealingLoop(config: LoopConfig): Promise<LoopResult>
+
+// ── Blog Post Generation ────────────────────────────────────────────
+
+// Generate blog posts from ebook chapters
+generateBlogPosts(slug: string): BlogResult[]
 ```
 
 ### Make Commands
@@ -1263,8 +1375,17 @@ make transform ebook={id}     # Stage 3: Generate prose from plans
 make pipeline ebook={id}       # Full pipeline: research → outline → plan → transform
 make eval ebook={id}           # A/B eval: template vs LLM engine (11 metrics)
 make eval-report ebook={id}    # Re-run eval from existing snapshots
+
+# Blog Posts
+make blog ebook={id}           # Generate blog posts from chapters
+make blog-all                  # Generate blog posts for all ebooks
+
+# Self-Healing Eval Loop
+make eval-all ebook={id}       # Unified eval across all modalities (dry-run)
+make heal ebook={id}           # Self-healing loop: evaluate → fix → re-evaluate
+make heal ebook={id} max-iter=5  # Custom max iterations
 ```
 
 ---
 
-**Last Updated:** 2026-02-18 (after Epic #6 LLM engine quality fixes)
+**Last Updated:** 2026-02-18 (after self-healing eval loop + blog modality)
