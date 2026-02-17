@@ -261,13 +261,12 @@ function countRealNumbers(text: string): number {
 
 // ── Generic claim detection ─────────────────────────────────────────────────
 
-const GENERIC_PATTERNS = [
+const GENERIC_PATTERNS: RegExp[] = [
   /\bshould consider\b/gi,
   /\bmany organizations\b/gi,
   /\bgenerally\b/gi,
-  /\bsignificant(?:ly)?\b/gi,
+  /\bsignificant(?:ly)?\s+(?:cost|savings|reduction|improvement|impact|overhead|margin|portion)/gi,
   /\btypically\b/gi,
-  /\bcan be\b/gi,
   /\bin many cases\b/gi,
   /\boften\b/gi,
   /\bvarious\b/gi,
@@ -275,12 +274,56 @@ const GENERIC_PATTERNS = [
   /\d+-\d+%/g,  // Vague ranges like "30-50%"
 ];
 
+// Source names that indicate proper attribution
+const ATTRIBUTION_PATTERN = /\([^)]*(?:Gartner|Flexera|CNCF|Datadog|HashiCorp|Sedai|Arc82|CloudKeeper|Apptio|Forrester|IDC|McKinsey|Deloitte|case study|customer|report|survey|benchmark|research|source)/i;
+
+// Technical verbs that make "can be" legitimate (e.g., "can be configured")
+const TECHNICAL_VERB_PATTERN = /\bcan be\s+(?:configured|deployed|set|enabled|disabled|adjusted|tuned|applied|used|achieved|automated|integrated|combined|extended|customized)\b/i;
+
+// Named subjects that make percentage ranges legitimate (e.g., "VPA delivers 20-40%")
+const NAMED_SUBJECT_PATTERN = /\b(?:VPA|HPA|Karpenter|Spot|Graviton|ARM|Terraform|Infracost|Sentinel|OPA|Kubernetes|EC2|RDS|S3|Lambda|GKE|EKS|AKS)\b/i;
+
 function countGenericClaims(text: string): number {
+  // Strip code blocks, tables, callout markers, headings, and frontmatter before counting
+  const proseOnly = text
+    .replace(/^---[\s\S]*?---/m, "")        // YAML frontmatter
+    .replace(/```[\s\S]*?```/g, "")          // code blocks
+    .replace(/^\|.*\|$/gm, "")              // table rows
+    .replace(/:::\s*\{[^}]*\}/g, "")        // callout markers
+    .replace(/:::/g, "")                     // callout closers
+    .replace(/<!--[\s\S]*?-->/g, "")         // HTML comments
+    .replace(/^#+\s.*$/gm, "");              // headings
+
+  // Split into sentences for contextual analysis
+  const sentences = proseOnly.split(/(?<=[.!?])\s+/);
   let count = 0;
-  for (const pattern of GENERIC_PATTERNS) {
-    const matches = text.match(pattern) || [];
-    count += matches.length;
+
+  for (const sentence of sentences) {
+    // Skip very short fragments
+    if (sentence.split(/\s+/).length < 5) continue;
+
+    let sentenceViolation = false;
+
+    for (const pattern of GENERIC_PATTERNS) {
+      pattern.lastIndex = 0;
+      if (!pattern.test(sentence)) continue;
+
+      // Whitelist: sentence has source attribution in parentheses
+      if (ATTRIBUTION_PATTERN.test(sentence)) continue;
+
+      // Whitelist: "can be" + technical verb is legitimate
+      if (/\bcan be\b/i.test(sentence) && TECHNICAL_VERB_PATTERN.test(sentence)) continue;
+
+      // Whitelist: percentage range with a named technology subject
+      if (/\d+-\d+%/.test(sentence) && NAMED_SUBJECT_PATTERN.test(sentence)) continue;
+
+      sentenceViolation = true;
+      break; // one violation per sentence max
+    }
+
+    if (sentenceViolation) count++;
   }
+
   return count;
 }
 

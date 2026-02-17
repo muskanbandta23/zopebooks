@@ -96,6 +96,75 @@ function loadOJSTemplate(templateName: string): string {
   return result.trim();
 }
 
+// ── Post-generation vagueness cleanup ────────────────────────────────────────
+
+const VAGUE_QUALIFIERS = /\b(typically|often|generally|usually|around|approximately|routinely)\b/i;
+const VAGUE_ORG_PATTERN = /\b(many|some|most|numerous)\s+(organizations|companies|teams|enterprises)\b/i;
+
+/**
+ * Removes sentences with fabricated vague claims from LLM prose.
+ *
+ * Strategy:
+ *   1. Build a set of "known" percentage ranges from content seeds
+ *   2. Flag sentences with BOTH a fabricated range (not in seeds) AND a vague qualifier
+ *   3. Remove unattributed "many/some organizations" filler sentences
+ *
+ * Only removes sentences — never rewrites. This is the "deliberate omission" principle:
+ * if you cannot be specific, say nothing.
+ */
+function cleanVagueClaims(prose: string, seeds: ContentSeed | undefined): string {
+  if (!seeds) return prose;
+
+  // Build set of known percentage ranges from seeds
+  const knownRanges = new Set<string>();
+  const extractRanges = (text: string) => {
+    const matches = text.match(/\d+-\d+%/g);
+    if (matches) matches.forEach((m) => knownRanges.add(m));
+  };
+
+  const claimsList = Array.isArray(seeds.key_claims) ? seeds.key_claims : [];
+  for (const c of claimsList) {
+    extractRanges(typeof c === "string" ? c : c.claim);
+  }
+  const patternsList = Array.isArray(seeds.patterns) ? seeds.patterns : [];
+  for (const p of patternsList) {
+    extractRanges(typeof p === "string" ? p : `${p.typical_savings || ""} ${p.description || ""}`);
+  }
+
+  // Process paragraph by paragraph to preserve markdown structure
+  const paragraphs = prose.split(/\n\n+/);
+  const cleaned = paragraphs.map((para) => {
+    // Don't touch code blocks, tables, callouts, or headings
+    if (para.trim().startsWith("```") || para.trim().startsWith("|") || para.trim().startsWith(":::") || para.trim().startsWith("#")) {
+      return para;
+    }
+
+    // Split into sentences and filter
+    const sentences = para.split(/(?<=[.!?])\s+/);
+    const keptSentences = sentences.filter((sentence) => {
+      // Check for fabricated vague ranges
+      const rangeMatches = sentence.match(/\d+-\d+%/g) || [];
+      for (const range of rangeMatches) {
+        if (!knownRanges.has(range) && VAGUE_QUALIFIERS.test(sentence)) {
+          return false; // Remove: fabricated range + vague qualifier
+        }
+      }
+
+      // Check for "many organizations" filler without specifics
+      if (VAGUE_ORG_PATTERN.test(sentence)) {
+        const hasSpecific = /\$[\d,]+|\d{2,}%|\b(?:Gartner|Flexera|CNCF|Datadog|HashiCorp|Sedai|Forrester)\b/i.test(sentence);
+        if (!hasSpecific) return false; // Remove: unattributed org generalization
+      }
+
+      return true;
+    });
+
+    return keptSentences.join(" ");
+  }).filter((para) => para.trim().length > 0);
+
+  return cleaned.join("\n\n");
+}
+
 // ── D2 diagram embedding ────────────────────────────────────────────────────
 
 function embedDiagram(
@@ -216,6 +285,140 @@ spec:
   selector:
     matchLabels:
       app: api-gateway`,
+
+  NetworkPolicy: `# NetworkPolicy: restricts pod-to-pod traffic to only what's needed
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-netpol
+  namespace: production
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              tier: frontend
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              tier: backend
+      ports:
+        - protocol: TCP
+          port: 5432`,
+
+  Ingress: `# Ingress: routes external traffic to services with TLS termination
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway-ingress
+  namespace: production
+  annotations:
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.example.com
+      secretName: api-tls
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080`,
+
+  ServiceAccount: `# ServiceAccount: grants workload identity with least-privilege RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-service-account
+  namespace: production
+  annotations:
+    iam.gke.io/gcp-service-account: app-sa@project.iam.gserviceaccount.com
+automountServiceAccountToken: false`,
+
+  PriorityClass: `# PriorityClass: ensures critical workloads get scheduled first during contention
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority-production
+value: 1000000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Priority class for production-critical workloads"`,
+
+  StorageClass: `# StorageClass: provisions persistent volumes with cost-optimized settings
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cost-optimized-ssd
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-balanced
+  replication-type: none
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer`,
+
+  PrometheusRule: `# PrometheusRule: alerting on cost anomalies and resource waste
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cost-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: cost-optimization
+      interval: 5m
+      rules:
+        - alert: HighCPUOverprovision
+          expr: avg(rate(container_cpu_usage_seconds_total[5m])) by (namespace) / avg(kube_pod_container_resource_requests{resource="cpu"}) by (namespace) < 0.2
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Namespace {{ $labels.namespace }} using less than 20% of requested CPU"`,
+
+  CronJob: `# CronJob: scheduled task for periodic cost reporting
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: weekly-cost-report
+  namespace: platform
+spec:
+  schedule: "0 8 * * 1"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cost-reporter
+              image: cost-tools:latest
+              command: ["./generate-report.sh"]
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"
+          restartPolicy: OnFailure`,
 };
 
 /**
@@ -234,10 +437,17 @@ function findConfigTemplateName(heading: string, purpose: string): string {
   // Keyword matching
   const keywordMap: Record<string, string[]> = {
     VerticalPodAutoscaler: ["vpa", "vertical pod", "autoscal", "right-siz"],
-    HorizontalPodAutoscaler: ["hpa", "horizontal pod", "replica"],
+    HorizontalPodAutoscaler: ["hpa", "horizontal pod", "replica", "scale out", "scale in"],
     ResourceQuota: ["quota", "resource quota", "namespace quota"],
     LimitRange: ["limit range", "limitrange", "default limit"],
-    PodDisruptionBudget: ["pdb", "disruption", "availability"],
+    PodDisruptionBudget: ["pdb", "disruption", "availability", "drain"],
+    NetworkPolicy: ["network polic", "netpol", "network segmen", "pod-to-pod", "traffic control"],
+    Ingress: ["ingress", "gateway", "route", "tls terminat", "load balanc"],
+    ServiceAccount: ["service account", "rbac", "workload identity", "iam", "least privilege"],
+    PriorityClass: ["priority class", "preempt", "scheduling priority", "critical workload"],
+    StorageClass: ["storage class", "persistent volume", "provision", "volume expan"],
+    PrometheusRule: ["prometheus", "alert", "monitor", "metric", "observab", "grafana"],
+    CronJob: ["cron", "scheduled", "periodic", "batch job", "cost report"],
   };
 
   for (const [key, keywords] of Object.entries(keywordMap)) {
@@ -257,18 +467,21 @@ function generateConfigBlock(configName: string, description: string): string {
     ].join("\n");
   }
 
-  // Generic config fallback
+  // Generic config fallback — avoid placeholder-like comments
+  const slugName = configName.toLowerCase().replace(/\s+/g, "-");
   return [
     `\`\`\`yaml`,
     `# ${configName}: ${description}`,
     `apiVersion: v1`,
     `kind: ConfigMap`,
     `metadata:`,
-    `  name: ${configName.toLowerCase().replace(/\s+/g, "-")}`,
+    `  name: ${slugName}`,
     `  namespace: production`,
+    `  labels:`,
+    `    managed-by: "platform-team"`,
     `data:`,
-    `  # Configure ${configName.toLowerCase()} settings here`,
-    `  enabled: "true"`,
+    `  policy: "enforce"`,
+    `  log-level: "info"`,
     `\`\`\``,
   ].join("\n");
 }
@@ -344,13 +557,14 @@ async function renderSectionWithLLM(
     editorial,
   );
 
+  const maxTokens = Math.max(2048, section.word_target * 6); // ~6 tokens per word margin (accounts for code/tables overhead)
   const startTime = Date.now();
-  const result = await llm.complete({
+  let result = await llm.complete({
     messages,
     temperature: 0.7,
-    maxTokens: Math.max(2048, section.word_target * 4), // ~4 tokens per word margin to prevent truncation
+    maxTokens,
   });
-  const durationMs = Date.now() - startTime;
+  let durationMs = Date.now() - startTime;
 
   pipelineConfig.costTracker.addCall({
     stage: "transform",
@@ -361,13 +575,53 @@ async function renderSectionWithLLM(
     durationMs,
   });
 
+  // Truncation detection and continuation (max 1 retry)
+  if (result.finishReason === "length") {
+    console.log(`    [truncation] Section "${section.heading}" hit token limit (${result.usage.completionTokens}/${maxTokens}). Continuing...`);
+    const continuationMessages: typeof messages = [
+      ...messages,
+      { role: "assistant" as const, content: result.content },
+      { role: "user" as const, content: "Your previous response was cut off. Continue exactly where you left off — do not repeat any text. Complete the remaining content for this section." },
+    ];
+    const contStart = Date.now();
+    const continuation = await llm.complete({
+      messages: continuationMessages,
+      temperature: 0.7,
+      maxTokens: Math.max(1024, section.word_target * 3),
+    });
+    const contDuration = Date.now() - contStart;
+
+    pipelineConfig.costTracker.addCall({
+      stage: "transform-continuation",
+      provider: llm.name,
+      model: llm.model,
+      promptTokens: continuation.usage.promptTokens,
+      completionTokens: continuation.usage.completionTokens,
+      durationMs: contDuration,
+    });
+
+    result = {
+      ...result,
+      content: result.content + "\n\n" + continuation.content,
+      usage: {
+        promptTokens: result.usage.promptTokens + continuation.usage.promptTokens,
+        completionTokens: result.usage.completionTokens + continuation.usage.completionTokens,
+        totalTokens: result.usage.totalTokens + continuation.usage.totalTokens,
+      },
+    };
+    durationMs += contDuration;
+  }
+
   // Strip reasoning model artifacts (<think>...</think> blocks, common in DeepSeek, MiniMax, etc.)
-  const prose = result.content
+  const rawProse = result.content
     .replace(/<think>[\s\S]*?<\/think>/g, "")
     .replace(/^---\s*$/gm, "")  // Strip stray horizontal rules from reasoning
     .replace(/^\*{1,3}\s*$/gm, "")  // Strip orphaned bold/italic markers on their own line
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  // Post-generation vagueness cleanup
+  const prose = cleanVagueClaims(rawProse, plan.content_seeds);
 
   // ── Assemble section with heading + prose + visuals ──
 
@@ -401,9 +655,9 @@ async function renderSectionWithLLM(
       parts.push(embedDiagram(slug, v.template, v.purpose || section.heading));
       parts.push(``);
     } else if (v.type === "code") {
-      // Only embed config block if the LLM prose doesn't already contain a YAML block
-      const proseHasYaml = /```yaml/i.test(prose) || /```yml/i.test(prose);
-      if (!proseHasYaml) {
+      // Only embed config block if the LLM prose doesn't already contain any code block
+      const proseHasCode = /```\w+/i.test(prose);
+      if (!proseHasCode) {
         // Try to match config kind from heading, purpose, or plan metadata
         const configName = findConfigTemplateName(section.heading, v.purpose || "");
         parts.push(generateConfigBlock(configName, v.purpose || section.heading));

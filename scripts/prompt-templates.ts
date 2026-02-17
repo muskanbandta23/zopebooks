@@ -222,6 +222,74 @@ Generate the chapter plan.`,
   ];
 }
 
+// ── Fact Sheet Builder ────────────────────────────────────────────────────────
+
+/**
+ * Builds a structured fact sheet from content seeds and context.
+ * Designed to force the LLM to use exact numbers with attribution
+ * rather than paraphrasing into vague ranges.
+ *
+ * Handles both shapes from plan files:
+ *   - key_claims as ResearchClaim[] objects ({claim, source})
+ *   - key_claims as plain strings (from LLM planner output)
+ *   - patterns as ResearchPattern[] objects ({name, typical_savings, ...})
+ *   - patterns as plain strings
+ */
+function buildFactSheet(
+  seeds: ContentSeed | undefined,
+  context: ContextConfig | null,
+): string {
+  if (!seeds) return "";
+
+  const lines: string[] = ["=== FACT SHEET (use ONLY these numbers, attributed exactly as shown) ==="];
+
+  // Verified claims with attribution
+  if (seeds.key_claims?.length) {
+    lines.push("");
+    lines.push("VERIFIED CLAIMS:");
+    for (const c of seeds.key_claims) {
+      if (typeof c === "string") {
+        lines.push(`  - "${c}"`);
+      } else {
+        lines.push(`  - "${c.claim}" — attribute to: ${c.source}`);
+      }
+    }
+  }
+
+  // Patterns with exact savings figures
+  if (seeds.patterns?.length) {
+    lines.push("");
+    lines.push("OPTIMIZATION PATTERNS (use exact figures, not wider ranges):");
+    for (const p of seeds.patterns) {
+      if (typeof p === "string") {
+        lines.push(`  - ${p}`);
+      } else {
+        const savings = p.typical_savings || "not quantified";
+        lines.push(`  - ${p.name}: ${savings} — ${p.description || ""}`);
+      }
+    }
+  }
+
+  // Customer stories with exact before/after
+  if (context?.customer_stories?.length) {
+    lines.push("");
+    lines.push("CUSTOMER DATA (use exact figures, not ranges):");
+    for (const s of context.customer_stories) {
+      lines.push(`  - ${s.industry}: ${s.before} → ${s.after} in ${s.timeline}${(s as any).cluster_size ? ` (${(s as any).cluster_size})` : ""}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("RULES:");
+  lines.push("  - When citing a figure, use the EXACT number above with its source in parentheses");
+  lines.push("  - If you need a number not listed here, write the sentence WITHOUT a number — describe the mechanism qualitatively instead");
+  lines.push("  - NEVER fabricate statistics or invent percentage ranges");
+  lines.push("  - Replace any range like '20-40%' with a specific case: e.g., 'a 1,200-resource media platform cut spend 37% in 8 weeks (customer case study)'");
+  lines.push("=== END FACT SHEET ===");
+
+  return lines.join("\n");
+}
+
 // ── Stage 3: Section Prose Generation ───────────────────────────────────────
 
 export function sectionProsePrompt(
@@ -239,18 +307,8 @@ export function sectionProsePrompt(
   const codePolicy = editorial?.code_policy || "config-only";
   const seeds = plan.content_seeds;
 
-  // Build research context
-  const claimsContext = seeds?.key_claims?.length
-    ? "Research claims you can reference:\n" + seeds.key_claims.map((c) => `- "${c.claim}" (${c.source})`).join("\n")
-    : "";
-
-  const patternsContext = seeds?.patterns?.length
-    ? "Optimization patterns:\n" + seeds.patterns.map((p) => `- ${p.name}: ${p.description}${p.typical_savings ? ` (${p.typical_savings})` : ""}`).join("\n")
-    : "";
-
-  const customerContext = context?.customer_stories?.length
-    ? "Customer data point:\n" + context.customer_stories.map((s) => `- ${s.industry}: ${s.before} → ${s.after} in ${s.timeline}`).join("\n")
-    : "";
+  // Build structured fact sheet from seeds + context
+  const factSheet = buildFactSheet(seeds, context);
 
   // Continuity context — last 2 sections for flow
   const continuity = previousSections.length > 0
@@ -269,8 +327,10 @@ Code policy: ${codePolicy}
 
 Rules:
 - Write actual prose paragraphs — not bullet points, not instructions, not placeholders
-- Back claims with specific data from the provided research. Inline citations: "... (Source Name)"
-- Use specific numbers, not ranges like "20-50%" — pick the most cited figure
+- Back claims with specific data from the provided FACT SHEET. Inline citations: "... (Source Name)"
+- Use specific numbers from the FACT SHEET, not ranges — pick the exact documented figure
+- NEVER use these vague phrases: "typically", "often", "can be", "significant", "generally", "in many cases", "various", "should consider", "many organizations", "some organizations". Replace each with a specific claim backed by a number or named source from the FACT SHEET
+- If the FACT SHEET does not contain a relevant number, describe the mechanism qualitatively — do NOT invent statistics
 - Target exactly ${section.word_target} words (±20%)
 - Do NOT include the section heading (## ...) — the assembler adds it
 - Do NOT include YAML frontmatter
@@ -287,16 +347,12 @@ Section: "${section.heading}" (id: ${section.id})
 Word target: ${section.word_target} words
 Section guidance: ${section.notes || "Write based on the chapter context and research data."}
 
-${claimsContext}
-
-${patternsContext}
-
-${customerContext}
+${factSheet}
 
 ${seeds?.product_tie_in ? `Product tie-in (mention subtly, not marketing): ${seeds.product_tie_in}` : ""}
 ${continuity}
 
-Write the section content now.`,
+Every claim must have a number or named source from the FACT SHEET. If no data exists, describe qualitatively — never fabricate. Write the section content now.`,
     },
   ];
 }

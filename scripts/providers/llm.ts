@@ -102,8 +102,8 @@ function sleep(ms: number): Promise<void> {
  * or include preamble text. Works with models that don't support native JSON mode.
  */
 export function extractJSON(text: string): string {
-  // Try direct parse first
-  const trimmed = text.trim();
+  // Strip reasoning model artifacts (<think>...</think> blocks from DeepSeek, MiniMax, etc.)
+  const trimmed = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   try {
     JSON.parse(trimmed);
     return trimmed;
