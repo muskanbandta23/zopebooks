@@ -289,6 +289,76 @@ REAL NUMBERS: 23 total (avg 2.9 per chapter)
 READING LEVEL: 11.2 grade (target: 8-14)
 ```
 
+### 9. LLM Content Pipeline Architecture
+
+**Pattern:** Four-stage pipeline with provider-agnostic LLM integration
+
+```
+Stage 0: Topic → Research Data (research.yml)      [search APIs + LLM structuring]
+Stage 1: Topic + Research → Book Outline (outline.yml)  [LLM outline generation]
+Stage 2: Outline + Research → Chapter Plans (*.plan.yml) [LLM section planning]
+Stage 3: Chapter Plans → Full .qmd Chapters          [LLM prose + template assembly]
+```
+
+**Key Design Decisions:**
+
+1. **Content seeds, not full research:** Stage 2 curates 4-6 claims + patterns into `content_seeds`. Stage 3 only sees these seeds, not the full research.yml. This keeps prompts focused and prevents the LLM from cherry-picking random data.
+
+2. **Structured FACT SHEET:** The `buildFactSheet()` function formats seeds into a rigid data block with exact numbers and attribution rules. This prevents LLMs from paraphrasing "37% reduction" into "30-50% savings".
+
+3. **Post-generation cleanup:** `cleanVagueClaims()` runs after LLM output, removing sentences with fabricated statistics + vague qualifiers. Only removes — never rewrites.
+
+4. **Template fallback:** Every stage works without an LLM (mock mode). This enables A/B eval: template baseline vs LLM-powered output.
+
+5. **Truncation continuation:** If `finishReason === "length"`, the engine issues one follow-up call to complete the section rather than silently truncating.
+
+6. **CONFIG_TEMPLATES library:** 13 Kubernetes resource type templates (ResourceQuota, LimitRange, VPA, HPA, PDB, NetworkPolicy, Ingress, ServiceAccount, PriorityClass, StorageClass, PrometheusRule, CronJob) with keyword matching via `findConfigTemplateName()`.
+
+**When modifying the pipeline:**
+- Always run `make eval ebook=terraform-cloud-costs` after changes to validate systematic improvement
+- Never tune prompts by reading individual chapter output — use the 11-metric eval
+- New config types go in `CONFIG_TEMPLATES` + `keywordMap` in `transform-chapter.ts`
+- New vague patterns go in `GENERIC_PATTERNS` in `engine-eval.ts`
+- Provider bugs go in `scripts/providers/` — the base interface is in `llm.ts`
+
+### 10. Engine Eval Best Practices
+
+**Pattern:** Measure before you fix, fix the engine not the content
+
+The A/B eval (`scripts/engine-eval.ts`) compares template-only output vs LLM-powered output across 11 metrics. Verdict: PASS (≥70% improved), MIXED (30-70%), FAIL (≤30%).
+
+**11 Metrics:**
+| Metric | Direction | What it measures |
+|--------|-----------|-----------------|
+| Word Count | higher-is-better | Total prose volume |
+| Placeholders | lower-is-better | Unresolved instructions/TODOs |
+| Truncations | lower-is-better | Mid-sentence breaks before headings |
+| Duplicate Blocks | lower-is-better | Identical code/table blocks |
+| Code Blocks (tagged) | higher-is-better | Fenced code with language tags |
+| Tables | higher-is-better | Markdown tables |
+| Real Numbers | higher-is-better | $ amounts, specific percentages |
+| Generic Claims | lower-is-better | Context-aware vague language detection |
+| Avg Reading Grade | lower-is-better | Flesch-Kincaid (target 8-14) |
+| Word Targets Hit | higher-is-better | Chapters within plan's word range |
+| Sections Complete | higher-is-better | All planned sections rendered |
+
+**Workflow for engine changes:**
+```bash
+# 1. Baseline (existing snapshots)
+make eval-report ebook=terraform-cloud-costs
+
+# 2. Apply engine fix
+
+# 3. Re-generate
+make transform ebook=terraform-cloud-costs
+
+# 4. Full eval (snapshots LLM output, generates template, compares)
+make eval ebook=terraform-cloud-costs
+
+# 5. Compare: did the metric you targeted improve?
+#    Did any other metrics regress?
+```
+
 ## Epic #5 Insights: SOTA Content Engineering
 
 ### The Engine-First Philosophy
@@ -929,6 +999,16 @@ throw new Error(
   - Documentation: Comprehensive guides (D2, OJS, content quality), SOTA chapter template, updated CONTRIBUTING.md/CLAUDE.md
   - Validation test case: finops-playbook chapters transformed, before/after comparison with measurable improvements
 
+- ✅ **Epic #6:** LLM Engine Quality Fixes (MIXED 7/11 → PASS 10/11)
+  - Branch: `main`
+  - Key files: `scripts/transform-chapter.ts`, `scripts/prompt-templates.ts`, `scripts/engine-eval.ts`, `scripts/providers/llm.ts`
+  - **Placeholders (2→0):** 8 new CONFIG_TEMPLATES (NetworkPolicy, Ingress, ServiceAccount, PriorityClass, StorageClass, PrometheusRule, CronJob), expanded keyword map, fixed generic fallback
+  - **Truncations (3→1):** Token multiplier 4x→6x, truncation continuation on finishReason="length"
+  - **Duplicates (2→0):** Broadened prose-has-content detection from YAML-only to any fenced code block
+  - **Generic Claims (45→19):** Three-layer defense: structured FACT SHEET prompt, cleanVagueClaims() post-processing, context-aware eval with whitelists
+  - **Bonus:** extractJSON() strips `<think>` blocks from reasoning models (MiniMax, DeepSeek)
+  - Validation fixture: `books/terraform-cloud-costs/` (new ebook generated end-to-end)
+
 ### Future
 - See `docs/EBOOK_UPGRADE_ROADMAP.md` for full roadmap
 - Focus areas: Content transformation at scale, advanced D2 patterns, automation
@@ -973,7 +1053,21 @@ scripts/
 ├── theme-tokens.ts        # Design token definitions
 ├── theme-utils.ts         # Token CSS vars & social theme values
 ├── validate.ts            # Config validation (incl. content, diagrams, OJS)
-└── new-ebook.sh          # Scaffolding
+├── new-ebook.sh           # Scaffolding
+├── pipeline-types.ts      # Shared types for all pipeline stages
+├── prompt-templates.ts    # LLM prompts (research, outline, plan, prose) + fact sheet builder
+├── provider-config.ts     # Provider resolution + cost tracking
+├── research-topic.ts      # Stage 0: Topic research via search APIs
+├── generate-outline.ts    # Stage 1: Book outline generation
+├── plan-chapters.ts       # Stage 2: Section-level chapter planning
+├── transform-chapter.ts   # Stage 3: LLM prose generation + assembly
+├── engine-eval.ts         # A/B eval tool (template vs LLM, 11 metrics)
+└── providers/
+    ├── llm.ts             # Base LLM interface + retry + JSON extraction
+    ├── llm-anthropic.ts   # Claude provider
+    ├── llm-openai.ts      # OpenAI-compatible (OpenAI, DeepSeek, MiniMax, etc.)
+    ├── llm-google.ts      # Gemini provider
+    └── llm-mock.ts        # Mock provider (template fallback)
 
 quality-thresholds.yml     # Configurable content quality standards
 
@@ -1114,6 +1208,36 @@ validateSQL(code: string): ValidationResult
 
 // Auto-detect code language
 detectLanguage(code: string): string
+
+// ── LLM Pipeline (Stage 3) ──────────────────────────────────────────
+
+// Build structured fact sheet from content seeds + context
+// Forces LLM to use exact numbers with attribution
+buildFactSheet(seeds: ContentSeed, context: ContextConfig | null): string
+
+// Post-generation vagueness cleanup (removes fabricated claims)
+cleanVagueClaims(prose: string, seeds: ContentSeed): string
+
+// Find matching config template for a section heading
+findConfigTemplateName(heading: string, purpose: string): string | null
+
+// Generate K8s config block from template library (13 resource types)
+generateConfigBlock(configName: string | null, description: string): string
+
+// ── Engine Eval ─────────────────────────────────────────────────────
+
+// Context-aware generic claim detection (strips code/tables, whitelists attributed claims)
+countGenericClaims(text: string): number
+
+// Detect unresolved placeholders in generated content
+detectPlaceholders(content: string): string[]
+
+// Detect mid-sentence truncations before headings
+detectTruncation(content: string): string[]
+
+// Full A/B evaluation: template engine vs LLM engine (11 metrics)
+// Usage: bun run scripts/engine-eval.ts <slug> [--report-only]
+compare(template: EngineSnapshot, llm: EngineSnapshot): EvalReport
 ```
 
 ### Make Commands
@@ -1130,8 +1254,17 @@ make compare ebook={id} before={path} after={path}  # Compare before/after quali
 make new-ebook slug={id}       # Scaffold new ebook
 make clean                     # Clear outputs
 make all                       # Full pipeline
+
+# LLM Content Pipeline
+make research ebook={id}       # Stage 0: Research topic via search APIs
+make outline ebook={id}        # Stage 1: Generate book outline
+make plan ebook={id}           # Stage 2: Generate chapter plans
+make transform ebook={id}     # Stage 3: Generate prose from plans
+make pipeline ebook={id}       # Full pipeline: research → outline → plan → transform
+make eval ebook={id}           # A/B eval: template vs LLM engine (11 metrics)
+make eval-report ebook={id}    # Re-run eval from existing snapshots
 ```
 
 ---
 
-**Last Updated:** 2026-02-14 (after Epic #5 completion)
+**Last Updated:** 2026-02-18 (after Epic #6 LLM engine quality fixes)
