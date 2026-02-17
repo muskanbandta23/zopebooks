@@ -1,0 +1,11 @@
+---
+subtitle: "Infrastructure-as-Code Strategies for Reducing Cloud Spend"
+---
+
+# Terraform Cloud Cost Control {.unnumbered}
+
+## Preface {.unnumbered}
+
+Welcome to *Terraform Cloud Cost Control*.
+
+<!-- TODO: Write preface content -->
