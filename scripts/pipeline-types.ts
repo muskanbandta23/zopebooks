@@ -265,7 +265,7 @@ export function buildDensityProfile(
       minVisuals: 2,
       minCodeBlocks: 1,
       minDiagrams: 1,
-      hasCalculator: hasCodeHeavyTag,
+      hasCalculator: true,
       hasSecondaryCode: hasCodeHeavyTag,
       hasPhasedImplementation: false,
       hasAfterDiagram: false,

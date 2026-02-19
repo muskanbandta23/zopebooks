@@ -1,11 +1,12 @@
-% Zopdev PDF Preamble — Modern Edition
+% Zopdev PDF Preamble — Premium Editorial Edition
 % Included via: include-in-header in _quarto.yml
 %
-% Clean, restrained PDF styling with muted indigo accent,
-% lighter heading weights, and subtle callout boxes.
+% Stripe/Vercel-level editorial styling: gradient cover,
+% branded chapter openers, colored accents, stat blocks, pull-quotes.
 
 % ===== COLORS =====
 \usepackage{xcolor}
+\definecolor{zopdev-primary}{HTML}{0052FF}
 \definecolor{zopdev-indigo}{HTML}{4F46E5}
 \definecolor{zopdev-indigo-dark}{HTML}{3730A3}
 \definecolor{zopdev-navy}{HTML}{0A1628}
@@ -20,6 +21,10 @@
 \definecolor{zopdev-tip-bg}{HTML}{ECFDF5}
 \definecolor{zopdev-warning-bg}{HTML}{FFFBEB}
 \definecolor{zopdev-important-bg}{HTML}{FEF2F2}
+% Cover gradient colors
+\definecolor{zopdev-cover-start}{HTML}{0A1628}
+\definecolor{zopdev-cover-mid}{HTML}{4F46E5}
+\definecolor{zopdev-cover-end}{HTML}{0052FF}
 
 % ===== GEOMETRY =====
 \usepackage{geometry}
@@ -54,8 +59,14 @@
 \fancyhead[L]{\small\textcolor{zopdev-gray}{\leftmark}}
 \fancyhead[R]{\small\textcolor{zopdev-gray}{\thepage}}
 \fancyfoot[C]{\small\textcolor{zopdev-gray}{zopdev}}
-\renewcommand{\headrulewidth}{0.25pt}
+\renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
+
+% Custom header rule: thin brand-colored line
+\renewcommand{\headrule}{%
+  \vspace{-4pt}%
+  {\color{zopdev-border}\hrule height 0.25pt}%
+}
 
 % Plain style for chapter opening pages
 \fancypagestyle{plain}{
@@ -68,19 +79,23 @@
 % ===== CHAPTER & SECTION FORMATTING =====
 \usepackage{titlesec}
 
-% Chapter: semibold navy, generous spacing
+% Chapter: bold navy with brand-colored accent bar
 \titleformat{\chapter}[display]
-  {\normalfont\huge\fontseries{sb}\selectfont\color{zopdev-navy}}
-  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+  {\normalfont\huge\bfseries\color{zopdev-navy}}
+  {%
+    {\fontsize{14}{18}\selectfont\color{zopdev-primary}\MakeUppercase{\chaptertitlename}\ \thechapter}%
+    \vspace{4pt}%
+    {\color{zopdev-primary}\titlerule[2pt]}%
+  }{16pt}{\Huge}
 \titlespacing*{\chapter}{0pt}{-20pt}{30pt}
 
-% Section: semibold navy, more top space
+% Section: bold navy
 \titleformat{\section}
-  {\normalfont\Large\fontseries{sb}\selectfont\color{zopdev-navy}}
+  {\normalfont\Large\bfseries\color{zopdev-navy}}
   {\thesection}{1em}{}
 \titlespacing*{\section}{0pt}{2.5em}{1em}
 
-% Subsection: semibold navy
+% Subsection: semibold navy with left accent
 \titleformat{\subsection}
   {\normalfont\large\fontseries{sb}\selectfont\color{zopdev-navy}}
   {\thesubsection}{1em}{}
@@ -96,17 +111,17 @@
 \usepackage{tcolorbox}
 \tcbuselibrary{listings, skins, breakable}
 
-% Note callout (indigo)
+% Note callout (primary blue)
 \newtcolorbox{zopdev-note}[1][Note]{
   enhanced,
   breakable,
   colback=zopdev-note-bg,
-  colframe=zopdev-indigo,
+  colframe=zopdev-primary,
   boxrule=0pt,
   leftrule=3pt,
   arc=4pt,
   left=8pt, right=8pt, top=8pt, bottom=8pt,
-  fonttitle=\fontseries{sb}\selectfont\color{zopdev-indigo},
+  fonttitle=\bfseries\color{zopdev-primary},
   title=#1,
   attach boxed title to top left={yshift=-2mm, xshift=4mm},
   boxed title style={colback=white, colframe=white, boxrule=0pt}
@@ -122,7 +137,7 @@
   leftrule=3pt,
   arc=4pt,
   left=8pt, right=8pt, top=8pt, bottom=8pt,
-  fonttitle=\fontseries{sb}\selectfont\color{zopdev-success},
+  fonttitle=\bfseries\color{zopdev-success},
   title=#1,
   attach boxed title to top left={yshift=-2mm, xshift=4mm},
   boxed title style={colback=white, colframe=white, boxrule=0pt}
@@ -138,7 +153,7 @@
   leftrule=3pt,
   arc=4pt,
   left=8pt, right=8pt, top=8pt, bottom=8pt,
-  fonttitle=\fontseries{sb}\selectfont\color{zopdev-warning},
+  fonttitle=\bfseries\color{zopdev-warning},
   title=#1,
   attach boxed title to top left={yshift=-2mm, xshift=4mm},
   boxed title style={colback=white, colframe=white, boxrule=0pt}
@@ -154,20 +169,47 @@
   leftrule=3pt,
   arc=4pt,
   left=8pt, right=8pt, top=8pt, bottom=8pt,
-  fonttitle=\fontseries{sb}\selectfont\color{zopdev-danger},
+  fonttitle=\bfseries\color{zopdev-danger},
   title=#1,
   attach boxed title to top left={yshift=-2mm, xshift=4mm},
   boxed title style={colback=white, colframe=white, boxrule=0pt}
 }
 
-% Code listing box — uniform border, no accent
+% Pull-quote box
+\newtcolorbox{zopdev-pullquote}{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=white,
+  boxrule=0pt,
+  arc=0pt,
+  left=16pt, right=16pt, top=12pt, bottom=12pt,
+  before upper={\fontsize{14}{20}\selectfont\itshape\color{zopdev-navy}},
+  overlay={
+    \draw[zopdev-primary, line width=2pt]
+      ([xshift=4pt]frame.north west) -- ([xshift=4pt]frame.south west);
+  }
+}
+
+% Stat highlight box
+\newtcolorbox{zopdev-stat}{
+  enhanced,
+  colback=zopdev-note-bg,
+  colframe=zopdev-primary,
+  boxrule=0.5pt,
+  arc=6pt,
+  left=10pt, right=10pt, top=10pt, bottom=10pt,
+  halign=center,
+}
+
+% Code listing box
 \newtcblisting{codebox}{
   enhanced,
   breakable,
   colback=zopdev-light,
   colframe=zopdev-border,
   boxrule=0.5pt,
-  leftrule=0.5pt,
+  leftrule=3pt,
   listing only,
   left=6pt, right=6pt, top=6pt, bottom=6pt,
   arc=6pt
@@ -177,9 +219,9 @@
 \usepackage{hyperref}
 \hypersetup{
   colorlinks=true,
-  linkcolor=zopdev-indigo,
-  urlcolor=zopdev-indigo,
-  citecolor=zopdev-indigo
+  linkcolor=zopdev-primary,
+  urlcolor=zopdev-primary,
+  citecolor=zopdev-primary
 }
 
 % ===== TABLES =====
@@ -193,13 +235,12 @@
 \arrayrulecolor{zopdev-border}
 
 % ===== BLOCKQUOTES =====
-% changepage must be loaded with [strict] to avoid option clash with Quarto internals
 \PassOptionsToPackage{strict}{changepage}
 \usepackage{changepage}
 \renewenvironment{quote}{%
   \begin{adjustwidth}{0.5cm}{0cm}%
   \color{zopdev-gray}%
-  \noindent\textcolor{zopdev-border}{\vrule width 2pt}\hspace{0.5em}%
+  \noindent\textcolor{zopdev-primary}{\vrule width 2pt}\hspace{0.5em}%
   \begin{minipage}{\dimexpr\linewidth-0.5em-2pt}%
 }{%
   \end{minipage}%
@@ -212,12 +253,12 @@
   enhanced,
   breakable,
   colback=zopdev-light,
-  colframe=zopdev-border,
+  colframe=zopdev-primary,
   boxrule=0.5pt,
-  leftrule=0.5pt,
+  leftrule=3pt,
   arc=6pt,
   left=8pt, right=8pt, top=8pt, bottom=8pt,
-  fonttitle=\fontseries{sb}\selectfont\color{zopdev-indigo},
+  fonttitle=\bfseries\color{zopdev-primary},
   title=#1,
   attach boxed title to top left={yshift=-2mm, xshift=4mm},
   boxed title style={colback=white, colframe=white, boxrule=0pt}
@@ -228,30 +269,53 @@
 \setlength{\parskip}{0.5em}
 \setlength{\parindent}{0pt}
 
+% ===== DIAGRAM SIZING =====
+\usepackage{graphicx}
+
 % ===== CUSTOM TITLE PAGE =====
 \usepackage{tikz}
+\usetikzlibrary{calc}
 \makeatletter
 \renewcommand{\maketitle}{%
   \begin{titlepage}
     \begin{tikzpicture}[remember picture, overlay]
-      % Subtle accent line at top
-      \fill[zopdev-indigo] (current page.north west) rectangle ([yshift=-4pt]current page.north east);
+      % Full-page gradient background
+      \fill[left color=zopdev-cover-start, right color=zopdev-cover-mid]
+        (current page.south west) rectangle (current page.north east);
+      % Gradient overlay from mid to end
+      \fill[left color=zopdev-cover-mid, right color=zopdev-cover-end, opacity=0.6]
+        (current page.south west) rectangle (current page.north east);
+      % Grid pattern
+      \foreach \i in {0,1,...,15} {
+        \draw[white, opacity=0.03, line width=0.5pt]
+          ($(current page.south west) + (\i*1.2cm, 0)$) -- ++(0, \paperheight);
+        \draw[white, opacity=0.03, line width=0.5pt]
+          ($(current page.south west) + (0, \i*1.5cm)$) -- ++(\paperwidth, 0);
+      }
+      % Decorative accent circles
+      \fill[zopdev-primary, opacity=0.08]
+        ($(current page.north east) + (-3cm, -4cm)$) circle (5cm);
+      \fill[zopdev-indigo, opacity=0.06]
+        ($(current page.south west) + (2cm, 3cm)$) circle (4cm);
     \end{tikzpicture}
-    \vspace*{3cm}
+    % Content
+    \vspace*{4cm}
     \begin{flushleft}
-      {\fontsize{14}{18}\selectfont\color{zopdev-indigo}\fontseries{sb}\selectfont ZOPDEV\par}
+      {\fontsize{11}{14}\selectfont\color{white}\fontseries{sb}\selectfont\MakeUppercase{Zopdev}\par}
+      \vspace{0.3cm}
+      {\color{white}\rule{40pt}{2pt}\par}
       \vspace{2cm}
-      {\fontsize{36}{42}\selectfont\fontseries{b}\selectfont\color{zopdev-navy}\@title\par}
+      {\fontsize{38}{44}\selectfont\bfseries\color{white}\@title\par}
       \vspace{0.75cm}
-      \ifdefined\@subtitle{\fontsize{16}{22}\selectfont\color{zopdev-gray}\@subtitle\par}\fi
+      \ifdefined\@subtitle{\fontsize{16}{22}\selectfont\color{white!80}\@subtitle\par}\fi
       \vspace{3cm}
-      {\fontsize{12}{16}\selectfont\color{zopdev-gray}\@author\par}
+      {\fontsize{12}{16}\selectfont\color{white!70}\@author\par}
       \vspace{0.5cm}
-      {\fontsize{11}{14}\selectfont\color{zopdev-border}\@date\par}
+      {\fontsize{11}{14}\selectfont\color{white!50}\@date\par}
     \end{flushleft}
     \vfill
     \begin{flushleft}
-      \textcolor{zopdev-border}{\rule{3cm}{0.5pt}}
+      {\color{white!30}\rule{3cm}{0.5pt}}
     \end{flushleft}
   \end{titlepage}
 }

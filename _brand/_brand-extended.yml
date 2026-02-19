@@ -14,12 +14,30 @@ company:
 products:
   - id: "zopnight"
     name: "ZopNight"
-    description: "FinOps automation platform for continuous cloud cost optimization"
+    tagline: "Cloud cost governance on autopilot"
+    description: "Cloud cost governance and optimization platform with policy-driven recommendations, idle resource scheduling, right-sizing, and event readiness for traffic and load prediction"
     url: "https://zopnight.com"
+    features:
+      - "Policy-driven cost optimization recommendations"
+      - "Scheduler to shut down idle resources"
+      - "Right-sizing recommendations"
+      - "Event readiness for traffic and load prediction"
+      - "Multi-cloud cost governance"
   - id: "zopcloud"
     name: "ZopCloud"
     description: "Cloud migration and modernization services"
     url: "https://zopcloud.com"
+  - id: "zopday"
+    name: "ZopDay"
+    tagline: "Ship faster on Kubernetes"
+    description: "Kubernetes-based Internal Developer Platform that helps teams spin up clusters and microservices fast in a secure golden path manner"
+    url: "https://zopday.com"
+    features:
+      - "Cluster provisioning and lifecycle management"
+      - "Microservice scaffolding with golden paths"
+      - "Secure-by-default infrastructure templates"
+      - "Self-service developer portal"
+      - "GitOps-native deployment workflows"
 
 default_icps:
   - id: "devops-engineer"

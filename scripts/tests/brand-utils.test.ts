@@ -92,11 +92,12 @@ describe("loadBrandExtended", () => {
     expect(ext.company.website).toBe("https://zopdev.com");
   });
 
-  test("loads 2 products", () => {
+  test("loads 3 products", () => {
     const ext = loadBrandExtended(PROJECT_ROOT);
-    expect(ext.products).toHaveLength(2);
+    expect(ext.products).toHaveLength(3);
     expect(ext.products[0].id).toBe("zopnight");
     expect(ext.products[1].id).toBe("zopcloud");
+    expect(ext.products[2].id).toBe("zopday");
   });
 
   test("loads 3 default ICPs", () => {
@@ -222,7 +223,7 @@ describe("loadMergedBrand", () => {
   // Product filtering
   test("returns all products in resolved.products", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.resolved.products).toHaveLength(2);
+    expect(merged.resolved.products).toHaveLength(3);
   });
 
   test("filters featuredProducts for finops-playbook (zopnight only)", () => {
@@ -304,8 +305,8 @@ describe("loadMergedBrand", () => {
     expect(merged.overrides).toBeNull();
     expect(merged.resolved.colors.primary).toBe("#4F46E5");
     expect(merged.resolved.icps).toHaveLength(3);
-    expect(merged.resolved.products).toHaveLength(2);
-    expect(merged.resolved.featuredProducts).toHaveLength(2);
+    expect(merged.resolved.products).toHaveLength(3);
+    expect(merged.resolved.featuredProducts).toHaveLength(3);
     expect(merged.resolved.tone.voice).toBe("Technical, authoritative, practical");
     expect(merged.resolved.ctas.primary.text).toBe("Download Free PDF");
   });

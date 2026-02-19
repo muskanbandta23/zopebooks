@@ -400,6 +400,9 @@ for (const slug of slugs) {
 
   const prefix = `books/${slug}/brand-overrides.yml`;
 
+  // Handle empty YAML files (parse returns null)
+  if (!overrides) continue;
+
   // Validate target_icps reference valid ICP ids
   if (overrides.target_icps && brandExtData?.default_icps) {
     const validIcpIds = new Set(brandExtData.default_icps.map((i) => i.id));

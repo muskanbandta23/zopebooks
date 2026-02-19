@@ -12,7 +12,7 @@
  *   bun run _social/generate.ts <slug> linkedin|instagram|og       # specific ebook + type
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { parse } from "yaml";
 import satori from "satori";
@@ -24,6 +24,7 @@ import { InstagramPost, type InstagramPostProps } from "./templates/instagram-po
 import { OgImage, type OgImageProps } from "./templates/og-image.js";
 import { loadMergedBrand } from "../scripts/brand-utils.js";
 import { getSocialThemeValues } from "../scripts/theme-utils.js";
+import { extractD2Blocks, renderD2ToPng } from "../scripts/d2-render.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const ROOT_DIR = join(SCRIPT_DIR, "..");
@@ -174,7 +175,50 @@ for (const ebook of calendar.ebooks) {
     const pdfBytes = await pngsToPdf(pngs, 1080, 1080);
     writeFileSync(join(outputDir, "carousel.pdf"), pdfBytes);
 
-    console.log(`  → ${pngs.length} slides + carousel.pdf`);
+    // Generate diagram slides from chapter D2 blocks
+    const chaptersDir = join(ROOT_DIR, "books", ebook.slug, "chapters");
+    let diagramCount = 0;
+    if (existsSync(chaptersDir)) {
+      const chapterFiles = readdirSync(chaptersDir)
+        .filter(f => f.endsWith(".qmd") || f.endsWith(".md"))
+        .sort();
+      for (const file of chapterFiles) {
+        const content = readFileSync(join(chaptersDir, file), "utf-8");
+        const d2Blocks = extractD2Blocks(content);
+        for (const d2Source of d2Blocks) {
+          const diagramPng = await renderD2ToPng(d2Source, 1080, 1080, { theme: "0" });
+          if (diagramPng) {
+            // Composite diagram onto a branded background
+            const bgSvg = `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="${brandColors.lightBackground}"/>
+                <stop offset="100%" stop-color="#ffffff"/>
+              </linearGradient></defs>
+              <rect width="1080" height="1080" fill="url(#bg)"/>
+              <rect x="0" y="0" width="6" height="1080" fill="${brandColors.primary}"/>
+              <text x="80" y="60" font-family="Inter,sans-serif" font-size="20" fill="${brandColors.primary}" font-weight="700">DIAGRAM</text>
+              <text x="920" y="1050" font-family="Inter,sans-serif" font-size="18" fill="${brandColors.primary}" opacity="0.5">zopdev</text>
+            </svg>`;
+            const bgBuffer = await sharp(Buffer.from(bgSvg)).png().toBuffer();
+            const composited = await sharp(bgBuffer)
+              .composite([{
+                input: await sharp(diagramPng)
+                  .resize(920, 920, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 0 } })
+                  .png()
+                  .toBuffer(),
+                left: 80,
+                top: 80,
+              }])
+              .png()
+              .toBuffer();
+            diagramCount++;
+            writeFileSync(join(outputDir, `diagram-${String(diagramCount).padStart(2, "0")}.png`), composited);
+          }
+        }
+      }
+    }
+
+    console.log(`  → ${pngs.length} slides + ${diagramCount} diagram slides + carousel.pdf`);
     generated++;
   }
 

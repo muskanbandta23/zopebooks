@@ -194,7 +194,7 @@ Rules:
 - "opening" section: no heading, uses industry data hook — NOT a fictional story
 - Include at least ${density.minDiagrams} D2 diagram section(s)
 - Include at least ${density.minCodeBlocks} code/config section(s)
-${density.hasCalculator ? "- Include exactly 1 interactive calculator section (OJS)" : "- No calculator needed for this density level"}
+${density.hasCalculator ? "- MUST include exactly 1 interactive calculator section (OJS). Place it in the most data-heavy section. Use one of: cost-comparison-calculator, roi-calculator, resource-optimizer, or adoption-estimator. The calculator lets readers model their own scenario." : "- No calculator needed for this density level"}
 - End with a "summary" section
 - Section notes should be detailed enough that a writer knows exactly what to write
 - For illustration visuals, include image_prompt (text description of the image) and image_style

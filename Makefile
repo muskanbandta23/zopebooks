@@ -203,6 +203,12 @@ ifndef before
 endif
 	bun run $(SCRIPTS_DIR)/compare-outputs.ts $(ebook) $(before) $(after)
 
+# ─── Interactive Creator ──────────────────────────────────────────────────────
+
+.PHONY: create
+create: ## Interactive ebook creator — topic in, all modalities out
+	bun run $(SCRIPTS_DIR)/create-ebook.ts
+
 # ─── Scaffold ────────────────────────────────────────────────────────────────
 
 .PHONY: new-ebook

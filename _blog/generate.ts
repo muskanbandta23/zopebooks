@@ -15,6 +15,7 @@ import { parse } from "yaml";
 import Mustache from "mustache";
 import { loadMergedBrand, buildCssVars } from "../scripts/brand-utils.js";
 import { loadEbookContent } from "../scripts/content-utils.js";
+import { renderD2ToSvg, extractD2Blocks } from "../scripts/d2-render.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
@@ -34,9 +35,15 @@ function markdownToHtml(md: string): string {
     return `<pre><code${langAttr}>${escaped}</code></pre>`;
   });
 
-  // D2 diagram blocks — render as placeholder
-  html = html.replace(/```\{\.d2[^}]*\}[\s\S]*?```/g,
-    '<div class="diagram-placeholder"><em>[Diagram — see full ebook for interactive version]</em></div>');
+  // D2 diagram blocks — render as inline SVG images
+  html = html.replace(/```\{\.?d2[^}]*\}\n([\s\S]*?)```/g, (_, d2Source: string) => {
+    const svg = renderD2ToSvg(d2Source.trim());
+    if (svg) {
+      const encoded = Buffer.from(svg).toString("base64");
+      return `<figure class="diagram-figure"><img src="data:image/svg+xml;base64,${encoded}" alt="Diagram" class="blog-diagram" loading="lazy" /><figcaption>Diagram from the ebook</figcaption></figure>`;
+    }
+    return '<div class="diagram-placeholder"><em>[Diagram — see full ebook for interactive version]</em></div>';
+  });
 
   // OJS blocks — render as placeholder
   html = html.replace(/```\{ojs[^}]*\}[\s\S]*?```/g,

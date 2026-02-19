@@ -1,23 +1,32 @@
 /*-- scss:defaults --*/
 
-// Zopdev Book Theme — Modern Edition (2026)
+// Zopdev Book Theme — Premium Editorial Edition (2026)
 // Applied via: theme: [cosmo, brand, ../../_themes/zopdev-book.scss]
 //
-// Design philosophy: restraint over decoration.
-// Typography and whitespace create hierarchy, not borders and gradients.
+// Design philosophy: Stripe/Vercel-level editorial feel.
+// Gradient hero sections, branded chapter openers, decorative dividers,
+// pull-quotes, stat blocks, and a polished reading experience.
+
+// Brand colors
+$brand-primary: #0052FF;
+$brand-secondary: #4F46E5;
+$brand-navy: #0A1628;
+$brand-success: #00C48C;
+$brand-warning: #FFB020;
+$brand-danger: #FF6B6B;
 
 // Supplementary semantic colors
 $success: #10B981;
 $warning: #F59E0B;
 $danger: #EF4444;
 
-// Typography — optimized for long-form reading (Medium-inspired)
+// Typography — optimized for long-form reading
 $font-size-base: 1.125rem; // 18px — optimal for sustained reading
-$line-height-base: 1.75;
-$headings-font-weight: 600;
-$headings-line-height: 1.2;
+$line-height-base: 1.8;
+$headings-font-weight: 700;
+$headings-line-height: 1.15;
 $headings-margin-bottom: 1rem;
-$paragraph-margin-bottom: 1.5rem; // generous spacing between paragraphs
+$paragraph-margin-bottom: 1.75rem; // generous spacing between paragraphs
 
 // Code — dark background
 $code-font-size: 0.875em;
@@ -38,80 +47,184 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-weight: 380;
 }
 
 // ===== PROSE COLUMN WIDTH =====
-// Constrain content to ~680px (Medium-style) for comfortable line scanning
-// ~65-75 characters per line — the optimal range for readability
 #quarto-content .content,
 .page-columns .content {
-  max-width: 720px;
+  max-width: 800px;
 }
 
-// ===== TITLE BLOCK / COVER PAGE =====
+// ===== COVER PAGE / HERO =====
 .quarto-title-block {
-  padding: 6rem 0 4rem 0;
-  border-bottom: 1px solid $border-color;
-  min-height: 50vh;
+  background: linear-gradient(135deg, $brand-navy 0%, $brand-secondary 50%, $brand-primary 100%);
+  color: white;
+  padding: 8rem 3rem 5rem 3rem;
+  margin: -1rem -1rem 3rem -1rem;
+  min-height: 70vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+
+  // Decorative mesh overlay
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba($brand-primary, 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba($brand-secondary, 0.2) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba($brand-success, 0.1) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  // Subtle grid pattern
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  * {
+    position: relative;
+    z-index: 1;
+  }
 
   .quarto-title {
-    font-size: 3rem;
-    font-weight: 700;
-    letter-spacing: -0.04em;
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
     margin-bottom: 1rem;
     line-height: 1.05;
-    max-width: 720px;
+    max-width: 800px;
+    color: white;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
   }
 
   .quarto-title-meta {
     font-size: 0.9rem;
-    color: var(--bs-secondary-color);
+    color: rgba(255, 255, 255, 0.7);
     margin-top: 2rem;
 
     .quarto-title-meta-heading {
       font-weight: 500;
       margin-right: 0.5rem;
+      color: rgba(255, 255, 255, 0.5);
     }
+
+    .quarto-title-meta-contents {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    a { color: rgba(255, 255, 255, 0.9); }
   }
 
   .description,
   .subtitle {
-    font-size: 1.25rem;
-    margin-top: 1rem;
-    color: var(--bs-secondary-color);
+    font-size: 1.375rem;
+    margin-top: 1.25rem;
+    color: rgba(255, 255, 255, 0.85);
     max-width: 640px;
     line-height: 1.6;
+    font-weight: 400;
   }
+}
+
+// ===== CHAPTER OPENERS =====
+// First heading of each chapter page
+.page-columns > .content > section:first-of-type > h1:first-child,
+#quarto-content > .content > section:first-of-type > h1:first-child,
+.chapter-number + .chapter-title,
+h1.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: $brand-navy;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+
+  // Gradient accent underline
+  &::after {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, $brand-primary, $brand-secondary);
+    margin-top: 1rem;
+    border-radius: 2px;
+  }
+}
+
+// Chapter number styling
+.chapter-number {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: $brand-primary;
+  margin-bottom: 0.5rem;
+}
+
+// Drop cap on first paragraph after chapter heading
+.content > section:first-of-type > h1:first-child + p::first-letter,
+.content > section:first-of-type > h2:first-child + p::first-letter {
+  float: left;
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 0.85;
+  margin-right: 0.1em;
+  margin-top: 0.05em;
+  color: $brand-primary;
 }
 
 // ===== HEADINGS =====
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin-top: 3.5rem;
   margin-bottom: 1rem;
   scroll-margin-top: 80px;
+  color: $brand-navy;
 }
 
 h1 {
-  font-size: 2.25rem;
+  font-size: 2.5rem;
   letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 1.625rem; // clear separation from 18px body
+  font-size: 1.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, $brand-primary, rgba($brand-primary, 0)) 1;
 }
 
 h3 {
-  font-size: 1.3125rem;
+  font-size: 1.375rem;
+  padding-left: 0.75rem;
+  border-left: 3px solid $brand-primary;
 }
 
 h4 {
   font-size: 1.0625rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 h5 {
@@ -127,12 +240,14 @@ pre.sourceCode {
   background: $code-bg;
   color: $code-color;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid $brand-primary;
   border-radius: 12px;
   padding: 1.25rem;
   font-size: $code-font-size;
   line-height: 1.65;
   overflow-x: auto;
   margin: 2rem 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 
   code {
     background: transparent;
@@ -145,16 +260,16 @@ pre.sourceCode {
 
 // Inline code
 code {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba($brand-primary, 0.06);
   color: inherit;
   padding: 0.15em 0.35em;
   border-radius: 5px;
   font-size: 0.9em;
   font-weight: 450;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba($brand-primary, 0.1);
 }
 
-// Code copy button (styled for dark background)
+// Code copy button
 .code-copy-button {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.7);
@@ -177,11 +292,12 @@ pre:hover .code-copy-button {
 
 // ===== CALLOUT BOXES =====
 .callout {
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
   margin: 2rem 0;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-left: 3px solid;
+  border-left: 4px solid;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 
   .callout-header {
     display: flex;
@@ -217,10 +333,10 @@ pre:hover .code-copy-button {
 
 .callout-note,
 .callout.callout-style-default.callout-note {
-  background: rgba($primary, 0.04);
-  border-left-color: $primary;
-  .callout-icon { color: $primary; }
-  .callout-title { color: $primary; }
+  background: rgba($brand-primary, 0.04);
+  border-left-color: $brand-primary;
+  .callout-icon { color: $brand-primary; }
+  .callout-title { color: $brand-primary; }
 }
 
 .callout-warning,
@@ -245,22 +361,32 @@ table {
   width: 100%;
   margin: 2rem 0;
   font-size: 0.9375rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 
   thead {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, rgba($brand-primary, 0.08), rgba($brand-secondary, 0.06));
+    border-bottom: 2px solid rgba($brand-primary, 0.15);
 
     th {
-      padding: 0.75rem 1rem;
+      padding: 0.875rem 1rem;
       text-align: left;
-      font-weight: 500;
+      font-weight: 600;
       font-size: 0.875rem;
-      color: var(--bs-secondary-color);
+      color: $brand-navy;
+      letter-spacing: 0.01em;
     }
   }
 
   tbody {
     tr {
       border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      transition: background 150ms ease;
+
+      &:hover {
+        background: rgba($brand-primary, 0.02);
+      }
 
       &:last-child {
         border-bottom: none;
@@ -307,6 +433,98 @@ blockquote {
   }
 }
 
+// ===== PULL QUOTES =====
+// Usage: ::: {.pull-quote}
+// "Your quote text here"
+// :::
+.pull-quote {
+  text-align: center;
+  margin: 3rem auto;
+  max-width: 600px;
+  padding: 2rem 1.5rem;
+  position: relative;
+
+  &::before {
+    content: "\201C";
+    display: block;
+    font-size: 5rem;
+    font-weight: 800;
+    color: rgba($brand-primary, 0.15);
+    line-height: 0.5;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 1.375rem;
+    font-style: italic;
+    font-weight: 500;
+    color: $brand-navy;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+
+  cite, .attribution {
+    display: block;
+    font-size: 0.875rem;
+    font-style: normal;
+    color: var(--bs-secondary-color);
+    margin-top: 0.75rem;
+
+    &::before {
+      content: "\2014 ";
+    }
+  }
+}
+
+// ===== STAT HIGHLIGHT BLOCKS =====
+// Usage: ::: {.stat-highlight}
+// :::: {.stat}
+// **$18,400** Monthly Savings
+// ::::
+// :::: {.stat}
+// **143** Instances Optimized
+// ::::
+// :::
+.stat-highlight {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+
+  .stat {
+    background: linear-gradient(135deg, rgba($brand-primary, 0.04), rgba($brand-secondary, 0.02));
+    border: 1px solid rgba($brand-primary, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba($brand-primary, 0.1);
+    }
+
+    strong, b {
+      display: block;
+      font-size: 2rem;
+      font-weight: 800;
+      color: $brand-primary;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: var(--bs-secondary-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+  }
+}
+
 // ===== FIGURE CAPTIONS =====
 figcaption {
   text-align: center;
@@ -343,17 +561,18 @@ figcaption {
         border-radius: 4px;
         color: var(--bs-secondary-color);
         font-size: 0.8125rem;
-        transition: color 150ms ease;
+        transition: color 150ms ease, background 150ms ease;
 
         &:hover {
           color: var(--bs-body-color);
           text-decoration: none;
+          background: rgba($brand-primary, 0.04);
         }
 
         &.active {
-          font-weight: 500;
-          color: var(--bs-body-color);
-          background: rgba(0, 0, 0, 0.03);
+          font-weight: 600;
+          color: $brand-primary;
+          background: rgba($brand-primary, 0.06);
         }
       }
     }
@@ -362,6 +581,7 @@ figcaption {
       padding-left: 0.75rem;
       margin-left: 0.5rem;
       margin-top: 0.125rem;
+      border-left: 1px solid rgba($brand-primary, 0.1);
     }
   }
 }
@@ -376,7 +596,7 @@ ul, ol {
     line-height: 1.75;
 
     &::marker {
-      color: var(--bs-secondary-color);
+      color: $brand-primary;
     }
   }
 
@@ -386,12 +606,29 @@ ul, ol {
   }
 }
 
-// ===== HORIZONTAL RULES =====
+// ===== HORIZONTAL RULES / SECTION DIVIDERS =====
 hr {
   border: none;
-  height: 1px;
-  background: rgba(0, 0, 0, 0.06);
+  height: auto;
+  background: transparent;
   margin: 4rem 0;
+  text-align: center;
+
+  &::before {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, $brand-primary, transparent);
+    margin: 0 auto 0.75rem auto;
+  }
+
+  &::after {
+    content: "\2022 \2022 \2022";
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    color: rgba($brand-primary, 0.3);
+  }
 }
 
 // ===== IMAGES =====
@@ -410,24 +647,36 @@ hr {
 // ===== SIDEBAR =====
 .sidebar {
   border-right: 1px solid $border-color;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 
   .sidebar-title {
-    font-weight: 600;
+    font-weight: 700;
     padding: 1rem;
+    color: $brand-navy;
   }
 }
 
 // ===== FOOTER =====
-.footer {
+.footer,
+.page-footer {
   margin-top: 4rem;
-  padding: 2rem 0;
-  border-top: 1px solid $border-color;
-  color: var(--bs-secondary-color);
+  padding: 3rem 0;
+  border-top: none;
+  background: linear-gradient(135deg, $brand-navy, darken($brand-navy, 5%));
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
 
+  a {
+    color: rgba(255, 255, 255, 0.9);
+    &:hover { color: white; }
+  }
+
   .footer-branding {
-    font-weight: 600;
-    color: $primary;
+    font-weight: 700;
+    color: white;
   }
 }
 
@@ -443,15 +692,22 @@ hr {
     img, svg {
       max-width: 100%;
       height: auto;
-      min-height: 200px; // prevent vertical squishing
+      max-height: 550px;
+      object-fit: contain;
+      min-height: 200px;
       border-radius: 12px;
       border: 1px solid rgba(0, 0, 0, 0.06);
+      cursor: zoom-in;
+      transition: box-shadow 150ms ease;
+
+      &:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
     }
   }
 }
 
-// Full-width breakout for wide diagrams (before/after, multi-column)
-// Use with ::: {.column-page} or ::: {.column-screen-inset} in .qmd
+// Full-width breakout for wide diagrams
 .column-page .cell[data-engine="d2"],
 .column-screen-inset .cell[data-engine="d2"],
 .column-screen .cell[data-engine="d2"] {
@@ -460,13 +716,13 @@ hr {
       max-width: 100%;
       width: 100%;
       min-height: 300px;
+      max-height: 700px;
     }
   }
 }
 
-// Auto-breakout: diagrams wider than prose column get extra space
+// Auto-breakout: diagrams wider than prose column
 .cell[data-engine="d2"] .cell-output-display {
-  // Allow diagrams to overflow the prose column slightly
   margin-left: -2rem;
   margin-right: -2rem;
   padding-left: 2rem;
@@ -482,7 +738,7 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   font-size: 0.875rem;
 
   strong {
-    color: $primary;
+    color: $brand-primary;
   }
 }
 
@@ -532,8 +788,8 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 }
 
 .ojs-highlight-row {
-  background: rgba($primary, 0.04) !important;
-  border-left: 3px solid $primary;
+  background: rgba($brand-primary, 0.04) !important;
+  border-left: 3px solid $brand-primary;
 }
 
 .ojs-insufficient-row {
@@ -560,15 +816,21 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 .ojs-metric {
   background: var(--bs-body-bg);
   border: 1px solid $border-color;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.25rem;
   text-align: center;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba($brand-primary, 0.08);
+  }
 
   .ojs-metric-value {
     display: block;
     font-size: 1.75rem;
-    font-weight: 700;
-    color: $primary;
+    font-weight: 800;
+    color: $brand-primary;
     letter-spacing: -0.025em;
     line-height: 1.2;
     margin-bottom: 0.25rem;
@@ -585,8 +847,8 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 }
 
 .ojs-recommendation {
-  background: rgba($primary, 0.03);
-  border: 1px solid $primary;
+  background: rgba($brand-primary, 0.03);
+  border: 1px solid $brand-primary;
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1.5rem 0;
@@ -594,12 +856,12 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   h4 {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
-    color: $primary;
+    color: $brand-primary;
   }
 
   .ojs-recommendation-badge {
     display: inline-block;
-    background: $primary;
+    background: $brand-primary;
     color: white;
     font-size: 0.75rem;
     font-weight: 600;
@@ -611,8 +873,8 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
   .ojs-recommendation-price {
     font-size: 1.5rem;
-    font-weight: 700;
-    color: $primary;
+    font-weight: 800;
+    color: $brand-primary;
     margin: 0.5rem 0;
   }
 
@@ -625,7 +887,7 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
 .ojs-badge {
   display: inline-block;
-  background: $primary;
+  background: $brand-primary;
   color: white;
   font-size: 0.7rem;
   font-weight: 600;
@@ -653,7 +915,7 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 // OJS input controls
 .observablehq {
   input[type="range"] {
-    accent-color: $primary;
+    accent-color: $brand-primary;
     width: 100%;
     margin: 0.25rem 0;
   }
@@ -670,8 +932,8 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      border-color: $brand-primary;
+      box-shadow: 0 0 0 3px rgba($brand-primary, 0.1);
     }
   }
 
@@ -686,8 +948,8 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      border-color: $brand-primary;
+      box-shadow: 0 0 0 3px rgba($brand-primary, 0.1);
     }
   }
 
@@ -705,7 +967,7 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
   output {
     font-weight: 600;
-    color: $primary;
+    color: $brand-primary;
   }
 }
 
@@ -715,14 +977,18 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   top: 0;
   left: 0;
   width: 0%;
-  height: 2px;
-  background: $primary;
+  height: 3px;
+  background: linear-gradient(90deg, $brand-primary, $brand-secondary);
   z-index: 9999;
   transition: width 100ms linear;
 }
 
 // ===== DARK MODE ADAPTATIONS =====
 [data-bs-theme="dark"] {
+  .quarto-title-block {
+    background: linear-gradient(135deg, #0D0D14 0%, $brand-navy 50%, darken($brand-primary, 30%) 100%);
+  }
+
   pre.sourceCode {
     background: #0D0D14;
     border-color: rgba(255, 255, 255, 0.08);
@@ -738,11 +1004,13 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   }
 
   table thead {
+    background: rgba(255, 255, 255, 0.04);
     border-bottom-color: rgba(255, 255, 255, 0.1);
   }
 
   table tbody tr {
     border-bottom-color: rgba(255, 255, 255, 0.04);
+    &:hover { background: rgba(255, 255, 255, 0.02); }
   }
 
   blockquote {
@@ -750,21 +1018,50 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   }
 
   hr {
-    background: rgba(255, 255, 255, 0.06);
+    &::before {
+      background: linear-gradient(90deg, transparent, rgba($brand-primary, 0.5), transparent);
+    }
+    &::after { color: rgba($brand-primary, 0.2); }
+  }
+
+  h2 {
+    border-image: linear-gradient(90deg, rgba($brand-primary, 0.5), transparent) 1;
+  }
+
+  h3 {
+    border-left-color: rgba($brand-primary, 0.5);
   }
 
   .ojs-metric {
     border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .stat-highlight .stat {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .pull-quote::before {
+    color: rgba($brand-primary, 0.2);
+  }
+
+  .footer, .page-footer {
+    background: linear-gradient(135deg, #0D0D14, $brand-navy);
   }
 }
 
 // ===== RESPONSIVE =====
 @media (max-width: 768px) {
   .quarto-title-block {
-    padding: 2.5rem 0 2rem 0;
+    padding: 4rem 1.5rem 3rem 1.5rem;
+    min-height: 50vh;
 
     .quarto-title {
-      font-size: 2rem;
+      font-size: 2.25rem;
+    }
+
+    .description, .subtitle {
+      font-size: 1.125rem;
     }
   }
 
@@ -794,6 +1091,23 @@ figure:has(.cell[data-engine="d2"]) figcaption {
     }
   }
 
+  .stat-highlight {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+
+    .stat strong {
+      font-size: 1.5rem;
+    }
+  }
+
+  .pull-quote {
+    margin: 2rem 0;
+    padding: 1.5rem 1rem;
+
+    p { font-size: 1.125rem; }
+    &::before { font-size: 3rem; }
+  }
+
   .ojs-summary-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
@@ -813,6 +1127,10 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 }
 
 @media (max-width: 480px) {
+  .stat-highlight {
+    grid-template-columns: 1fr;
+  }
+
   .ojs-summary-grid {
     grid-template-columns: 1fr;
   }
@@ -829,17 +1147,29 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 // ===== PRINT STYLES =====
 @media print {
   .quarto-title-block {
+    background: white !important;
+    color: black !important;
     border-bottom: 2px solid black;
+    min-height: auto;
+    padding: 2rem 0;
+
+    &::before, &::after { display: none; }
+
+    .quarto-title { color: black !important; text-shadow: none; }
+    .subtitle, .description { color: #525252 !important; }
   }
 
   pre.sourceCode {
     background: #f5f5f5 !important;
     color: black !important;
     border: 1px solid #d4d4d4;
+    border-left: 3px solid #0052FF;
+    box-shadow: none;
   }
 
   .callout {
     border: 1px solid #d4d4d4;
+    box-shadow: none;
   }
 
   .sidebar, .navbar {
@@ -853,6 +1183,7 @@ figure:has(.cell[data-engine="d2"]) figcaption {
   .cell[data-engine="d2"] .cell-output-display {
     img, svg {
       border: 1px solid #d4d4d4;
+      box-shadow: none;
     }
   }
 
@@ -869,5 +1200,16 @@ figure:has(.cell[data-engine="d2"]) figcaption {
 
   .ojs-metric {
     border: 1px solid #d4d4d4;
+  }
+
+  .stat-highlight .stat {
+    border: 1px solid #d4d4d4;
+    background: none !important;
+  }
+
+  .footer, .page-footer {
+    background: none !important;
+    color: black;
+    border-top: 1px solid #d4d4d4;
   }
 }

@@ -1,6 +1,7 @@
-/* Zopdev EPUB Theme — Modern Edition
+/* Zopdev EPUB Theme — Premium Editorial Edition
  *
- * Clean, restrained styling with muted indigo accent.
+ * Branded styling with blue accent, premium heading styles,
+ * and pull-quote/stat-highlight support.
  * EPUB readers vary in CSS support, so we keep to safe properties.
  * Light code blocks (dark bg unreliable across e-readers).
  */
@@ -10,7 +11,7 @@
 body {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
   font-size: 1em;
-  line-height: 1.75;
+  line-height: 1.8;
   color: #0A1628;
 }
 
@@ -18,28 +19,33 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   color: #0A1628;
-  line-height: 1.2;
+  line-height: 1.15;
   margin-top: 2.5em;
   margin-bottom: 0.75em;
 }
 
 h1 {
-  font-size: 2em;
+  font-size: 2.25em;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 1.5em;
+  font-size: 1.6em;
+  padding-bottom: 0.4em;
+  border-bottom: 2px solid #0052FF;
 }
 
 h3 {
-  font-size: 1.25em;
+  font-size: 1.3em;
+  padding-left: 0.6em;
+  border-left: 3px solid #0052FF;
 }
 
 h4 {
   font-size: 1.125em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 h5 {
@@ -56,7 +62,7 @@ code {
   font-family: "JetBrains Mono", "Courier New", Courier, monospace;
   font-size: 0.875em;
   color: inherit;
-  background: #F5F5F5;
+  background: #F0F4FF;
   padding: 0.15em 0.35em;
   border-radius: 4px;
 }
@@ -64,6 +70,7 @@ code {
 pre {
   background-color: #F5F5F5;
   border: 1px solid #E5E5E5;
+  border-left: 3px solid #0052FF;
   border-radius: 8px;
   padding: 1em;
   overflow-x: auto;
@@ -82,7 +89,7 @@ pre code {
 /* ===== BLOCKQUOTES ===== */
 
 blockquote {
-  border-left: 2px solid #E5E5E5;
+  border-left: 2px solid #0052FF;
   margin: 2em 0;
   padding: 0 0 0 1.25em;
   color: #525252;
@@ -90,6 +97,43 @@ blockquote {
 
 blockquote p:last-child {
   margin-bottom: 0;
+}
+
+/* ===== PULL QUOTES ===== */
+
+.pull-quote {
+  text-align: center;
+  margin: 2.5em auto;
+  padding: 1.5em 1em;
+}
+
+.pull-quote p {
+  font-size: 1.3em;
+  font-style: italic;
+  font-weight: 500;
+  color: #0A1628;
+  line-height: 1.5;
+}
+
+/* ===== STAT HIGHLIGHTS ===== */
+
+.stat-highlight {
+  margin: 2em 0;
+}
+
+.stat-highlight .stat {
+  background: #F0F4FF;
+  border: 1px solid #D1DDFF;
+  padding: 1em;
+  margin: 0.5em 0;
+  text-align: center;
+}
+
+.stat-highlight .stat strong {
+  display: block;
+  font-size: 1.75em;
+  font-weight: 800;
+  color: #0052FF;
 }
 
 /* ===== TABLES ===== */
@@ -102,15 +146,16 @@ table {
 }
 
 thead {
-  border-bottom: 1px solid #D4D4D4;
+  border-bottom: 2px solid #D1DDFF;
+  background: #F0F4FF;
 }
 
 th {
   padding: 0.75em;
   text-align: left;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875em;
-  color: #525252;
+  color: #0A1628;
 }
 
 td {
@@ -125,14 +170,14 @@ td {
   border-radius: 6px;
   padding: 1em;
   margin: 2em 0;
-  border-left-width: 3px;
+  border-left-width: 4px;
   border-left-style: solid;
 }
 
-/* Note (indigo) */
+/* Note (blue) */
 .callout-note {
-  border-left-color: #4F46E5;
-  background: #F5F3FF;
+  border-left-color: #0052FF;
+  background: #F0F4FF;
 }
 
 /* Tip (green) */
@@ -154,12 +199,12 @@ td {
 }
 
 .callout-title {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9em;
   margin-bottom: 0.5em;
 }
 
-.callout-note .callout-title { color: #4F46E5; }
+.callout-note .callout-title { color: #0052FF; }
 .callout-tip .callout-title { color: #10B981; }
 .callout-warning .callout-title { color: #F59E0B; }
 .callout-important .callout-title { color: #EF4444; }
@@ -167,7 +212,7 @@ td {
 /* ===== LINKS ===== */
 
 a {
-  color: #4F46E5;
+  color: #0052FF;
   text-decoration: none;
 }
 
@@ -198,7 +243,7 @@ ul, ol {
 
 li {
   margin: 0.4em 0;
-  line-height: 1.75;
+  line-height: 1.8;
 }
 
 /* ===== CALCULATOR FALLBACK STYLING ===== */
@@ -215,15 +260,16 @@ li {
 }
 
 .ojs-results-table thead {
-  border-bottom: 1px solid #D4D4D4;
+  border-bottom: 2px solid #D1DDFF;
+  background: #F0F4FF;
 }
 
 .ojs-results-table th {
   padding: 0.6em;
   text-align: left;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875em;
-  color: #525252;
+  color: #0A1628;
 }
 
 .ojs-results-table td {
@@ -232,8 +278,8 @@ li {
 }
 
 .ojs-total-row {
-  font-weight: 600;
-  border-top: 1px solid #D4D4D4;
+  font-weight: 700;
+  border-top: 2px solid #D1DDFF;
 }
 
 .ojs-summary-grid {
@@ -241,8 +287,8 @@ li {
 }
 
 .ojs-metric {
-  background: #FAFAFA;
-  border: 1px solid #E5E5E5;
+  background: #F0F4FF;
+  border: 1px solid #D1DDFF;
   padding: 1em;
   margin: 0.5em 0;
   text-align: center;
@@ -251,8 +297,8 @@ li {
 .ojs-metric-value {
   display: block;
   font-size: 1.5em;
-  font-weight: 700;
-  color: #4F46E5;
+  font-weight: 800;
+  color: #0052FF;
 }
 
 .ojs-metric-label {
@@ -264,44 +310,44 @@ li {
 }
 
 .ojs-recommendation {
-  border: 1px solid #4F46E5;
+  border: 1px solid #0052FF;
   padding: 1em;
   margin: 1em 0;
-  background: #F5F3FF;
+  background: #F0F4FF;
 }
 
 .ojs-recommendation-badge {
   display: inline-block;
-  background: #4F46E5;
+  background: #0052FF;
   color: #FFFFFF;
   font-size: 0.75em;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   padding: 0.2em 0.6em;
 }
 
 .ojs-positive {
   color: #10B981;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .ojs-negative {
   color: #EF4444;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .ojs-badge {
   display: inline-block;
-  background: #4F46E5;
+  background: #0052FF;
   color: #FFFFFF;
   font-size: 0.7em;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.1em 0.4em;
 }
 
 .ojs-savings {
   color: #10B981;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .ojs-note {
@@ -313,6 +359,7 @@ li {
 
 hr {
   border: none;
-  border-top: 1px solid #E5E5E5;
-  margin: 3em 0;
+  border-top: 2px solid #D1DDFF;
+  margin: 3em auto;
+  width: 30%;
 }
