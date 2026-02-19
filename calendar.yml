@@ -42,3 +42,25 @@ ebooks:
       description: "Learn practical strategies to optimize Kubernetes spending, right-size workloads, and implement FinOps practices for container environments."
       cta_text: "Download Free PDF"
       form_action: "#"  # TODO: replace with real webhook URL when ready
+
+  - slug: platform-engineering
+    title: "The Platform Engineering Playbook"
+    subtitle: "Building Internal Developer Platforms That Actually Ship"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    scheduled_publish: 2026-05-15
+    tags: [platform-engineering, idp, developer-experience, devops, backstage]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true
+    landing:
+      headline: "Build Developer Platforms That Engineers Actually Use"
+      description: "Learn how platform engineering teams design, build, and operate Internal Developer Platforms — from golden paths and self-service infra to measuring developer productivity and platform ROI."
+      cta_text: "Download Free PDF"
+      form_action: "#"
