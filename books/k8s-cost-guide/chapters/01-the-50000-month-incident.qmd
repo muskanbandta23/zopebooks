@@ -26,7 +26,116 @@ The customer data makes this concrete: that $89,000 monthly e-commerce bill cont
 zopnight makes this Request vs. Actual Usage Gap visible at a glance across every namespace, turning what was invisible waste into actionable optimization data.
 
 ::: {.column-page}
-```{.d2 width="100%" file="../diagrams/before-after-optimization.d2"}
+```{.d2 width="100%"}
+# Before/After Optimization
+direction: right
+
+before_state: BEFORE OPTIMIZATION {
+  style.fill: "#ffebee"
+  style.stroke: "#FF6B6B"
+  style.stroke-width: 2
+
+  problem_desc: |md
+    ## The Situation
+    - No resource scheduling
+    - Over-provisioned instances
+    - 24/7 non-prod environments
+    - Zero RI coverage
+  |
+
+  architecture: Infrastructure {
+    dev: Dev Environment\n24/7 runtime {
+      style.fill: "#ffffff"
+      instances: m5.2xlarge x 20
+      cost: 5530 dollars per month
+    }
+    staging: Staging Environment\n24/7 runtime {
+      style.fill: "#ffffff"
+      instances: m5.2xlarge x 15
+      cost: 4147 dollars per month
+    }
+    prod: Production\nOn-demand instances {
+      style.fill: "#ffffff"
+      instances: m5.xlarge x 40
+      cost: 5606 dollars per month
+    }
+    dev -> staging -> prod
+  }
+
+  total_before: Monthly Cost 15283 dollars {
+    shape: text
+    style.font-size: 20
+    style.bold: true
+    style.font-color: "#FF6B6B"
+  }
+
+  problem_desc -> architecture -> total_before
+}
+
+after_state: AFTER OPTIMIZATION {
+  style.fill: "#e8f5e9"
+  style.stroke: "#00C48C"
+  style.stroke-width: 2
+
+  solution_desc: |md
+    ## The Changes
+    - Scheduled dev/staging (12h/day, weekdays)
+    - Right-sized all instances
+    - Production: 70% RI coverage
+    - Spot instances for batch jobs
+  |
+
+  architecture: Infrastructure {
+    dev: Dev Environment\n60h/week runtime {
+      style.fill: "#ffffff"
+      instances: m5.large x 20
+      cost: 1108 dollars per month
+    }
+    staging: Staging Environment\n60h/week runtime {
+      style.fill: "#ffffff"
+      instances: m5.large x 15
+      cost: 831 dollars per month
+    }
+    prod: Production\n70% RI, 30% On-Demand {
+      style.fill: "#ffffff"
+      instances: m5.large x 40
+      cost: 2246 dollars per month
+    }
+    dev -> staging -> prod
+  }
+
+  total_after: Monthly Cost 4185 dollars {
+    shape: text
+    style.font-size: 20
+    style.bold: true
+    style.font-color: "#00C48C"
+  }
+
+  solution_desc -> architecture -> total_after
+}
+
+transformation: Transformation {
+  style.stroke: "#0052FF"
+  style.stroke-width: 3
+  style.stroke-dash: 5
+}
+
+before_state -> transformation -> after_state
+
+savings_impact: |md
+  ## Impact
+  **Monthly Savings:** 11098 dollars (73% reduction)
+  **Annual Savings:** 133176 dollars
+  **Implementation Time:** 2 weeks
+  **ROI:** 2664%
+| {
+  shape: rectangle
+  style.fill: "#0052FF"
+  style.font-color: "#ffffff"
+  style.shadow: true
+}
+
+after_state -> savings_impact
 ```
 :::
 
@@ -73,7 +182,77 @@ This is why research consistently finds roughly 30% of Kubernetes spend purchase
 
 Without seeing the gap between what teams requested and what their containers actually consume, there is no data to challenge conservative estimates. zopnight provides namespace-level cost visibility that makes the Request vs. Actual Usage Gap visible at a glance, turning optimization from a guessing game into a measurable, repeatable process.
 
-```{.d2 width="100%" file="../diagrams/data-pipeline.d2"}
+```{.d2 width="100%"}
+# Cost Visibility Data Pipeline
+direction: down
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 20
+  }
+}
+
+sources: Data Sources {
+  style.fill: "#E6EDFF"
+  style.stroke: "#0052FF"
+  style.stroke-width: 2
+
+  metrics: K8s Metrics {
+    style.fill: "#ffffff"
+    style.stroke: "#0052FF"
+    details: |md
+      - CPU requests vs usage
+      - Memory requests vs usage
+      - Namespace breakdown
+    |
+  }
+  billing: Cloud Billing {
+    style.fill: "#ffffff"
+    style.stroke: "#0052FF"
+    details: |md
+      - Node costs per hour
+      - Storage charges
+      - Network egress
+    |
+  }
+}
+
+processing: Processing {
+  style.fill: "#e8f5e9"
+  style.stroke: "#00C48C"
+  style.stroke-width: 2
+
+  rer: Calculate RER per Namespace {
+    style.fill: "#ffffff"
+  }
+  waste: Identify Waste 8000 dollars per month {
+    style.fill: "#FFB020"
+    style.font-color: "#ffffff"
+  }
+  rer -> waste
+}
+
+outputs: Actions {
+  style.fill: "#e8f5e9"
+  style.stroke: "#00C48C"
+  style.stroke-width: 2
+
+  alerts: Budget Alerts {
+    style.fill: "#ffffff"
+  }
+  dashboard: Namespace Dashboard {
+    style.fill: "#0052FF"
+    style.font-color: "#ffffff"
+  }
+  rightsizing: Right-Sizing Recommendations {
+    style.fill: "#00C48C"
+    style.font-color: "#ffffff"
+  }
+}
+
+sources -> processing: Raw data
+processing -> outputs: Insights
 ```
 
 *Diagram the feedback loop showing how over-provisioning compounds over time*

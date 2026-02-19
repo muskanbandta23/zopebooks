@@ -193,6 +193,8 @@
 \arrayrulecolor{zopdev-border}
 
 % ===== BLOCKQUOTES =====
+% changepage must be loaded with [strict] to avoid option clash with Quarto internals
+\PassOptionsToPackage{strict}{changepage}
 \usepackage{changepage}
 \renewenvironment{quote}{%
   \begin{adjustwidth}{0.5cm}{0cm}%
@@ -241,7 +243,7 @@
       \vspace{2cm}
       {\fontsize{36}{42}\selectfont\fontseries{b}\selectfont\color{zopdev-navy}\@title\par}
       \vspace{0.75cm}
-      {\fontsize{16}{22}\selectfont\color{zopdev-gray}\@subtitle\par}
+      \ifdefined\@subtitle{\fontsize{16}{22}\selectfont\color{zopdev-gray}\@subtitle\par}\fi
       \vspace{3cm}
       {\fontsize{12}{16}\selectfont\color{zopdev-gray}\@author\par}
       \vspace{0.5cm}

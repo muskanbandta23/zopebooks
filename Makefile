@@ -306,6 +306,44 @@ ifndef ebook
 endif
 	bun run $(SCRIPTS_DIR)/engine-eval.ts $(ebook) --report-only
 
+# ─── Publish (all modalities for one ebook) ──────────────────────────────────
+
+.PHONY: publish
+publish: ## Generate ALL modalities for one ebook — ebook=<slug>
+ifndef ebook
+	$(error Usage: make publish ebook=<slug>)
+endif
+	@echo ""
+	@echo "╔══════════════════════════════════════════════════════════════╗"
+	@echo "║  Publishing: $(ebook)"
+	@echo "╚══════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "── [1/5] Rendering HTML / PDF / EPUB ──────────────────────────"
+	quarto render $(BOOKS_DIR)/$(ebook)
+	@echo ""
+	@echo "── [2/5] Generating landing page ──────────────────────────────"
+	bun run _landing/generate.ts $(ebook)
+	@echo ""
+	@echo "── [3/5] Generating social assets ─────────────────────────────"
+	bun run _social/generate.ts $(ebook)
+	@echo ""
+	@echo "── [4/5] Generating blog posts ─────────────────────────────────"
+	bun run _blog/generate.ts $(ebook)
+	@echo ""
+	@echo "── [5/5] Content quality audit ─────────────────────────────────"
+	bun run $(SCRIPTS_DIR)/content-audit.ts $(ebook)
+	@echo ""
+	@echo "╔══════════════════════════════════════════════════════════════╗"
+	@echo "║  Done!  All modalities generated for: $(ebook)"
+	@echo "║"
+	@echo "║  HTML   →  _output/books/$(ebook)/"
+	@echo "║  Landing→  _output/landing/$(ebook)/"
+	@echo "║  Social →  _output/social/$(ebook)/"
+	@echo "║  Blog   →  _output/blog/$(ebook)/"
+	@echo "║"
+	@echo "║  Run 'make eval-all ebook=$(ebook)' to check quality"
+	@echo "╚══════════════════════════════════════════════════════════════╝"
+
 # ─── Full Pipeline ───────────────────────────────────────────────────────────
 
 .PHONY: all

@@ -23,7 +23,100 @@ Right-sizing is the practice of matching resource allocation to actual workload 
 The following diagram shows Acme Corp's infrastructure before optimization. The 143 m5.2xlarge instances, originally sized for a product launch that never materialized the expected traffic spike, were hemorrhaging $22,300/month.
 
 ::: {.column-page}
-```{.d2 file="../diagrams/right-sizing-before-after.d2" width="100%"}
+```{.d2 width="100%"}
+# Right-Sizing Before/After Comparison
+direction: right
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 20
+  }
+}
+
+before: BEFORE {
+  shape: rectangle
+  style.fill: "#ffebee"
+  style.stroke: "#FF6B6B"
+  style.stroke-width: 3
+
+  title: Overprovisioned Fleet {
+    shape: text
+    style.font-size: 18
+    style.bold: true
+    style.font-color: "#FF6B6B"
+  }
+
+  cost: 22300 dollars per month {
+    shape: text
+    style.font-size: 16
+    style.bold: true
+    style.font-color: "#FF6B6B"
+  }
+
+  instances: 143 m5.2xlarge instances {
+    shape: rectangle
+    style.fill: "#ffffff"
+    style.stroke: "#FF6B6B"
+    stats: |md
+      - Average CPU: 18% utilization
+      - Memory: 35% utilization
+      - Cost: 156 dollars/instance/month
+    |
+  }
+}
+
+after: AFTER {
+  shape: rectangle
+  style.fill: "#e8f5e9"
+  style.stroke: "#00C48C"
+  style.stroke-width: 3
+
+  title: Right-Sized Fleet {
+    shape: text
+    style.font-size: 18
+    style.bold: true
+    style.font-color: "#00C48C"
+  }
+
+  cost: 3900 dollars per month {
+    shape: text
+    style.font-size: 16
+    style.bold: true
+    style.font-color: "#00C48C"
+  }
+
+  instances: 143 m5.large instances {
+    shape: rectangle
+    style.fill: "#ffffff"
+    style.stroke: "#00C48C"
+    stats: |md
+      - Average CPU: 45% utilization
+      - Memory: 52% utilization
+      - Cost: 27 dollars/instance/month
+    |
+  }
+}
+
+before -> after: Right-Sizing Campaign {
+  style.stroke: "#0052FF"
+  style.stroke-width: 2
+}
+
+savings: Savings 18400 dollars per month\n83 percent reduction {
+  shape: circle
+  style.fill: "#00C48C"
+  style.font-color: "#ffffff"
+  style.font-size: 14
+  style.shadow: true
+  style.bold: true
+}
+
+after -> savings {
+  style.stroke: "#00C48C"
+  style.stroke-dash: 3
+  style.stroke-width: 2
+}
 ```
 :::
 
