@@ -46,6 +46,7 @@ format:
           <div class="reading-progress"></div>
           <script>window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-window.innerHeight;if(h>0)document.querySelector('.reading-progress').style.width=(window.scrollY/h*100)+'%';});</script>
       - file: ../../_themes/lightbox.html
+      - file: ../../_themes/diagram-sizing.html
   pdf:
     documentclass: book
     classoption: [oneside, 11pt]
