@@ -80,14 +80,14 @@ class CostTracker {
 
 // ── Build Report ────────────────────────────────────────────────────────────
 
-function buildReport(
+async function buildReport(
   slug: string,
   iteration: number,
   modalities: Modality[],
   costTracker: CostTracker,
   healsApplied?: Array<{ strategy: string; chapter?: string; action: string }>,
-): UnifiedEvalReport {
-  const results = evaluateAll(slug, modalities);
+): Promise<UnifiedEvalReport> {
+  const results = await evaluateAll(slug, modalities);
 
   const allViolations = results.flatMap(r => r.violations);
   const healableViolations = allViolations.filter(v => v.healable);
@@ -125,7 +125,7 @@ export async function runHealingLoop(config: LoopConfig): Promise<LoopResult> {
     console.log(`── Iteration ${iteration} ${"─".repeat(40)}`);
 
     // 1. Evaluate all modalities
-    const report = buildReport(config.slug, iteration, config.modalities, costTracker);
+    const report = await buildReport(config.slug, iteration, config.modalities, costTracker);
     allReports.push(report);
 
     console.log(formatUnifiedReport(report));

@@ -67,6 +67,12 @@ const PROMPT_AUGMENTATIONS: Record<string, string> = {
     "IMPORTANT: Write at a Grade 10-12 reading level. Use shorter sentences (max 25 words). " +
     "Prefer active voice. Break complex paragraphs into 2-3 sentence chunks. " +
     "Avoid jargon without immediate explanation.",
+
+  add_image:
+    "IMPORTANT: Include at least one visual element in this section. " +
+    "If describing a metric, savings figure, or key statistic, recommend a stat-card or comparison-graphic visual. " +
+    "If describing multiple KPIs, recommend a metric-highlight visual with 2-4 metrics. " +
+    "Include specific numbers from the FACT SHEET in the visual data fields.",
 };
 
 // ── Ebook Heal: Re-transform Chapters ───────────────────────────────────────
@@ -247,6 +253,47 @@ async function healBlog(slug: string, _violations: ModalityViolation[]): Promise
   }
 }
 
+// ── Hub Heal: Regenerate ────────────────────────────────────────────────────
+
+async function healHub(_slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
+  try {
+    const proc = Bun.spawnSync(
+      ["bun", "run", join(PROJECT_ROOT, "_hub", "generate.ts")],
+      { cwd: PROJECT_ROOT, timeout: 30_000 },
+    );
+
+    if (proc.exitCode === 0) {
+      return [{ strategy: "regenerate_hub", action: "Regenerated hub page", success: true }];
+    } else {
+      const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";
+      return [{ strategy: "regenerate_hub", action: "Hub regeneration FAILED", success: false, error: stderr }];
+    }
+  } catch (err) {
+    return [{ strategy: "regenerate_hub", action: "Hub regeneration FAILED", success: false, error: String(err) }];
+  }
+}
+
+// ── PDF Heal: Re-render ─────────────────────────────────────────────────────
+
+async function healPdf(slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
+  try {
+    const bookDir = join(PROJECT_ROOT, "books", slug);
+    const proc = Bun.spawnSync(
+      ["quarto", "render", bookDir, "--to", "pdf"],
+      { cwd: PROJECT_ROOT, timeout: 300_000 },
+    );
+
+    if (proc.exitCode === 0) {
+      return [{ strategy: "regenerate_pdf", action: `Re-rendered PDF for ${slug}`, success: true }];
+    } else {
+      const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";
+      return [{ strategy: "regenerate_pdf", action: "PDF render FAILED", success: false, error: stderr }];
+    }
+  } catch (err) {
+    return [{ strategy: "regenerate_pdf", action: "PDF render FAILED", success: false, error: String(err) }];
+  }
+}
+
 // ── Strategy Dispatch Table ─────────────────────────────────────────────────
 
 interface StrategyEntry {
@@ -288,6 +335,12 @@ const STRATEGY_REGISTRY: Record<string, StrategyEntry> = {
     requiresLLM: true,
     fn: healEbookChapters,
   },
+  add_image: {
+    modality: "ebook",
+    description: "Re-transform chapter with image requirement",
+    requiresLLM: true,
+    fn: healEbookChapters,
+  },
 
   // Deterministic regeneration (no LLM)
   regenerate_landing: {
@@ -313,6 +366,22 @@ const STRATEGY_REGISTRY: Record<string, StrategyEntry> = {
     description: "Regenerate blog posts (source improvement needed in ebook)",
     requiresLLM: false,
     fn: healBlog,
+  },
+
+  // Hub
+  regenerate_hub: {
+    modality: "hub",
+    description: "Regenerate hub library page",
+    requiresLLM: false,
+    fn: healHub,
+  },
+
+  // PDF (re-render via Quarto)
+  regenerate_pdf: {
+    modality: "pdf",
+    description: "Re-render PDF via quarto render --to pdf",
+    requiresLLM: false,
+    fn: healPdf,
   },
 };
 

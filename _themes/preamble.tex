@@ -269,8 +269,32 @@
 \setlength{\parskip}{0.5em}
 \setlength{\parindent}{0pt}
 
-% ===== DIAGRAM SIZING =====
+% ===== FIGURE PLACEMENT & ORPHAN/WIDOW CONTROL =====
+\usepackage{float}
+\floatplacement{figure}{H}   % Keep figures exactly where declared (no floating)
+
+% Orphan/widow penalties — prevent single lines at page breaks
+\widowpenalty=10000
+\clubpenalty=10000
+\brokenpenalty=10000
+
+% Figure caption styling
+\usepackage{caption}
+\captionsetup{
+  font={small,color=zopdev-gray},
+  labelfont={bf,color=zopdev-primary},
+  skip=8pt,
+  format=plain,
+}
+
+% ===== DIAGRAM & IMAGE SIZING =====
 \usepackage{graphicx}
+
+% Ensure images don't overflow page width
+\makeatletter
+\def\maxwidth#1{\ifdim\Gin@nat@width>#1 #1\else\Gin@nat@width\fi}
+\makeatother
+\setkeys{Gin}{width=\maxwidth{\linewidth}}
 
 % ===== CUSTOM TITLE PAGE =====
 \usepackage{tikz}
