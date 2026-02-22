@@ -150,10 +150,10 @@ async function healEbookChapters(slug: string, violations: ModalityViolation[]):
 
       writeFileSync(planPath, stringify(planContent), "utf-8");
 
-      // Re-transform the chapter
+      // Re-transform the chapter (single chapter takes ~2-4 minutes with LLM calls)
       const proc = Bun.spawnSync(
         ["bun", "run", join(SCRIPT_DIR, "transform-chapter.ts"), slug, chapter],
-        { cwd: PROJECT_ROOT, timeout: 120_000 },
+        { cwd: PROJECT_ROOT, timeout: 300_000 },
       );
 
       if (proc.exitCode === 0) {
@@ -164,7 +164,7 @@ async function healEbookChapters(slug: string, violations: ModalityViolation[]):
           success: true,
         });
       } else {
-        const stderr = proc.stderr?.toString().slice(0, 500) || "unknown error";
+        const stderr = proc.stderr?.toString().slice(0, 500) || proc.stdout?.toString().slice(0, 500) || `exit code ${proc.exitCode} (timeout=${proc.exitCode === null ? 'yes' : 'no'})`;
         actions.push({
           strategy: strategies.join("+"),
           chapter,

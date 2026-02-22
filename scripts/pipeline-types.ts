@@ -164,6 +164,9 @@ export interface ChapterPlan {
   word_target: [number, number];
   sections: PlanSection[];
   content_seeds: ContentSeed;
+  // Self-healing augmentation (injected by heal-strategies.ts)
+  heal_augmentation?: string;
+  heal_iteration?: number;
   // Legacy support
   scenario?: ScenarioConfig;
 }

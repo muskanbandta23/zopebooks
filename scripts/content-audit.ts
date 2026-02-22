@@ -186,12 +186,12 @@ function countWords(text: string): number {
 // ── Metric 1: Diagram Density ───────────────────────────────────────────────
 
 const DIAGRAM_PATTERNS = [
-  /```\{mermaid\}/g,
-  /```\{d2\}/g,
+  /```\{\.?mermaid[^}]*\}/g, // ```{mermaid} or ```{.mermaid ...}
+  /```\{\.?d2[^}]*\}/g,      // ```{d2} or ```{.d2 width="100%" ...}
   /```mermaid/g,
   /```d2/g,
-  /!\[.*?\]\(.*?\)/g, // Markdown images
-  /{{< diagram /g, // Quarto diagram shortcode
+  /!\[.*?\]\(.*?\)/g,         // Markdown images
+  /{{< diagram /g,            // Quarto diagram shortcode
 ];
 
 export function measureDiagramDensity(slug: string): DiagramMetrics {
@@ -235,8 +235,8 @@ export function measureDiagramDensity(slug: string): DiagramMetrics {
 
 // ── Metric 2: Code Density ──────────────────────────────────────────────────
 
-const CODE_BLOCK_RE = /```(\{?[\w.-]*\}?)?/g;
-const CODE_BLOCK_FULL_RE = /```(\{?[\w.-]*\}?)?\n([\s\S]*?)```/g;
+const CODE_BLOCK_RE = /```(\{[^}]*\}|[\w.-]+)?/g;
+const CODE_BLOCK_FULL_RE = /```(\{[^}]*\}|[\w.-]+)?\n([\s\S]*?)```/g;
 
 export function measureCodeDensity(slug: string): CodeMetrics {
   const chapters = getChapterFiles(slug);
@@ -250,19 +250,31 @@ export function measureCodeDensity(slug: string): CodeMetrics {
     const chapterLanguages: Record<string, number> = {};
     let chapterBlocks = 0;
 
-    // Use the full regex to match complete code blocks
-    const blockMatches = [...content.matchAll(CODE_BLOCK_FULL_RE)];
-    for (const match of blockMatches) {
-      chapterBlocks++;
-      let lang = (match[1] || "").replace(/[{}]/g, "").trim();
+    // Line-by-line toggle parser (avoids regex mismatching closing ``` as openings)
+    const lines = content.split("\n");
+    let inBlock = false;
+    for (const line of lines) {
+      if (line.startsWith("```")) {
+        if (inBlock) {
+          // Closing fence — just toggle off
+          inBlock = false;
+        } else {
+          // Opening fence — extract language tag
+          inBlock = true;
+          chapterBlocks++;
+          const fenceContent = line.slice(3).trim();
+          let rawLang = fenceContent.replace(/[{}]/g, "").trim();
+          let lang = rawLang.replace(/^\./, "").split(/\s+/)[0];
 
-      if (!lang) {
-        untaggedBlocks++;
-        lang = "untagged";
+          if (!lang) {
+            untaggedBlocks++;
+            lang = "untagged";
+          }
+
+          chapterLanguages[lang] = (chapterLanguages[lang] || 0) + 1;
+          byLanguage[lang] = (byLanguage[lang] || 0) + 1;
+        }
       }
-
-      chapterLanguages[lang] = (chapterLanguages[lang] || 0) + 1;
-      byLanguage[lang] = (byLanguage[lang] || 0) + 1;
     }
 
     totalBlocks += chapterBlocks;
@@ -293,6 +305,39 @@ const GENERIC_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\boften\b/gi, label: "often" },
 ];
 
+// Whitelists — matches here suppress the generic claim flag (consistent with engine-eval.ts)
+const ATTRIBUTION_PATTERN = /(?:\([^)]*(?:Gartner|Flexera|CNCF|Datadog|HashiCorp|Sedai|Arc82|CloudKeeper|Apptio|Forrester|IDC|McKinsey|Deloitte|Flosum|Future Processing|case study|customer|report|survey|benchmark|research|source|industry)|\bFACT SHEET\b)/i;
+const TECHNICAL_VERB_PATTERN = /\bcan be\s+(?:configured|deployed|set|enabled|disabled|adjusted|tuned|applied|used|achieved|automated|integrated|combined|extended|customized|scheduled|optimized|migrated|resized|scaled)\b/i;
+const NAMED_SUBJECT_PATTERN = /\b(?:VPA|HPA|Karpenter|Spot|Graviton|ARM|Terraform|Infracost|Sentinel|OPA|Kubernetes|EC2|RDS|S3|Lambda|GKE|EKS|AKS|Azure|GCP|AWS|Reserved Instance|Savings Plan|CloudWatch|Prometheus)\b/i;
+
+function isWhitelisted(line: string, label: string): boolean {
+  // Attributed claims are not vague (they have a named source)
+  if (ATTRIBUTION_PATTERN.test(line)) return true;
+
+  // "can be" followed by a technical verb is legitimate usage
+  if (label === "can be (weak assertion)" && TECHNICAL_VERB_PATTERN.test(line)) return true;
+
+  // Percentage ranges paired with named technology/service are specific
+  if (label === "vague percentage range" && NAMED_SUBJECT_PATTERN.test(line)) return true;
+
+  // "typically" or "often" with a specific number is contextual
+  if ((label === "typically" || label === "often") && /\$[\d,]+|\d+%|\d+ (?:minutes|hours|days|weeks|months)/.test(line)) return true;
+
+  // Skip lines inside tables (pipe-delimited)
+  if (line.trim().startsWith("|") && line.trim().endsWith("|")) return true;
+
+  // Percentage ranges with a dollar amount or timeframe on same line are specific
+  if (label === "vague percentage range" && /\$[\d,]+|\d+ (?:year|month|day|week)s?\b/.test(line)) return true;
+
+  // "significantly" or "significant" near a specific number is fine
+  if (label === "significant(ly)" && /\$[\d,]+|\d+%|\d+x\b/.test(line)) return true;
+
+  // "can be" with a specific outcome (number, percentage, dollar) is fine
+  if (label === "can be (weak assertion)" && /\$[\d,]+|\d+%/.test(line)) return true;
+
+  return false;
+}
+
 export function detectGenericClaims(slug: string): GenericClaimMetrics {
   const chapters = getChapterFiles(slug);
   const details: GenericClaim[] = [];
@@ -303,16 +348,19 @@ export function detectGenericClaims(slug: string): GenericClaimMetrics {
     const lines = content.split("\n");
     let chapterClaims = 0;
     const chapterName = basename(chapterPath, ".qmd");
+    let inCodeBlock = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // Skip code blocks, front matter, headings
-      if (line.startsWith("```") || line.startsWith("---") || line.startsWith("#")) continue;
+      // Track code blocks properly (toggle on ```)
+      if (line.startsWith("```")) { inCodeBlock = !inCodeBlock; continue; }
+      // Skip inside code blocks, front matter, headings
+      if (inCodeBlock || line.startsWith("---") || line.startsWith("#")) continue;
 
       for (const { pattern, label } of GENERIC_PATTERNS) {
         // Reset regex state for each line
         pattern.lastIndex = 0;
-        if (pattern.test(line)) {
+        if (pattern.test(line) && !isWhitelisted(line, label)) {
           chapterClaims++;
           details.push({
             chapter: chapterName,
@@ -333,8 +381,8 @@ export function detectGenericClaims(slug: string): GenericClaimMetrics {
 // ── Metric 4: Interactive Elements ──────────────────────────────────────────
 
 const INTERACTIVE_PATTERNS = [
-  /```\{ojs\}/g,
-  /```\{observable\}/g,
+  /```\{\.?ojs[^}]*\}/g,        // ```{ojs} or ```{.ojs ...}
+  /```\{\.?observable[^}]*\}/g,  // ```{observable} or ```{.observable ...}
   /{{< interactive /g,
 ];
 
@@ -508,8 +556,10 @@ function checkThresholds(
     });
   }
 
-  // Code density per chapter
+  // Code density per chapter (skip intro/preface chapters — they are summaries, not technical content)
+  const isIntroChapter = (name: string) => /^0[01]-intro|^0[01]-preface|^index$/.test(name);
   for (const ch of report.code.byChapter) {
+    if (isIntroChapter(ch.chapter)) continue;
     if (ch.blocks < thresholds.min_code_blocks_per_chapter) {
       violations.push({
         metric: "code_density",
@@ -536,8 +586,9 @@ function checkThresholds(
     }
   }
 
-  // Real numbers per chapter
+  // Real numbers per chapter (skip intro/preface chapters)
   for (const ch of report.realNumbers.byChapter) {
+    if (isIntroChapter(ch.chapter)) continue;
     if (ch.numbers < thresholds.min_real_numbers_per_chapter) {
       violations.push({
         metric: "real_numbers",

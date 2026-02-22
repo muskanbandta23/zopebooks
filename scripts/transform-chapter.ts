@@ -112,6 +112,58 @@ const VAGUE_ORG_PATTERN = /\b(many|some|most|numerous)\s+(organizations|companie
  * Only removes sentences — never rewrites. This is the "deliberate omission" principle:
  * if you cannot be specific, say nothing.
  */
+/**
+ * Post-processing: fix unclosed code fences.
+ * LLMs sometimes transition from code to prose without closing the ``` fence.
+ * This detects the pattern and inserts the missing closing fence.
+ */
+function fixUnclosedCodeFences(content: string): string {
+  const lines = content.split("\n");
+  let inCodeBlock = false;
+  let openFenceLine = -1;
+  const fixes: number[] = []; // line indices where we need to insert closing ```
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith("```")) {
+      if (inCodeBlock) {
+        inCodeBlock = false;
+        openFenceLine = -1;
+      } else {
+        inCodeBlock = true;
+        openFenceLine = i;
+      }
+    } else if (inCodeBlock) {
+      // Detect code-to-prose transition: a non-empty line that looks like prose
+      // inside what should be a code block (paragraph text, markdown headings, callouts)
+      const trimmed = line.trim();
+      if (
+        trimmed.length > 80 &&
+        !trimmed.startsWith("#") && // not a code comment
+        !trimmed.startsWith("//") &&
+        !trimmed.startsWith("*") &&
+        !trimmed.startsWith("|") &&
+        /[.!?]\s/.test(trimmed) // contains sentence-ending punctuation
+      ) {
+        // This looks like prose inside a code block — insert closing fence before this line
+        fixes.push(i);
+        inCodeBlock = false;
+        openFenceLine = -1;
+      }
+    }
+  }
+
+  if (fixes.length === 0) return content;
+
+  // Insert closing fences (from bottom to top to preserve line numbers)
+  for (let i = fixes.length - 1; i >= 0; i--) {
+    lines.splice(fixes[i], 0, "```", "");
+  }
+
+  console.log(`    [post-process] Fixed ${fixes.length} unclosed code fence(s)`);
+  return lines.join("\n");
+}
+
 function cleanVagueClaims(prose: string, seeds: ContentSeed | undefined): string {
   if (!seeds) return prose;
 
@@ -1076,7 +1128,8 @@ if (import.meta.main) {
     const qmdFile = planFile.replace(".plan.yml", ".qmd");
     const qmdPath = join(chaptersDir, qmdFile);
 
-    const content = await transformChapter(slug, planPath, research, context, outline, pipelineConfig);
+    let content = await transformChapter(slug, planPath, research, context, outline, pipelineConfig);
+    content = fixUnclosedCodeFences(content);
     writeFileSync(qmdPath, content);
 
     // Count stats

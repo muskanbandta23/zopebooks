@@ -199,7 +199,7 @@ export async function runHealingLoop(config: LoopConfig): Promise<LoopResult> {
     console.log(`\n  Heals: ${healResult.successCount}/${healResult.totalActions} successful\n`);
 
     // Estimate cost for ebook re-transforms (rough estimate)
-    const ebookHeals = healResult.actions.filter(a => a.success && a.strategy.includes("strengthen") || a.strategy.includes("add_") || a.strategy.includes("enrich") || a.strategy.includes("simplify"));
+    const ebookHeals = healResult.actions.filter(a => a.success && (a.strategy.includes("strengthen") || a.strategy.includes("add_") || a.strategy.includes("enrich") || a.strategy.includes("simplify")));
     if (ebookHeals.length > 0) {
       // Rough estimate: ~2000 tokens per section, $0.003/1K tokens for Claude
       const estimatedTokens = ebookHeals.length * 2000;

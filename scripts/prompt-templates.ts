@@ -340,7 +340,7 @@ Rules:
 - Start the opening section with a compelling hook, not "In today's..." or "Organizations..."
 - For config/code sections: provide brief context before and after the config block, but do NOT include the config block itself — the assembler handles that
 - Write in markdown format (bold, italic, lists where appropriate)
-- Maintain continuity with previous sections — build on what was said, don't repeat`,
+- Maintain continuity with previous sections — build on what was said, don't repeat${plan.heal_augmentation ? `\n\nADDITIONAL REQUIREMENTS (from quality evaluation, iteration ${plan.heal_iteration || 1}):\n${plan.heal_augmentation}` : ""}`,
     },
     {
       role: "user",
