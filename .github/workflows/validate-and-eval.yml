@@ -1,0 +1,63 @@
+name: Validate & Eval
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate configs
+        run: bun run scripts/validate.ts
+
+      - name: Audit all ebooks
+        run: |
+          for dir in books/*/; do
+            slug=$(basename "$dir")
+            echo "── Auditing $slug ──"
+            bun run scripts/content-audit.ts "$slug" || true
+          done
+
+  eval:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run eval (mock mode)
+        run: |
+          for dir in books/*/; do
+            slug=$(basename "$dir")
+            if [ -f "books/$slug/chapters/"*.plan.yml ]; then
+              echo "── Eval $slug ──"
+              bun run scripts/eval-modalities.ts "$slug" || true
+            fi
+          done
+
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-reports
+          path: _output/audit/
+          retention-days: 30
