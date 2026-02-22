@@ -95,6 +95,13 @@ ifndef ebook
 endif
 	quarto render $(BOOKS_DIR)/$(ebook) --to pdf
 
+.PHONY: eval-pdf
+eval-pdf: ## Evaluate PDF quality — ebook=<slug>
+ifndef ebook
+	$(error Usage: make eval-pdf ebook=<slug>)
+endif
+	bun run scripts/pdf-eval.ts $(ebook)
+
 .PHONY: render-epub
 render-epub: ## Render EPUB only — ebook=<slug>
 ifndef ebook
@@ -267,6 +274,25 @@ endif
 	@echo ""
 	@echo "Pipeline complete. Next: review .qmd files, then run: make audit ebook=$(ebook)"
 
+.PHONY: hub
+hub: ## Generate multi-book hub page
+	bun run _hub/generate.ts
+
+.PHONY: pipeline-all
+pipeline-all: ## Parallel pipeline with configurable concurrency — ebook=<slug> [PARALLEL=2]
+ifndef ebook
+	$(error Usage: make pipeline-all ebook=<slug> [PARALLEL=2])
+endif
+	bun run $(SCRIPTS_DIR)/pipeline-runner.ts $(ebook) --parallel=$(or $(PARALLEL),2)
+
+.PHONY: cost-report
+cost-report: ## Show cost report — ebook=<slug> or --all
+ifdef ebook
+	bun run $(SCRIPTS_DIR)/cost-report.ts $(ebook)
+else
+	bun run $(SCRIPTS_DIR)/cost-report.ts --all
+endif
+
 # ─── Blog Posts ────────────────────────────────────────────────────────────
 
 .PHONY: blog
@@ -279,6 +305,19 @@ endif
 .PHONY: blog-all
 blog-all: ## Generate blog posts for all ebooks
 	bun run _blog/generate.ts
+
+# ─── Content Freshness ─────────────────────────────────────────────────────
+
+.PHONY: freshness
+freshness: ## Check pricing freshness — ebook=<slug>
+ifndef ebook
+	$(error Usage: make freshness ebook=<slug>)
+endif
+	bun run $(SCRIPTS_DIR)/freshness-check.ts $(ebook)
+
+.PHONY: freshness-all
+freshness-all: ## Check pricing freshness for all ebooks
+	bun run $(SCRIPTS_DIR)/freshness-check.ts --all
 
 # ─── Unified Eval & Self-Healing ──────────────────────────────────────────
 
