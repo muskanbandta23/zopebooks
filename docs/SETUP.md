@@ -73,11 +73,31 @@ quarto install tinytex
 
 ```bash
 # Install Bun dependencies
-make install
+bun install
 
 # Symlink brand files into all ebooks
-make setup
+ebook setup           # or: make setup
 
 # Validate configs
-make validate
+ebook validate        # or: make validate
+
+# List available ebooks
+ebook list            # or: make list
 ```
+
+## CLI Setup (Optional)
+
+To use the `ebook` command globally:
+
+```bash
+bun link
+ebook --help
+```
+
+Alternatively, run via bun directly:
+
+```bash
+bun run scripts/cli.ts --help
+```
+
+See [CLI_REFERENCE.md](CLI_REFERENCE.md) for full command documentation.

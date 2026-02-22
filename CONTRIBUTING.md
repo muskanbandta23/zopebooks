@@ -32,11 +32,13 @@ This guide covers how to contribute to the Zopdev Ebook Engine and create high-q
 git clone https://github.com/zopdev/ebooks.git
 cd ebooks
 
-# Install D2 diagram tool
+# Install dependencies
+bun install
 brew install d2
 
 # Verify setup
-make validate
+ebook validate        # or: make validate
+ebook list            # or: make list
 ```
 
 ### Create a New Ebook
@@ -566,6 +568,37 @@ Use ZopNight's scheduling to save 40% on non-prod resources.
 - **`scripts/content-audit.ts`** — Content quality validation
 - **`scripts/code-validation.ts`** — Code syntax checking
 - **`scripts/compare-outputs.ts`** — Before/after comparison
+
+---
+
+## CLI Development
+
+The unified CLI lives in `scripts/cli.ts`. It routes subcommands to existing scripts via subprocess delegation.
+
+### Adding a New Command
+
+1. Add a `CommandDef` entry to the `COMMANDS` array in `scripts/cli.ts`
+2. Set `group`, `requiresSlug`, `options`, and `handler`
+3. The handler should call `run()` to delegate to an existing script
+4. Update `docs/CLI_REFERENCE.md` with the new command
+5. Update `Makefile` with an equivalent Make target
+
+### Testing CLI Changes
+
+```bash
+bun run scripts/cli.ts --help                    # Verify help output
+bun run scripts/cli.ts <new-command> --help      # Verify command help
+bun run scripts/cli.ts <new-command> <slug>      # Test execution
+bun test scripts/tests/                          # Run unit tests
+```
+
+### Architecture
+
+- **No external dependencies** — arg parsing is hand-rolled (`process.argv`)
+- **Subprocess delegation** — each command spawns `bun run scripts/X.ts`
+- **ANSI colors** — inline escape codes (no chalk/picocolors)
+- **Levenshtein distance** — typo correction for unknown commands and slugs
+- **Inline handlers** — `list` and `clean` run directly (no subprocess)
 
 ---
 
