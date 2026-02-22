@@ -64,3 +64,25 @@ ebooks:
       description: "Learn how platform engineering teams design, build, and operate Internal Developer Platforms — from golden paths and self-service infra to measuring developer productivity and platform ROI."
       cta_text: "Download Free PDF"
       form_action: "#"
+
+  - slug: cloud-migration-costs
+    title: "Cloud Migration Cost Catastrophe"
+    subtitle: "How to Plan, Budget, and Control Cloud Migration Costs Before Your CFO Fires You"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    scheduled_publish: 2026-06-01
+    tags: [cloud-migration, cost-planning, finops, zopcloud]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true
+    landing:
+      headline: "Stop Your Cloud Migration From Bleeding Budget"
+      description: "75% of cloud migrations exceed budget. Learn the incident-driven framework for planning, budgeting, and controlling migration costs — with production-ready patterns that deliver ROI in 30 days."
+      cta_text: "Download Free PDF"
+      form_action: "#"

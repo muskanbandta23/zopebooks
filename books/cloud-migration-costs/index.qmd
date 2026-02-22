@@ -1,0 +1,11 @@
+---
+subtitle: "A Practitioner Guide to Budgeting, Forecasting, and Controlling Migration Spend"
+---
+
+# Cloud Migration Cost Planning {.unnumbered}
+
+## Preface {.unnumbered}
+
+Welcome to *Cloud Migration Cost Planning*.
+
+<!-- TODO: Write preface content -->
