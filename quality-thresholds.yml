@@ -26,6 +26,9 @@ defaults:
   # Code blocks should have language tags
   max_untagged_code_blocks: 0
 
+  # Minimum images per 800 words (inline chapter images: stat cards, comparisons, illustrations)
+  min_images_per_800_words: 1
+
 # Per-ebook overrides (keys match ebook slugs)
 # Example:
 # finops-playbook:
@@ -53,6 +56,20 @@ modalities:
     require_seo_title: true
     require_meta_description: true
     require_cta: true
+
+  hub:
+    require_all_ebooks_listed: true
+    require_search: true
+    max_file_size_kb: 300
+
+  pdf:
+    require_cover_page: true
+    max_blank_pages: 2
+    require_embedded_fonts: true
+
+  freshness:
+    drift_threshold_percent: 15
+    cache_ttl_hours: 168
 
   heal:
     max_iterations: 3

@@ -97,6 +97,13 @@ export interface ThresholdViolation {
   message: string;
 }
 
+export interface ImageMetrics {
+  totalImages: number;
+  totalWords: number;
+  imagesPer800Words: number;
+  byChapter: Array<{ chapter: string; images: number; words: number; imagesPer800Words: number }>;
+}
+
 export interface AuditReport {
   slug: string;
   timestamp: string;
@@ -106,6 +113,7 @@ export interface AuditReport {
   interactive: InteractiveMetrics;
   realNumbers: NumberMetrics;
   readability: ReadabilityMetrics;
+  images: ImageMetrics;
   violations: ThresholdViolation[];
   summary: {
     totalChapters: number;
@@ -123,6 +131,7 @@ interface QualityThresholds {
   max_reading_grade_level: number;
   min_reading_grade_level: number;
   max_untagged_code_blocks: number;
+  min_images_per_800_words: number;
 }
 
 // ── Threshold Loading ───────────────────────────────────────────────────────
@@ -138,6 +147,7 @@ function loadThresholds(slug: string): QualityThresholds {
     max_reading_grade_level: 14,
     min_reading_grade_level: 8,
     max_untagged_code_blocks: 0,
+    min_images_per_800_words: 1,
   };
 
   if (!existsSync(thresholdPath)) return defaultThresholds;
@@ -537,6 +547,41 @@ export function measureReadingLevel(slug: string): ReadabilityMetrics {
   };
 }
 
+// ── Metric 7: Image Density ─────────────────────────────────────────────────
+
+export function measureImageDensity(slug: string): ImageMetrics {
+  const chapters = getChapterFiles(slug);
+  const byChapter: ImageMetrics["byChapter"] = [];
+  let totalImages = 0;
+  let totalWords = 0;
+
+  for (const file of chapters) {
+    const content = readFileSync(file, "utf-8");
+    const cleaned = stripFrontMatter(content);
+    const words = countWords(cleaned);
+    // Count markdown image references: ![alt](path)
+    const imageMatches = cleaned.match(/!\[.*?\]\(.*?\)/g) || [];
+    const images = imageMatches.length;
+
+    totalImages += images;
+    totalWords += words;
+
+    byChapter.push({
+      chapter: basename(file).replace(/\.(qmd|md)$/, ""),
+      images,
+      words,
+      imagesPer800Words: words > 0 ? Math.round((images / words) * 800 * 100) / 100 : 0,
+    });
+  }
+
+  return {
+    totalImages,
+    totalWords,
+    imagesPer800Words: totalWords > 0 ? Math.round((totalImages / totalWords) * 800 * 100) / 100 : 0,
+    byChapter,
+  };
+}
+
 // ── Threshold Checking ──────────────────────────────────────────────────────
 
 function checkThresholds(
@@ -646,6 +691,17 @@ function checkThresholds(
     });
   }
 
+  // Image density
+  if (report.images.imagesPer800Words < thresholds.min_images_per_800_words) {
+    violations.push({
+      metric: "image_density",
+      actual: report.images.imagesPer800Words,
+      threshold: thresholds.min_images_per_800_words,
+      direction: "below",
+      message: `Image density (${report.images.imagesPer800Words} per 800 words) is below minimum (${thresholds.min_images_per_800_words} per 800 words)`,
+    });
+  }
+
   return violations;
 }
 
@@ -671,8 +727,9 @@ export function auditEbook(slug: string): AuditReport {
   const interactive = countInteractiveElements(slug);
   const realNumbers = detectRealNumbers(slug);
   const readability = measureReadingLevel(slug);
+  const images = measureImageDensity(slug);
 
-  const partial = { slug, timestamp: new Date().toISOString(), diagrams, code, genericClaims, interactive, realNumbers, readability };
+  const partial = { slug, timestamp: new Date().toISOString(), diagrams, code, genericClaims, interactive, realNumbers, readability, images };
   const violations = checkThresholds(partial, thresholds);
 
   return {
@@ -750,6 +807,16 @@ function formatHumanReport(report: AuditReport): string {
   for (const ch of report.realNumbers.byChapter) {
     const marker = ch.numbers === 0 ? " [!]" : "";
     lines.push(`    ${ch.chapter}: ${ch.numbers}${marker}`);
+  }
+  lines.push("");
+
+  // Image Density
+  lines.push(`  IMAGES`);
+  lines.push(`  Total: ${report.images.totalImages} images in ${report.images.totalWords} words`);
+  lines.push(`  Density: ${report.images.imagesPer800Words} per 800 words`);
+  for (const ch of report.images.byChapter) {
+    const marker = ch.images === 0 ? " [!]" : "";
+    lines.push(`    ${ch.chapter}: ${ch.images} images (${ch.imagesPer800Words}/800w)${marker}`);
   }
   lines.push("");
 

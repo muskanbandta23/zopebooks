@@ -97,7 +97,8 @@ export interface BookOutline {
 
 // ── Stage 2: Chapter Plans & Visual Recommendations ─────────────────────────
 
-export type VisualType = "d2" | "ojs" | "code" | "callout" | "illustration" | "table";
+export type VisualType = "d2" | "ojs" | "code" | "callout" | "illustration" | "table"
+  | "stat-card" | "comparison-graphic" | "metric-highlight" | "key-number";
 
 export interface VisualRecommendation {
   type: VisualType;
@@ -111,6 +112,23 @@ export interface VisualRecommendation {
   image_prompt?: string;     // Text prompt for image generation
   image_style?: "conceptual" | "diagram" | "infographic" | "illustration";
   image_filename?: string;   // e.g., "ch01-hero-k8s-cost.png"
+  // Satori-rendered graphic fields (for stat-card, comparison-graphic, metric-highlight, key-number)
+  stat_data?: {
+    headline: string;        // e.g., "$18,400/month"
+    subtext: string;         // e.g., "Average savings from right-sizing"
+    source?: string;         // e.g., "Datadog 2024 Report"
+  };
+  comparison_data?: {
+    title?: string;
+    before: { label: string; value: string };
+    after: { label: string; value: string };
+    improvement: string;     // e.g., "67% reduction"
+  };
+  metrics_data?: Array<{
+    label: string;
+    value: string;
+    trend?: "up" | "down";
+  }>;
 }
 
 export interface PlanSection {
@@ -328,6 +346,16 @@ export const VISUAL_RULES: VisualRule[] = [
   // Callouts
   { sectionType: "insight", roles: ["intro", "foundation", "technique", "advanced", "conclusion"], visualType: "callout", priority: 6 },
 
-  // Illustrations (placeholder for future)
+  // Illustrations (AI-generated conceptual images)
   { sectionType: "concept", roles: ["intro", "foundation"], visualType: "illustration", priority: 5 },
+
+  // Satori-rendered branded graphics (always available, no API key needed)
+  { sectionType: "impact", roles: ["technique", "advanced", "conclusion"], visualType: "stat-card", priority: 7 },
+  { sectionType: "results", roles: ["technique", "advanced", "conclusion"], visualType: "stat-card", priority: 7 },
+  { sectionType: "savings", roles: ["technique", "advanced"], visualType: "stat-card", priority: 8 },
+  { sectionType: "optimization", roles: ["technique", "advanced"], visualType: "comparison-graphic", priority: 8 },
+  { sectionType: "before-after", roles: ["technique", "advanced"], visualType: "comparison-graphic", priority: 9 },
+  { sectionType: "metrics", roles: ["foundation", "technique", "advanced"], visualType: "metric-highlight", priority: 6 },
+  { sectionType: "overview", roles: ["intro", "foundation"], visualType: "metric-highlight", priority: 5 },
+  { sectionType: "highlight", roles: ["intro", "foundation", "technique"], visualType: "key-number", priority: 6 },
 ];

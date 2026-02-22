@@ -39,6 +39,9 @@ import type {
 import { copyTemplateToBook } from "./diagram-utils.js";
 import { loadPipelineConfig, type PipelineConfig } from "./provider-config.js";
 import { sectionProsePrompt, imagePromptForSection } from "./prompt-templates.js";
+import { generateSectionImage, isImageVisualType, type BrandColors } from "./image-gen.js";
+import { loadMergedBrand } from "./brand-utils.js";
+import { getSocialThemeValues } from "./theme-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
@@ -61,6 +64,33 @@ function loadOutline(slug: string): BookOutline | null {
   const path = join(PROJECT_ROOT, "books", slug, "outline.yml");
   if (!existsSync(path)) return null;
   return parse(readFileSync(path, "utf-8")) as BookOutline;
+}
+
+// ── Brand colors for image generation ────────────────────────────────────────
+
+const brandColorsCache = new Map<string, BrandColors | null>();
+
+function getBrandColorsForSlug(slug: string): BrandColors | null {
+  if (brandColorsCache.has(slug)) return brandColorsCache.get(slug)!;
+
+  try {
+    const brandConfig = loadMergedBrand(PROJECT_ROOT, slug);
+    const themeValues = getSocialThemeValues(brandConfig.resolved);
+    const colors: BrandColors = {
+      primary: themeValues.primary,
+      foreground: themeValues.foreground,
+      background: themeValues.background,
+      secondary: themeValues.secondary,
+      darkPrimary: themeValues.darkPrimary,
+      lightBackground: themeValues.lightBackground,
+    };
+    brandColorsCache.set(slug, colors);
+    return colors;
+  } catch {
+    console.warn(`  [image-gen] Could not load brand colors for "${slug}", skipping image generation.`);
+    brandColorsCache.set(slug, null);
+    return null;
+  }
 }
 
 // ── OJS template loader ─────────────────────────────────────────────────────
@@ -726,32 +756,24 @@ async function renderSectionWithLLM(
     } else if (v.type === "table") {
       // Skip — LLM prose typically generates its own inline tables with specific data.
       // Template tables use generic "Varies" values which are lower quality.
-    } else if (v.type === "illustration" && pipelineConfig.image) {
-      // Generate image via image provider
-      const imagePrompt = v.image_prompt || imagePromptForSection(
-        chapterTitle,
-        section.heading,
-        v.purpose,
-        research?.topic || "technology",
-        v.image_style || pipelineConfig.imageConfig.style,
-      );
-      const filename = v.image_filename || `${plan.chapter_id}-${section.id}.png`;
-      const imagesDir = join(PROJECT_ROOT, "books", slug, "images");
-      if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });
-
-      try {
-        const imgResult = await pipelineConfig.image.generate({
-          prompt: imagePrompt,
-          style: v.image_style || pipelineConfig.imageConfig.style,
+    } else if (isImageVisualType(v.type)) {
+      // Satori-rendered graphics (stat-card, comparison-graphic, metric-highlight, key-number)
+      // or AI-generated illustrations — all handled by image-gen.ts
+      const brandColors = getBrandColorsForSlug(slug);
+      if (brandColors) {
+        const imgResult = await generateSectionImage({
+          slug,
+          chapterId: plan.chapter_id,
+          sectionId: section.id,
+          visual: v,
+          brandColors,
+          imageProvider: pipelineConfig.image,
+          rootDir: PROJECT_ROOT,
         });
-        const imgPath = join(imagesDir, filename);
-        writeFileSync(imgPath, imgResult.imageBuffer);
-        parts.push(`![${v.purpose || section.heading}](images/${filename})`);
-        parts.push(``);
-        console.log(`    Generated image: ${filename}`);
-      } catch (err) {
-        parts.push(`<!-- Image generation failed: ${(err as Error).message} -->`);
-        parts.push(``);
+        if (imgResult) {
+          parts.push(`![${v.purpose || section.heading}](${imgResult.filename})`);
+          parts.push(``);
+        }
       }
     }
   }
