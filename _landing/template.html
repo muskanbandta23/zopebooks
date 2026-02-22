@@ -24,7 +24,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -40,7 +40,7 @@
     <div class="container">
       <div class="logo">
         <a href="{{company_website}}">
-          <img src="logo.svg" alt="{{company_name}}" width="150" height="38">
+          <img src="logo.svg" alt="{{company_name}}" width="120" height="32">
         </a>
       </div>
     </div>
@@ -88,15 +88,46 @@
       </div>
     </section>
 
+    {{#stats_bar}}
+    <section class="stats-bar">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value">{{chapter_count}}</span>
+            <span class="stat-label">Chapters</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{total_reading_time}} min</span>
+            <span class="stat-label">Reading time</span>
+          </div>
+          {{#has_code}}
+          <div class="stat-item">
+            <span class="stat-value">Production</span>
+            <span class="stat-label">Ready code examples</span>
+          </div>
+          {{/has_code}}
+          <div class="stat-item">
+            <span class="stat-value">Free</span>
+            <span class="stat-label">PDF download</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    {{/stats_bar}}
+
     {{#authors}}
-    <section class="authors">
+    <section class="authors animate-on-scroll">
       <div class="container">
         <h2>About the Authors</h2>
         <div class="author-grid">
           {{#items}}
           <div class="author-card">
             {{#avatar_url}}
-            <img class="author-avatar" src="{{avatar_url}}" alt="{{name}}">
+            <img class="author-avatar" src="{{avatar_url}}" alt="{{name}}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="author-avatar-fallback" style="display:none">{{initials}}</div>
+            {{/avatar_url}}
+            {{^avatar_url}}
+            <div class="author-avatar-fallback">{{initials}}</div>
             {{/avatar_url}}
             <div class="author-info">
               <h3>{{name}}</h3>
@@ -118,9 +149,10 @@
     {{/authors}}
 
     {{#chapters}}
-    <section class="chapters">
+    <section class="chapters animate-on-scroll">
       <div class="container">
         <h2>What's Inside</h2>
+        <p class="chapters-subtitle">A practical guide from fundamentals to production</p>
         <div class="chapter-grid">
           {{#items}}
           <div class="chapter-card">
@@ -152,7 +184,7 @@
     {{/chapters}}
 
     {{#featured_products}}
-    <section class="products">
+    <section class="products animate-on-scroll">
       <div class="container">
         <h2>Powered by {{company_name}}</h2>
         <div class="product-grid">
@@ -170,8 +202,8 @@
 
     <section class="cta-bottom">
       <div class="container">
-        <h2>Ready to take control of your cloud costs?</h2>
-        <p>Download <em>{{title}}</em> and start optimizing today.</p>
+        <h2>Ready to get started?</h2>
+        <p>Download <em>{{title}}</em> and put these ideas into practice.</p>
         <div class="cta-buttons">
           <a href="#" class="btn-primary" onclick="document.querySelector('.hero-form').scrollIntoView({behavior:'smooth'});return false;">
             {{cta_text}}
@@ -189,5 +221,25 @@
       <p>&copy; {{year}} <a href="{{company_website}}">{{company_name}}</a>. All rights reserved.</p>
     </div>
   </footer>
+
+  <script>
+    // Sticky header shadow on scroll
+    const header = document.querySelector('.header');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 10);
+    }, { passive: true });
+
+    // Scroll animations via IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+  </script>
 </body>
 </html>

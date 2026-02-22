@@ -108,17 +108,37 @@ for (const ebook of calendar.ebooks) {
       : null,
   }));
 
-  // Map authors for template
+  // Map authors for template (with initials fallback)
   const authorItems = brandConfig.resolved.authors.map((a) => ({
     name: a.name,
     title: a.title || "",
     bio: a.bio || "",
     avatar_url: a.avatar_url || null,
+    initials: a.name
+      .split(/\s+/)
+      .map((w: string) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase(),
     has_social: a.social && Object.keys(a.social).length > 0,
     linkedin: a.social?.linkedin || null,
     github: a.social?.github || null,
     twitter: a.social?.twitter || null,
   }));
+
+  // Compute stats for stats bar
+  const totalReadingTime = chapterItems.reduce(
+    (sum, ch) => sum + (ch.reading_time_minutes || 3),
+    0,
+  );
+  const statsBar =
+    chapterItems.length > 0
+      ? {
+          chapter_count: chapterItems.length,
+          total_reading_time: totalReadingTime,
+          has_code: true,
+        }
+      : null;
 
   const data = {
     slug: ebook.slug,
@@ -146,6 +166,7 @@ for (const ebook of calendar.ebooks) {
         ? { items: brandConfig.resolved.featuredProducts }
         : null,
 
+    stats_bar: statsBar,
     tags: ebook.tags && ebook.tags.length > 0 ? { items: ebook.tags } : null,
     chapters: chapterItems.length > 0 ? { items: chapterItems } : null,
     authors: authorItems.length > 0 ? { items: authorItems } : null,
