@@ -59,7 +59,19 @@ Once you establish that 13% of requested CPU is used on average (Sedai), a dange
 
 Three factors sustain this cycle. First, fear of OOM kills and throttling drives defensive requesting—teams would rather over-provision than explain a latency spike to management. Second, lack of visibility into actual consumption means developers never see the 85% of memory sitting idle in their deployments. Third, and most critically, there is no feedback loop between billing and engineering. Finance receives the $50,000 bill; engineering writes the next deployment. The cost signal never reaches the decision-maker. The result is baked into the data: 88% of teams report year-over-year TCO increases for Kubernetes (Arc82), and up to 30% of cloud spending is wasted on over-provisioned resources (Sedai).
 
-Breaking this cycle requires a new metric. Track your Resource Efficiency Ratio—the percentage of requested resources that actually power productive workloads. If your organization sits in the 20-45% range (Sedai), right-sizing conversations become measurable rather than theoretical. zopnight enables this shift by surfacing efficiency metrics at the namespace level, generating VPA-driven right-sizing recommendations, and managing spot node pools to reduce idle capacity. The spiral ends when engineering sees what finance pays for.
+Breaking this cycle requires a new metric. Track your Resource Efficiency Ratio—the percentage of requested resources that actually power productive workloads. The following one-liner surfaces every namespace's efficiency ratio from live metrics:
+
+```bash
+# Audit resource efficiency across all namespaces
+# Requires: kubectl, metrics-server installed
+kubectl top pods --all-namespaces --no-headers | \
+  awk '{ns[$1]["cpu"] += $3+0; ns[$1]["mem"] += $4+0} END {
+    for (n in ns) printf "%-40s CPU: %dm  MEM: %dMi\n", n, ns[n]["cpu"], ns[n]["mem"]
+  }' | sort -k3 -n -r
+
+# Compare against requests (requires kubectl resource-capacity plugin)
+kubectl resource-capacity --namespace <team-ns> --util --sort cpu.util
+``` If your organization sits in the 20-45% range (Sedai), right-sizing conversations become measurable rather than theoretical. zopnight enables this shift by surfacing efficiency metrics at the namespace level, generating VPA-driven right-sizing recommendations, and managing spot node pools to reduce idle capacity. The spiral ends when engineering sees what finance pays for.
 
 ![Reinforce the scale of waste with a single impactful metric](images/01-the-50000-month-incident-stat-card-patterns_over_provisioning.png)
 

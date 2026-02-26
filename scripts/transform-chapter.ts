@@ -249,25 +249,34 @@ function cleanVagueClaims(prose: string, seeds: ContentSeed | undefined): string
 
 // ── D2 diagram embedding ────────────────────────────────────────────────────
 
+// Fallback template precedence: requested → before-after-optimization → cloud-architecture
+const DIAGRAM_FALLBACK_ORDER = ["before-after-optimization", "cloud-architecture", "finops-workflow", "data-pipeline"];
+
 function embedDiagram(
   slug: string,
   templateName: string,
   purpose: string,
 ): string {
-  try {
-    copyTemplateToBook(PROJECT_ROOT, templateName, slug);
-  } catch (err) {
-    return `<!-- D2 template "${templateName}" not available: ${(err as Error).message} -->\n`;
+  // Try the requested template first, then fallbacks in order
+  const candidates = [templateName, ...DIAGRAM_FALLBACK_ORDER.filter(t => t !== templateName)];
+  for (const candidate of candidates) {
+    try {
+      copyTemplateToBook(PROJECT_ROOT, candidate, slug);
+      const relPath = `../diagrams/${candidate}.d2`;
+      const caption = candidate !== templateName
+        ? `*${purpose}* *(diagram: ${candidate})*`
+        : `*${purpose}*`;
+      if (candidate !== templateName) {
+        console.warn(`  [diagram] Template "${templateName}" not found — using fallback "${candidate}"`);
+      }
+      return [`\`\`\`{.d2 width="100%" file="${relPath}"}`, `\`\`\``, ``, caption].join("\n");
+    } catch {
+      // try next candidate
+    }
   }
-
-  const relPath = `../diagrams/${templateName}.d2`;
-
-  return [
-    `\`\`\`{.d2 width="100%" file="${relPath}"}`,
-    `\`\`\``,
-    ``,
-    `*${purpose}*`,
-  ].join("\n");
+  // All templates failed — log warning, return empty (no comment clutter in output)
+  console.warn(`  [diagram] No D2 templates available for "${templateName}" in ${slug} — skipping diagram`);
+  return ``;
 }
 
 // ── Config block generation (replaces Python script generation) ─────────────
@@ -704,6 +713,15 @@ async function renderSectionWithLLM(
 
   // Post-generation vagueness cleanup
   const prose = cleanVagueClaims(rawProse, plan.content_seeds);
+
+  // Warn if avg sentence length is likely to push FK grade above 14
+  const proseSentences = prose.split(/[.!?]+/).filter(s => s.trim().split(/\s+/).length > 3);
+  if (proseSentences.length > 0) {
+    const avgWords = proseSentences.reduce((sum, s) => sum + s.trim().split(/\s+/).length, 0) / proseSentences.length;
+    if (avgWords > 20) {
+      console.warn(`  [readability] Section "${section.heading}" avg sentence length ${avgWords.toFixed(1)} words — may exceed FK grade 14`);
+    }
+  }
 
   // ── Assemble section with heading + prose + visuals ──
 

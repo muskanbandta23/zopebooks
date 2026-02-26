@@ -366,11 +366,11 @@ endif
 	@echo "── [1/5] Rendering HTML / PDF / EPUB ──────────────────────────"
 	quarto render $(BOOKS_DIR)/$(ebook)
 	@echo ""
-	@echo "── [2/5] Generating landing page ──────────────────────────────"
-	bun run _landing/generate.ts $(ebook)
-	@echo ""
-	@echo "── [3/5] Generating social assets ─────────────────────────────"
+	@echo "── [2/5] Generating social assets ─────────────────────────────"
 	bun run _social/generate.ts $(ebook)
+	@echo ""
+	@echo "── [3/5] Generating landing page ──────────────────────────────"
+	bun run _landing/generate.ts $(ebook)
 	@echo ""
 	@echo "── [4/5] Generating blog posts ─────────────────────────────────"
 	bun run _blog/generate.ts $(ebook)

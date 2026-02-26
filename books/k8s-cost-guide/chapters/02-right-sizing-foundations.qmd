@@ -63,7 +63,10 @@ What makes this approach powerful is combining automated measurement with action
 
 Platforms like zopnight accelerate this workflow by surfacing VPA-driven recommendations automatically, visualizing quota enforcement status, and presenting recommendations alongside the utilization data that validates them. Instead of exploring kubectl output manually, teams receive pre-computed suggestions tied directly to the measurements they already trust. This transforms right-sizing from a periodic audit exercise into an ongoing, data-driven practice that keeps resource requests aligned with actual consumption as workloads evolve.
 
-<!-- D2 template "vpa-workflow" not available: Template not found: vpa-workflow.d2. Available templates: finops-workflow, data-pipeline, before-after-optimization, multi-cloud-comparison, cloud-architecture -->
+```{.d2 width="100%" file="../diagrams/vpa-workflow.d2"}
+```
+
+*How VPA observes actual resource consumption and right-sizes pod requests to eliminate waste*
 
 
 ## Namespace Resource Quotas: Guardrails That Scale
@@ -81,22 +84,73 @@ The 10-20% savings from quota enforcement come not from optimizing efficient wor
 For organizations with multiple teams, dev/prod environments, or customer-facing multi-tenant offerings, namespace-level quotas are not optional—they are the operational foundation that makes right-sizing possible at scale. With tools like zopnight, teams can visualize quota consumption across namespaces, identify which teams are approaching their limits, and receive alerts before overcommitment becomes a crisis. This visibility transforms quotas from a policy checkbox into an active guardrail that keeps your optimization investments intact.
 
 ```yaml
-# Namespace Resource Quotas: Guardrails That Scale: Show a namespace ResourceQuota and LimitRange configuration
+# ResourceQuota: enforce aggregate resource ceiling for a team namespace
 apiVersion: v1
-kind: ConfigMap
+kind: ResourceQuota
 metadata:
-  name: namespace-resource-quotas:-guardrails-that-scale
-  namespace: production
-data:
-  # Configure namespace resource quotas: guardrails that scale settings here
-  enabled: "true"
+  name: team-quota
+  namespace: payments-team
+spec:
+  hard:
+    requests.cpu: "20"       # Total CPU requests capped at 20 cores
+    requests.memory: 40Gi    # Total memory requests capped at 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    pods: "50"               # Hard pod count ceiling
+---
+# LimitRange: per-pod defaults to prevent containers with no requests
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: team-limit-range
+  namespace: payments-team
+spec:
+  limits:
+  - type: Container
+    default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    max:
+      cpu: "4"
+      memory: "8Gi"
 ```
 
 ## Cron-Based Cluster Scaling: Time-Based Efficiency
 
 While VPA optimizes how much each individual pod requests, and ResourceQuota prevents aggregate overcommitment, neither addresses the most predictable source of waste: environments that sit completely unused for hours or even days at a time. Development, staging, and test clusters routinely consume budget during business hours only to sit idle overnight, on weekends, and during holidays. This predictable idleness represents the lowest-hanging fruit in any Kubernetes cost optimization strategy.
 
-Rather than manually scaling node pools down at 7pm and back up at 7am, organizations automate this cycle through scheduled cluster scaling. Karpenter, GKE, and AKS all support cron-based node pool schedules that resize capacity based on calendar patterns. A simple expression like `0 19 * * 1-5` shuts down non-essential nodes at 7pm weekdays, while `0 7 * * 1-5` brings them back Monday through Friday morning. Development and staging environments can extend this further—scaling to zero throughout weekends and holidays.
+Rather than manually scaling node pools down at 7pm and back up at 7am, organizations automate this cycle through scheduled cluster scaling. A Karpenter NodePool with a time-based schedule removes idle nodes without touching running pods:
+
+```yaml
+# Karpenter NodePool: scale dev node pool to zero on weeknights and weekends
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: dev-spot
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        name: default
+      taints:
+        - key: "env"
+          value: "dev"
+          effect: NoSchedule
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 30s
+    budgets:
+      # Scale to zero weeknights 7pm–7am and all weekend
+      - nodes: "0"
+        schedule: "0 19 * * 1-5"   # Mon–Fri at 7pm
+        duration: 12h
+      - nodes: "0"
+        schedule: "0 0 * * 6"      # Saturday midnight → all weekend
+        duration: 48h
+``` Karpenter, GKE, and AKS all support cron-based node pool schedules that resize capacity based on calendar patterns. A simple expression like `0 19 * * 1-5` shuts down non-essential nodes at 7pm weekdays, while `0 7 * * 1-5` brings them back Monday through Friday morning. Development and staging environments can extend this further—scaling to zero throughout weekends and holidays.
 
 The 65-75% savings on eligible workloads materialize because you are not merely optimizing requests; you are actually deprovisioning idle infrastructure. An e-commerce platform reduced dev/test spending from $89,000 to $52,000 monthly in six weeks through scheduled scaling alone (Source: Customer Data). A fintech company achieved $34,000 to $
 

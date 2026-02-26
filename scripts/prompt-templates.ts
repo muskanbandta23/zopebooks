@@ -340,6 +340,7 @@ Rules:
 - NEVER use these vague phrases: "typically", "often", "can be", "significant", "generally", "in many cases", "various", "should consider", "many organizations", "some organizations". Replace each with a specific claim backed by a number or named source from the FACT SHEET
 - If the FACT SHEET does not contain a relevant number, describe the mechanism qualitatively — do NOT invent statistics
 - Target exactly ${section.word_target} words (±20%)
+- Keep sentences short: maximum 20 words per sentence on average. Long technical sentences should be split into two. Target Flesch-Kincaid grade 10–13.
 - Do NOT include the section heading (## ...) — the assembler adds it
 - Do NOT include YAML frontmatter
 - Do NOT include HTML comments

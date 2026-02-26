@@ -91,11 +91,18 @@ function discoverEbooks(): EbookCard[] {
       const landingDir = join(PROJECT_ROOT, "_output", "landing", slug);
       const landingUrl = existsSync(join(landingDir, "index.html")) ? `../landing/${slug}/index.html` : undefined;
 
-      // Title from outline or topic
+      // Title from outline, ebook.yml, or topic
       let title = topicData.topic || slug;
       if (existsSync(outlinePath)) {
         const outlineData = parse(readFileSync(outlinePath, "utf-8")) as Record<string, string>;
         if (outlineData.title) title = outlineData.title;
+      }
+      const ebookYmlPath = join(booksDir, slug, "ebook.yml");
+      if (existsSync(ebookYmlPath)) {
+        try {
+          const ebookData = parse(readFileSync(ebookYmlPath, "utf-8")) as Record<string, Record<string, string>>;
+          if (ebookData.meta?.title) title = ebookData.meta.title;
+        } catch { /* use existing title */ }
       }
 
       ebooks.push({

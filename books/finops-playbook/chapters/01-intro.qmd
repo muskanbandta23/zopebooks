@@ -32,11 +32,10 @@ The FinOps Foundation defines three core principles:
 
 At its core, FinOps follows a continuous lifecycle:
 
-```{mermaid}
-flowchart LR
-    A[Inform] --> B[Optimize]
-    B --> C[Operate]
-    C --> A
+```{d2}
+//| label: fig-finops-lifecycle
+//| fig-cap: "The FinOps Lifecycle: a continuous loop of Inform, Optimize, and Operate"
+//| file: diagrams/finops-lifecycle.d2
 ```
 
 - **Inform**: Gain visibility into cloud usage and costs. Allocate spending to teams and products.
