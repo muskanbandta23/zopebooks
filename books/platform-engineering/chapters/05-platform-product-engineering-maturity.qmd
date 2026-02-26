@@ -21,7 +21,10 @@ Mature platforms—Stage 3—transform developer experience through self-service
 
 Stage 4 Excellence marks the convergence of AI-augmented workflows and predictive capabilities. With 92% of CIOs planning AI integrations into platforms, the frontier is clear—but technology alone never drives maturity. The critical insight is this: platform maturity is not a technology stack decision. It is an expression of organizational culture and measurement capability. Teams that instrument observability, that quantify developer experience, and that treat the platform as a product worthy of continuous improvement are the ones that ascend. The path upward requires honest assessment of where you operate today and disciplined investment in the capabilities that matter most: self-service, golden paths, and the metrics that prove platform value.
 
-<!-- D2 template "platform-maturity-stages" not available: Template not found: platform-maturity-stages.d2. Available templates: finops-workflow, data-pipeline, before-after-optimization, multi-cloud-comparison, cloud-architecture -->
+```{.d2 width="100%" file="../diagrams/platform-maturity-stages.d2"}
+```
+
+*Platform engineering maturity: from manual operations to self-service product — each stage compounds developer productivity gains*
 
 
 ## Developer Experience: The Missing Metric
@@ -46,7 +49,10 @@ The critical principle is augmentation, not replacement. AI handles pattern reco
 
 [D2 diagram: AI Integration Layers - showing AI capabilities positioned across platform layers: Catalog Layer (Intelligent Search), Provisioning Layer (Predictive Scaling), Interface Layer (Conversational), Observability Layer (Anomaly Detection), Automation Layer (Auto-Remediation)]
 
-<!-- D2 template "ai-platform-architecture" not available: Template not found: ai-platform-architecture.d2. Available templates: finops-workflow, data-pipeline, before-after-optimization, multi-cloud-comparison, cloud-architecture -->
+```{.d2 width="100%" file="../diagrams/cloud-architecture.d2"}
+```
+
+*Reference IDP architecture: golden paths layer over cloud primitives, self-service tooling, and unified observability*
 
 
 ## Adoption Metrics That Matter

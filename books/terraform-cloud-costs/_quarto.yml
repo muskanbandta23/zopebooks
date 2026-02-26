@@ -12,7 +12,9 @@ book:
   date: today
   chapters:
     - index.qmd
-    - chapters/01-intro.qmd
+    - chapters/01-the-20k-monthly-surprise.qmd
+    - chapters/02-environment-strategies.qmd
+    - chapters/03-enterprise-automation.qmd
 
 filters:
   - d2

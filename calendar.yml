@@ -36,6 +36,8 @@ ebooks:
       pdf: true
       epub: true
       landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
       og_image: true
     landing:
       headline: "Take Control of Kubernetes Costs"
@@ -84,5 +86,26 @@ ebooks:
     landing:
       headline: "Stop Your Cloud Migration From Bleeding Budget"
       description: "75% of cloud migrations exceed budget. Learn the incident-driven framework for planning, budgeting, and controlling migration costs — with production-ready patterns that deliver ROI in 30 days."
+      cta_text: "Download Free PDF"
+      form_action: "#"
+
+  - slug: terraform-cloud-costs
+    title: "Terraform Cloud Cost Control"
+    subtitle: "Infrastructure-as-Code Strategies for Reducing Cloud Spend"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [terraform, cost-optimization, infrastructure-as-code, finops]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true
+    landing:
+      headline: "Cut Cloud Costs with Better Terraform"
+      description: "Stop over-provisioning with every deploy. Learn infrastructure-as-code strategies to right-size resources, prevent cost drift, and build cost-aware Terraform workflows."
       cta_text: "Download Free PDF"
       form_action: "#"

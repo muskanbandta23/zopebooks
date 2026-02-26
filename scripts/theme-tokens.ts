@@ -3,6 +3,8 @@
  *
  * Tokens provide a consistent, reusable set of design primitives
  * for typography, spacing, shadows, radii, transitions, and more.
+ *
+ * Aligned with ZopNight Design System (2026).
  */
 
 // ── Type Scale (minor third, ratio 1.2) ────────────────────────────────────
@@ -37,15 +39,15 @@ export const spacing = {
   24: "6rem",     // 96px
 } as const;
 
-// ── Shadows ───────────────────────────────────────────────────────────────
+// ── Shadows (ZopNight 5-tier elevation system) ──────────────────────────────
 
 export const shadows = {
-  sm: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
-  md: "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04)",
-  lg: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03)",
-  xl: "0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.03)",
-  "2xl": "0 16px 32px -8px rgba(0, 0, 0, 0.08)",
-  glow: "0 0 0 1px rgba(79, 70, 229, 0.1)",
+  sm: "0px 1px 3px 0px rgba(166, 175, 195, 0.4)",
+  md: "0px 5px 12px 0px rgba(0, 0, 0, 0.1)",
+  lg: "0px 4px 12px 0px rgba(13, 10, 44, 0.06)",
+  xl: "0px 10px 15px 0px rgba(5, 13, 29, 0.18)",
+  "2xl": "0px 34px 26px 0px rgba(13, 10, 44, 0.05), 0px 12px 34px 0px rgba(13, 10, 44, 0.08)",
+  glow: "0 0 0 1px rgba(8, 145, 178, 0.1)",
 } as const;
 
 // ── Border Radius ─────────────────────────────────────────────────────────

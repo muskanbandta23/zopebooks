@@ -1,239 +1,161 @@
-# Zopdev Ebook Generation Engine
+# Zopdev Ebook Engine
 
-A modular, pluggable ebook-as-code system for generating multi-format ebooks (HTML, PDF, EPUB) with auto-generated landing pages and social media assets.
-
-**Repository:** https://github.com/talvinder/ebooks
-**Roadmap:** [6-Week SOTA Transformation Plan](https://github.com/talvinder/ebooks/issues/7)
-
-## ✅ System Status: **Fully Operational**
-
-All components tested and working:
-- ✅ HTML book rendering (with Mermaid diagrams)
-- ✅ PDF generation (236KB)
-- ✅ EPUB generation (204KB)
-- ✅ Landing page generation
-- ✅ Social media assets (LinkedIn carousel, Instagram posts, OG images)
-- ✅ Validation & scaffolding
+A modular ebook-as-code engine that generates multi-format ebooks (HTML, PDF, EPUB) with landing pages, social media assets, blog posts, and a multi-book hub — all from a single content pipeline.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
-make install
-
-# Validate configuration
-make validate
-
-# List all ebooks
-make list
-
-# Render finops-playbook (all formats)
-make render ebook=finops-playbook
-
-# Generate landing page
-make landing ebook=finops-playbook
-
-# Generate social assets
-make social ebook=finops-playbook
-
-# Full pipeline (validate → render → landing → social)
-make all
+bun install                        # Install dependencies
+ebook list                         # See all ebooks
+ebook pipeline k8s-cost-guide      # Generate content (research → outline → plan → transform)
+ebook publish k8s-cost-guide       # Render all output formats
+ebook audit k8s-cost-guide         # Check content quality
 ```
 
-## Available Commands
+> **Tip:** Run `ebook --help` or `ebook <command> --help` for full options.
 
-```bash
-make help                           # Show all targets
-make install                        # Install Bun dependencies
-make setup                          # Symlink brand into all ebooks
-make validate                       # Validate calendar + ebook manifests
-make list                           # List all ebooks with status
+## How It Works
 
-# Rendering
-make render ebook=<slug>            # Render one ebook (all formats)
-make render-html ebook=<slug>       # Render HTML only
-make render-pdf ebook=<slug>        # Render PDF only
-make render-epub ebook=<slug>       # Render EPUB only
-make render-all                     # Render all non-archived ebooks
-
-# Landing Pages
-make landing ebook=<slug>           # Generate landing page
-make landing-all                    # Generate all landing pages
-
-# Social Media
-make social ebook=<slug>            # Generate all social assets
-make social-linkedin ebook=<slug>   # LinkedIn carousel only
-make social-instagram ebook=<slug>  # Instagram posts only
-make social-og ebook=<slug>         # OG image only
-
-# Scaffolding
-make new-ebook slug=<slug> title="<title>" [subtitle="<subtitle>"]
-
-# Pipeline
-make all                            # Full pipeline
-make clean                          # Remove all _output/
+```
+topic.yml ──► [research] ──► [outline] ──► [plan] ──► [transform] ──► .qmd chapters
+                                                                           │
+                    ┌──────────┬───────────┬──────────┬────────────────────┘
+                    ▼          ▼           ▼          ▼
+                [render]   [landing]   [social]    [blog]
+                    │          │           │          │
+              HTML/PDF/    Landing     OG/LI/IG    Blog
+              EPUB         Page        Images      Posts
 ```
 
-## Directory Structure
+**4-stage LLM content pipeline** generates structured, data-backed ebook chapters from a topic definition. Output generators then produce all distribution formats from the same source.
+
+## Commands
+
+### Content Pipeline
+
+| Command | Description |
+|---------|-------------|
+| `ebook new --slug=<id> --title="<title>"` | Scaffold a new ebook |
+| `ebook create` | Interactive creator (topic in, all modalities out) |
+| `ebook pipeline <slug>` | Full pipeline: research → outline → plan → transform |
+| `ebook research <slug>` | Stage 0: Research topic via search APIs |
+| `ebook outline <slug>` | Stage 1: Generate book outline |
+| `ebook plan <slug>` | Stage 2: Plan chapters with visual recommendations |
+| `ebook transform <slug>` | Stage 3: Generate prose from chapter plans |
+
+### Output Generation
+
+| Command | Description |
+|---------|-------------|
+| `ebook render <slug> [--format=html\|pdf\|epub]` | Render with Quarto |
+| `ebook landing [slug]` | Generate landing page |
+| `ebook social <slug> [--type=linkedin\|instagram\|og]` | Generate social assets |
+| `ebook blog [slug]` | Generate blog posts from chapters |
+| `ebook hub` | Generate multi-book hub page |
+| `ebook publish <slug>` | Generate ALL modalities |
+
+### Quality & Evaluation
+
+| Command | Description |
+|---------|-------------|
+| `ebook validate` | Validate all configs (YAML, D2, OJS) |
+| `ebook audit [slug]` | Content quality audit (6 metrics) |
+| `ebook eval <slug>` | A/B engine eval (template vs LLM, 11 metrics) |
+| `ebook eval-all <slug>` | Unified eval across all modalities |
+| `ebook heal <slug> [--max-iter=N]` | Self-healing eval loop |
+| `ebook freshness [slug]` | Check pricing data freshness |
+| `ebook diagrams <slug>` | Validate D2 diagrams |
+
+### Utilities
+
+| Command | Description |
+|---------|-------------|
+| `ebook list [--json]` | List all ebooks with status |
+| `ebook cost-report [slug]` | Show LLM cost breakdown |
+| `ebook setup` | Symlink brand into all ebooks |
+| `ebook clean` | Remove all generated output |
+| `ebook test` | Run unit tests |
+
+See [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) for complete command documentation.
+
+## Project Structure
 
 ```
 ebooks/
-├── Makefile                        # CLI: 19 targets
-├── package.json                    # Bun dependencies
-├── calendar.yml                    # Content calendar (source of truth)
+├── scripts/
+│   ├── cli.ts                  # Unified CLI entry point
+│   ├── research-topic.ts       # Stage 0: topic research
+│   ├── generate-outline.ts     # Stage 1: book outline
+│   ├── plan-chapters.ts        # Stage 2: chapter planning
+│   ├── transform-chapter.ts    # Stage 3: prose generation
+│   ├── content-audit.ts        # 6-metric quality audit
+│   ├── engine-eval.ts          # A/B eval (11 metrics)
+│   ├── eval-loop.ts            # Self-healing orchestrator
+│   ├── brand-utils.ts          # Brand config loading & merging
+│   ├── validate.ts             # Config validation
+│   └── providers/              # LLM, search, image, pricing providers
 │
-├── _brand/                         # Brand assets
-│   ├── _brand.yml                  # Colors, typography, logos
-│   └── logos/                      # SVG logo files
+├── _brand/                     # Brand identity (colors, logos, company info)
+│   ├── brand.yml               # Quarto-native brand config
+│   └── _brand-extended.yml     # Company, products, ICPs, authors
 │
-├── _themes/                        # Shared themes
-│   ├── zopdev-book.scss            # HTML book theme
-│   ├── zopdev-epub.css             # EPUB styles
-│   └── preamble.tex                # LaTeX preamble for PDF
+├── _themes/                    # Rendering themes
+│   ├── zopdev-book.scss        # HTML theme (SCSS)
+│   ├── preamble.tex            # PDF theme (LaTeX)
+│   └── zopdev-epub.css         # EPUB theme
 │
-├── _templates/                     # Scaffolding templates
-│   ├── _quarto-base.yml            # Template _quarto.yml
-│   ├── chapter.qmd                 # Starter chapter
-│   └── ebook.yml                   # Starter manifest
+├── _landing/                   # Landing page generator
+├── _social/                    # Social media asset generator
+├── _blog/                      # Blog post generator
+├── _hub/                       # Multi-book hub generator
+├── _templates/                 # Scaffolding & calculator templates
+├── _diagrams/                  # Reusable D2 diagram templates
 │
-├── _landing/                       # Landing page generator
-│   ├── generate.ts                 # Bun script
-│   ├── template.html               # Mustache template
-│   └── styles.css                  # Landing page CSS
+├── books/                      # Ebook projects
+│   ├── k8s-cost-guide/
+│   ├── finops-playbook/
+│   ├── terraform-cloud-costs/
+│   ├── platform-engineering/
+│   └── cloud-migration-costs/
 │
-├── _social/                        # Social asset generator
-│   ├── generate.ts                 # Bun script (Satori + Sharp + pdf-lib)
-│   ├── templates/                  # TSX templates
-│   │   ├── linkedin-slide.tsx      # 1080x1080 carousel
-│   │   ├── instagram-post.tsx      # 1080x1350 quote card
-│   │   └── og-image.tsx            # 1200x630 OG image
-│   └── fonts/                      # Inter fonts (Regular, Bold)
-│
-├── scripts/                        # Shell scripts & validators
-│   ├── setup-ebook.sh              # Symlink brand
-│   ├── new-ebook.sh                # Scaffold new ebook
-│   ├── render-all.sh               # Render all non-archived
-│   └── validate.ts                 # Schema validation
-│
-├── books/                          # Ebook projects
-│   └── finops-playbook/            # Example: The FinOps Playbook
-│       ├── _quarto.yml             # Book config
-│       ├── _brand.yml              # → symlink to ../../_brand/_brand.yml
-│       ├── ebook.yml               # Per-ebook metadata & social config
-│       ├── index.qmd               # Preface
-│       ├── chapters/               # 8 chapters with content
-│       ├── images/                 # Image assets
-│       └── references.bib          # Bibliography
-│
-└── _output/                        # Generated output (gitignored)
-    ├── books/<slug>/html|pdf|epub
-    ├── landing/<slug>/index.html
-    └── social/<slug>/linkedin|instagram|og
+├── _output/                    # Generated output (gitignored)
+├── calendar.yml                # Content calendar (source of truth)
+├── quality-thresholds.yml      # Configurable quality standards
+└── Makefile                    # Make targets (alternative to CLI)
 ```
 
-## Current Content
+## Current Ebooks
 
-### The FinOps Playbook
-**Status**: in-progress  
-**Formats**: HTML, PDF (236KB), EPUB (204KB)  
-**Chapters**: 8 (Intro, Cloud Cost Fundamentals, FinOps Framework, Cost Allocation, Optimization Strategies, Tooling & Automation, Culture & Adoption, Case Studies)
+| Slug | Title | Status |
+|------|-------|--------|
+| `finops-playbook` | The FinOps Playbook | in-progress |
+| `k8s-cost-guide` | Kubernetes Cost Guide | draft |
+| `terraform-cloud-costs` | Terraform Cloud Costs | draft |
+| `platform-engineering` | The Platform Engineering Playbook | draft |
+| `cloud-migration-costs` | Cloud Migration Cost Catastrophe | draft |
 
-**Generated Assets**:
-- Landing page with lead capture form
-- LinkedIn carousel: 6 slides + combined PDF
-- Instagram: 3 quote cards (1080x1350)
-- OG image (1200x630)
+## Prerequisites
 
-## Dependencies
+- **[Bun](https://bun.sh/)** — TypeScript runtime
+- **[Quarto](https://quarto.org/)** — Book rendering (HTML/PDF/EPUB)
+- **TinyTeX** — PDF generation (`quarto install tinytex`)
+- **D2** (optional) — Diagram rendering
 
-### Installed
-- ✅ Bun (runtime)
-- ✅ Quarto CLI 1.8.27
-- ✅ TinyTeX (LaTeX for PDF)
-- ✅ Node packages: satori, sharp, pdf-lib, yaml, mustache, react
-- ✅ Fonts: Inter-Regular.ttf, Inter-Bold.ttf
+See [docs/SETUP.md](docs/SETUP.md) for detailed installation instructions.
 
-## Adding a New Ebook
+## Documentation
 
-1. **Scaffold structure**:
-   ```bash
-   make new-ebook slug=my-ebook title="My Ebook Title" subtitle="Optional Subtitle"
-   ```
-
-2. **Add entry to `calendar.yml`**:
-   ```yaml
-   - slug: my-ebook
-     title: "My Ebook Title"
-     subtitle: "Optional Subtitle"
-     status: draft
-     tags: [tag1, tag2]
-     outputs:
-       html: true
-       pdf: true
-       epub: true
-       landing_page: true
-       linkedin_carousel: true
-       instagram_posts: true
-       og_image: true
-     landing:
-       headline: "Your compelling headline"
-       description: "Lead capture description"
-       cta_text: "Download Free PDF"
-       form_action: "#"  # Replace with your webhook URL
-   ```
-
-3. **Write content** in `books/my-ebook/chapters/`
-
-4. **Generate outputs**:
-   ```bash
-   make render ebook=my-ebook
-   make landing ebook=my-ebook
-   make social ebook=my-ebook
-   ```
-
-## Customization
-
-### Brand Colors
-Edit `_brand/_brand.yml` to change colors, typography, and logos. Changes apply to:
-- Quarto-rendered books (HTML/PDF/EPUB)
-- Landing pages
-- Social media assets
-
-### Themes
-- **HTML**: `_themes/zopdev-book.scss` (SCSS extending Quarto's cosmo theme)
-- **PDF**: `_themes/preamble.tex` (LaTeX with custom chapter formatting, headers, code blocks)
-- **EPUB**: `_themes/zopdev-epub.css` (Hardcoded colors for e-reader compatibility)
-
-### Social Templates
-Edit TSX templates in `_social/templates/` to customize:
-- LinkedIn carousel slide layout
-- Instagram quote card design
-- Open Graph image appearance
-
-## Output Examples
-
-**HTML Book**: Full-featured website with navigation, search, and Mermaid diagrams  
-**PDF**: 236KB professionally formatted book with custom headers, branded chapter titles  
-**EPUB**: 204KB e-reader compatible format  
-**Landing Page**: Lead capture page with form, chapter listing, and brand styling  
-**Social Assets**: Ready-to-publish images for LinkedIn, Instagram, and social sharing
-
-## Roadmap
-
-See the [6-Week SOTA Transformation Plan](https://github.com/talvinder/ebooks/issues/7) for upcoming enhancements:
-
-- **Epic #1**: Hierarchical Brand Configuration System ([#1](https://github.com/talvinder/ebooks/issues/1))
-- **Epic #2**: Visual Foundation & Premium Theme ([#2](https://github.com/talvinder/ebooks/issues/2))
-- **Epic #3**: Professional D2 Diagram System ([#3](https://github.com/talvinder/ebooks/issues/3))
-- **Epic #4**: Content Transformation to SOTA Quality ([#4](https://github.com/talvinder/ebooks/issues/4))
-- **Epic #5**: Interactive Elements & Observable JS ([#5](https://github.com/talvinder/ebooks/issues/5))
-- **Epic #6**: Multi-Book Hub & Scalable Publishing ([#6](https://github.com/talvinder/ebooks/issues/6))
-
-**Target:** Transform from 21% → 85% quality score (AWS/Stripe documentation level)
+- **[CLI Reference](docs/CLI_REFERENCE.md)** — Every command, every option
+- **[Setup Guide](docs/SETUP.md)** — Prerequisites and installation
+- **[Quick Start Guide](docs/QUICKSTART_GUIDE.md)** — Step-by-step walkthrough
+- **[D2 Diagram Guide](guides/D2_DIAGRAM_GUIDE.md)** — Diagram patterns
+- **[Observable JS Patterns](guides/OBSERVABLE_JS_PATTERNS.md)** — Interactive calculators
+- **[Content Quality Standards](guides/CONTENT_QUALITY.md)** — Quality metrics
+- **[Contributing](CONTRIBUTING.md)** — Development workflow
 
 ## Contributing
 
-This is an active project with planned iterations. See the [GitHub Issues](https://github.com/talvinder/ebooks/issues) for the current roadmap and open tasks.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, code style, and PR process.
 
 ## License
 

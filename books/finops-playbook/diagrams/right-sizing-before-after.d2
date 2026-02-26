@@ -1,6 +1,6 @@
 # Right-Sizing Before/After Comparison
 # Purpose: Show cost impact of right-sizing overprovisioned instances
-# Brand: Zopdev (#0052FF primary, #00C48C success, #FFB020 warning, #FF6B6B danger)
+# Brand: Zopdev (#0891b2 primary, #16a34a success, #fbbf24 warning, #ef4444 danger)
 
 direction: right
 
@@ -14,28 +14,28 @@ vars: {
 # BEFORE: Overprovisioned
 before: BEFORE {
   shape: rectangle
-  style.fill: "#ffebee"
-  style.stroke: "#FF6B6B"
+  style.fill: "#fef2f2"
+  style.stroke: "#ef4444"
   style.stroke-width: 3
 
   title: Overprovisioned Fleet {
     shape: text
     style.font-size: 18
     style.bold: true
-    style.font-color: "#FF6B6B"
+    style.font-color: "#ef4444"
   }
 
   cost: 22300 dollars per month {
     shape: text
     style.font-size: 16
     style.bold: true
-    style.font-color: "#FF6B6B"
+    style.font-color: "#ef4444"
   }
 
   instances: 143 m5.2xlarge instances {
     shape: rectangle
     style.fill: "#ffffff"
-    style.stroke: "#FF6B6B"
+    style.stroke: "#ef4444"
 
     stats: |md
       - Average CPU: 18% utilization
@@ -49,28 +49,28 @@ before: BEFORE {
 # AFTER: Right-Sized
 after: AFTER {
   shape: rectangle
-  style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.fill: "#f0fdf4"
+  style.stroke: "#16a34a"
   style.stroke-width: 3
 
   title: Right-Sized Fleet {
     shape: text
     style.font-size: 18
     style.bold: true
-    style.font-color: "#00C48C"
+    style.font-color: "#16a34a"
   }
 
   cost: 3900 dollars per month {
     shape: text
     style.font-size: 16
     style.bold: true
-    style.font-color: "#00C48C"
+    style.font-color: "#16a34a"
   }
 
   instances: 143 m5.large instances {
     shape: rectangle
     style.fill: "#ffffff"
-    style.stroke: "#00C48C"
+    style.stroke: "#16a34a"
 
     stats: |md
       - Average CPU: 45% utilization
@@ -83,14 +83,14 @@ after: AFTER {
 
 # Flow
 before -> after: Right-Sizing Campaign {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-width: 2
 }
 
 # Savings badge
 savings: Savings 18400 dollars per month 83 percent reduction {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
   style.font-size: 16
   style.shadow: true
@@ -98,7 +98,7 @@ savings: Savings 18400 dollars per month 83 percent reduction {
 }
 
 after -> savings {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-dash: 3
   style.stroke-width: 2
 }

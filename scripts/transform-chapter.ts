@@ -39,6 +39,9 @@ import type {
 import { copyTemplateToBook } from "./diagram-utils.js";
 import { loadPipelineConfig, type PipelineConfig } from "./provider-config.js";
 import { sectionProsePrompt, imagePromptForSection } from "./prompt-templates.js";
+import { generateSectionImage, isImageVisualType, type BrandColors } from "./image-gen.js";
+import { loadMergedBrand } from "./brand-utils.js";
+import { getSocialThemeValues } from "./theme-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
@@ -61,6 +64,33 @@ function loadOutline(slug: string): BookOutline | null {
   const path = join(PROJECT_ROOT, "books", slug, "outline.yml");
   if (!existsSync(path)) return null;
   return parse(readFileSync(path, "utf-8")) as BookOutline;
+}
+
+// ── Brand colors for image generation ────────────────────────────────────────
+
+const brandColorsCache = new Map<string, BrandColors | null>();
+
+function getBrandColorsForSlug(slug: string): BrandColors | null {
+  if (brandColorsCache.has(slug)) return brandColorsCache.get(slug)!;
+
+  try {
+    const brandConfig = loadMergedBrand(PROJECT_ROOT, slug);
+    const themeValues = getSocialThemeValues(brandConfig.resolved);
+    const colors: BrandColors = {
+      primary: themeValues.primary,
+      foreground: themeValues.foreground,
+      background: themeValues.background,
+      secondary: themeValues.secondary,
+      darkPrimary: themeValues.darkPrimary,
+      lightBackground: themeValues.lightBackground,
+    };
+    brandColorsCache.set(slug, colors);
+    return colors;
+  } catch {
+    console.warn(`  [image-gen] Could not load brand colors for "${slug}", skipping image generation.`);
+    brandColorsCache.set(slug, null);
+    return null;
+  }
 }
 
 // ── OJS template loader ─────────────────────────────────────────────────────
@@ -219,25 +249,34 @@ function cleanVagueClaims(prose: string, seeds: ContentSeed | undefined): string
 
 // ── D2 diagram embedding ────────────────────────────────────────────────────
 
+// Fallback template precedence: requested → before-after-optimization → cloud-architecture
+const DIAGRAM_FALLBACK_ORDER = ["before-after-optimization", "cloud-architecture", "finops-workflow", "data-pipeline"];
+
 function embedDiagram(
   slug: string,
   templateName: string,
   purpose: string,
 ): string {
-  try {
-    copyTemplateToBook(PROJECT_ROOT, templateName, slug);
-  } catch (err) {
-    return `<!-- D2 template "${templateName}" not available: ${(err as Error).message} -->\n`;
+  // Try the requested template first, then fallbacks in order
+  const candidates = [templateName, ...DIAGRAM_FALLBACK_ORDER.filter(t => t !== templateName)];
+  for (const candidate of candidates) {
+    try {
+      copyTemplateToBook(PROJECT_ROOT, candidate, slug);
+      const relPath = `../diagrams/${candidate}.d2`;
+      const caption = candidate !== templateName
+        ? `*${purpose}* *(diagram: ${candidate})*`
+        : `*${purpose}*`;
+      if (candidate !== templateName) {
+        console.warn(`  [diagram] Template "${templateName}" not found — using fallback "${candidate}"`);
+      }
+      return [`\`\`\`{.d2 width="100%" file="${relPath}"}`, `\`\`\``, ``, caption].join("\n");
+    } catch {
+      // try next candidate
+    }
   }
-
-  const relPath = `../diagrams/${templateName}.d2`;
-
-  return [
-    `\`\`\`{.d2 width="100%" file="${relPath}"}`,
-    `\`\`\``,
-    ``,
-    `*${purpose}*`,
-  ].join("\n");
+  // All templates failed — log warning, return empty (no comment clutter in output)
+  console.warn(`  [diagram] No D2 templates available for "${templateName}" in ${slug} — skipping diagram`);
+  return ``;
 }
 
 // ── Config block generation (replaces Python script generation) ─────────────
@@ -675,6 +714,15 @@ async function renderSectionWithLLM(
   // Post-generation vagueness cleanup
   const prose = cleanVagueClaims(rawProse, plan.content_seeds);
 
+  // Warn if avg sentence length is likely to push FK grade above 14
+  const proseSentences = prose.split(/[.!?]+/).filter(s => s.trim().split(/\s+/).length > 3);
+  if (proseSentences.length > 0) {
+    const avgWords = proseSentences.reduce((sum, s) => sum + s.trim().split(/\s+/).length, 0) / proseSentences.length;
+    if (avgWords > 20) {
+      console.warn(`  [readability] Section "${section.heading}" avg sentence length ${avgWords.toFixed(1)} words — may exceed FK grade 14`);
+    }
+  }
+
   // ── Assemble section with heading + prose + visuals ──
 
   if (section.id === "opening") {
@@ -726,32 +774,24 @@ async function renderSectionWithLLM(
     } else if (v.type === "table") {
       // Skip — LLM prose typically generates its own inline tables with specific data.
       // Template tables use generic "Varies" values which are lower quality.
-    } else if (v.type === "illustration" && pipelineConfig.image) {
-      // Generate image via image provider
-      const imagePrompt = v.image_prompt || imagePromptForSection(
-        chapterTitle,
-        section.heading,
-        v.purpose,
-        research?.topic || "technology",
-        v.image_style || pipelineConfig.imageConfig.style,
-      );
-      const filename = v.image_filename || `${plan.chapter_id}-${section.id}.png`;
-      const imagesDir = join(PROJECT_ROOT, "books", slug, "images");
-      if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });
-
-      try {
-        const imgResult = await pipelineConfig.image.generate({
-          prompt: imagePrompt,
-          style: v.image_style || pipelineConfig.imageConfig.style,
+    } else if (isImageVisualType(v.type)) {
+      // Satori-rendered graphics (stat-card, comparison-graphic, metric-highlight, key-number)
+      // or AI-generated illustrations — all handled by image-gen.ts
+      const brandColors = getBrandColorsForSlug(slug);
+      if (brandColors) {
+        const imgResult = await generateSectionImage({
+          slug,
+          chapterId: plan.chapter_id,
+          sectionId: section.id,
+          visual: v,
+          brandColors,
+          imageProvider: pipelineConfig.image,
+          rootDir: PROJECT_ROOT,
         });
-        const imgPath = join(imagesDir, filename);
-        writeFileSync(imgPath, imgResult.imageBuffer);
-        parts.push(`![${v.purpose || section.heading}](images/${filename})`);
-        parts.push(``);
-        console.log(`    Generated image: ${filename}`);
-      } catch (err) {
-        parts.push(`<!-- Image generation failed: ${(err as Error).message} -->`);
-        parts.push(``);
+        if (imgResult) {
+          parts.push(`![${v.purpose || section.heading}](${imgResult.filename})`);
+          parts.push(``);
+        }
       }
     }
   }

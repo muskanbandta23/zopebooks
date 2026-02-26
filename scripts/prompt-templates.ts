@@ -186,7 +186,7 @@ Each section object:
 - id: string (snake_case, e.g., "opening", "background", "config_vpa")
 - heading: string (section title — specific, not generic)
 - word_target: number (words for this section)
-- visual: null | {type: "d2"|"ojs"|"code"|"callout"|"illustration"|"table", template?: string, language?: string, purpose: string, style?: string, image_prompt?: string, image_style?: string}
+- visual: null | {type: "d2"|"ojs"|"code"|"callout"|"illustration"|"table"|"stat-card"|"comparison-graphic"|"metric-highlight"|"key-number", template?: string, language?: string, purpose: string, style?: string, image_prompt?: string, image_style?: string, stat_data?: {headline: string, subtext: string, source?: string}, comparison_data?: {title?: string, before: {label: string, value: string}, after: {label: string, value: string}, improvement: string}, metrics_data?: Array<{label: string, value: string, trend?: "up"|"down"}>}
 - notes: string (detailed guidance for what this section should cover — be specific about arguments, examples, data to include)
 
 Rules:
@@ -195,6 +195,12 @@ Rules:
 - Include at least ${density.minDiagrams} D2 diagram section(s)
 - Include at least ${density.minCodeBlocks} code/config section(s)
 ${density.hasCalculator ? "- MUST include exactly 1 interactive calculator section (OJS). Place it in the most data-heavy section. Use one of: cost-comparison-calculator, roi-calculator, resource-optimizer, or adoption-estimator. The calculator lets readers model their own scenario." : "- No calculator needed for this density level"}
+- IMPORTANT: Include at least 1 image visual per chapter using these branded types:
+  - "stat-card": Use when a section highlights a key metric (e.g., "$22K/month savings"). Requires stat_data: {headline: "the number", subtext: "explanation", source: "attribution"}
+  - "comparison-graphic": Use for before/after or A/B comparisons. Requires comparison_data: {title, before: {label, value}, after: {label, value}, improvement: "summary"}
+  - "metric-highlight": Use when showing 2-4 KPIs together. Requires metrics_data: [{label, value, trend: "up"|"down"}, ...]
+  - "key-number": Use for a single bold number callout. Requires stat_data: {headline: "the number", subtext: "unit/label", source: "context"}
+  Place image visuals on the opening or impact/results sections. They break text walls with branded graphics.
 - End with a "summary" section
 - Section notes should be detailed enough that a writer knows exactly what to write
 - For illustration visuals, include image_prompt (text description of the image) and image_style
@@ -334,6 +340,7 @@ Rules:
 - NEVER use these vague phrases: "typically", "often", "can be", "significant", "generally", "in many cases", "various", "should consider", "many organizations", "some organizations". Replace each with a specific claim backed by a number or named source from the FACT SHEET
 - If the FACT SHEET does not contain a relevant number, describe the mechanism qualitatively — do NOT invent statistics
 - Target exactly ${section.word_target} words (±20%)
+- Keep sentences short: maximum 20 words per sentence on average. Long technical sentences should be split into two. Target Flesch-Kincaid grade 10–13.
 - Do NOT include the section heading (## ...) — the assembler adds it
 - Do NOT include YAML frontmatter
 - Do NOT include HTML comments

@@ -126,11 +126,11 @@ Use these hex codes to maintain brand consistency in your diagrams:
 
 | Color | Hex | Use For |
 |-------|-----|---------|
-| **Primary Blue** | `#0052FF` | Main elements, primary actions, Zopdev products |
-| **Success Green** | `#00C48C` | Savings, optimization wins, positive outcomes |
-| **Warning Orange** | `#FFB020` | Alerts, moderate issues, attention needed |
-| **Danger Red** | `#FF6B6B` | Problems, waste, over-spend |
-| **Dark Blue** | `#003DBF` | Borders, secondary elements |
+| **Primary Blue** | `#0891b2` | Main elements, primary actions, Zopdev products |
+| **Success Green** | `#16a34a` | Savings, optimization wins, positive outcomes |
+| **Warning Orange** | `#fbbf24` | Alerts, moderate issues, attention needed |
+| **Danger Red** | `#ef4444` | Problems, waste, over-spend |
+| **Dark Blue** | `#0e7490` | Borders, secondary elements |
 | **Light Blue** | `#e3f2fd` | Backgrounds, containers |
 
 ### Color Usage Examples
@@ -138,25 +138,25 @@ Use these hex codes to maintain brand consistency in your diagrams:
 ```d2
 # Primary element
 zopnight: ZopNight {
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
   style.font-color: "#ffffff"
 }
 
 # Success/savings indicator
 savings_badge: Potential Savings: $18K/month {
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
 }
 
 # Warning/alert
 cost_spike: Cost Spike Detected {
-  style.fill: "#FFB020"
+  style.fill: "#fbbf24"
   style.font-color: "#000000"
 }
 
 # Problem/waste
 idle_resources: Idle Resources: $5K/month waste {
-  style.fill: "#FF6B6B"
+  style.fill: "#ef4444"
   style.font-color: "#ffffff"
 }
 ```
@@ -199,14 +199,14 @@ aws.vpc.ec2 -> aws.vpc.rds
 ```d2
 # Fill color
 box: Box {
-  style.fill: "#0052FF"
-  style.stroke: "#003DBF"
+  style.fill: "#0891b2"
+  style.stroke: "#0e7490"
   style.font-color: "#ffffff"
 }
 
 # Stroke and width
 important: Important Element {
-  style.stroke: "#FF6B6B"
+  style.stroke: "#ef4444"
   style.stroke-width: 3
   style.bold: true
 }
@@ -292,12 +292,12 @@ aws: AWS Cloud {
 
   vpc: Production VPC {
     style.fill: "#ffffff"
-    style.stroke: "#0052FF"
+    style.stroke: "#0891b2"
     style.stroke-width: 2
 
     cost: $45K/month {
       shape: text
-      style.font-color: "#0052FF"
+      style.font-color: "#0891b2"
       style.bold: true
     }
 
@@ -311,7 +311,7 @@ aws: AWS Cloud {
     }
 
     eks: EKS Cluster {
-      style.fill: "#0052FF"
+      style.fill: "#0891b2"
       style.font-color: "#ffffff"
 
       eks_cost: $3,317/mo {
@@ -325,13 +325,13 @@ aws: AWS Cloud {
 # Savings badge
 savings: Potential Savings: $18K/month {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
   style.shadow: true
 }
 
 aws -> savings: Optimization {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-dash: 3
 }
 ```
@@ -344,7 +344,7 @@ direction: right
 before: BEFORE {
   shape: rectangle
   style.fill: "#ffebee"
-  style.stroke: "#FF6B6B"
+  style.stroke: "#ef4444"
   style.stroke-width: 2
 
   cost: $45K/month {
@@ -363,7 +363,7 @@ before: BEFORE {
 after: AFTER {
   shape: rectangle
   style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
 
   cost: $27K/month {
@@ -380,19 +380,19 @@ after: AFTER {
 }
 
 before -> after: Optimization {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 3
 }
 
 savings: Savings: $18K/month (40%) {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
   style.font-size: 14
 }
 
 after -> savings {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-dash: 3
 }
 ```
@@ -404,7 +404,7 @@ direction: down
 
 step1: 1. Connect Accounts {
   style.fill: "#e3f2fd"
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
 
   tasks: |md
     - Link AWS, GCP, Azure
@@ -414,7 +414,7 @@ step1: 1. Connect Accounts {
 
 step2: 2. Analyze Costs {
   style.fill: "#fff3e0"
-  style.stroke: "#FFB020"
+  style.stroke: "#fbbf24"
 
   tasks: |md
     - Identify waste
@@ -424,7 +424,7 @@ step2: 2. Analyze Costs {
 
 step3: 3. Implement Changes {
   style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
 
   tasks: |md
     - Right-size resources

@@ -21,7 +21,9 @@ import { BraveSearchProvider } from "./providers/search-brave.js";
 import { MockSearchProvider } from "./providers/search-mock.js";
 import type { ImageProvider } from "./providers/image.js";
 import { BananaProProvider } from "./providers/image-banana.js";
+import { OpenAIImageProvider } from "./providers/image-openai.js";
 import { MockImageProvider } from "./providers/image-mock.js";
+import { FailoverLLMProvider } from "./provider-failover.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,13 @@ export interface PipelineYamlConfig {
     temperature?: number;
     supports_json_mode?: boolean;
   };
+  failover?: Array<{
+    provider: string;
+    model?: string;
+    base_url?: string;
+    api_key_env?: string;
+    supports_json_mode?: boolean;
+  }>;
   search?: {
     providers?: string[];
     depth?: "basic" | "advanced";
@@ -200,6 +209,15 @@ function resolveImageProvider(yaml?: PipelineYamlConfig["images"]): ImageProvide
     });
   }
 
+  if (provider === "openai" || provider === "dalle" || (!provider && env("OPENAI_API_KEY") && env("IMAGE_PROVIDER") === "openai")) {
+    const apiKey = env("OPENAI_API_KEY");
+    if (!apiKey) return null;
+    return new OpenAIImageProvider({
+      apiKey,
+      model: yaml?.model_id || "dall-e-3",
+    });
+  }
+
   return null;
 }
 
@@ -239,9 +257,30 @@ export function loadPipelineConfig(rootDir: string, slug: string): PipelineConfi
   }
 
   // Full mode: resolve real providers, fallback to null
-  const llm = resolveLLMProvider(yamlConfig.llm);
+  let llm = resolveLLMProvider(yamlConfig.llm);
   const search = resolveSearchProvider(yamlConfig.search);
   const image = resolveImageProvider(yamlConfig.images);
+
+  // Wrap in failover if configured
+  if (llm && yamlConfig.failover && yamlConfig.failover.length > 0) {
+    const failoverProviders: LLMProvider[] = [llm]; // primary first
+    for (const fo of yamlConfig.failover) {
+      const apiKey = fo.api_key_env ? env(fo.api_key_env) : env("OPENAI_API_KEY");
+      if (!apiKey) continue;
+      const foProvider = new OpenAICompatibleProvider({
+        apiKey,
+        model: fo.model || "gpt-4o",
+        baseUrl: fo.base_url || undefined,
+        supportsJsonMode: fo.supports_json_mode ?? true,
+        name: fo.provider,
+      });
+      failoverProviders.push(foProvider);
+    }
+    if (failoverProviders.length > 1) {
+      llm = new FailoverLLMProvider(failoverProviders);
+      console.log(`  [config] Failover: ${failoverProviders.map(p => p.name).join(" → ")}`);
+    }
+  }
 
   if (llm) console.log(`  [config] LLM: ${llm.name}/${llm.model}`);
   else console.log("  [config] LLM: none (will use template fallback)");

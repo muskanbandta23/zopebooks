@@ -88,6 +88,96 @@ function recommendCalculator(chapter: OutlineChapter): VisualRecommendation {
   return { type: "ojs", template: "cost-comparison-calculator", purpose: "Interactive cost comparison calculator" };
 }
 
+// ── Image visual builders (for Satori-rendered graphics) ─────────────────────
+
+/**
+ * Extracts dollar amounts and percentages from research data to build
+ * stat-card or comparison-graphic visuals for impact sections.
+ */
+function buildImpactVisual(
+  patterns: ResearchPattern[],
+  claims: ResearchClaim[],
+): VisualRecommendation | null {
+  // Try to build a comparison-graphic from before/after patterns
+  const savingsPattern = patterns.find((p) => p.typical_savings);
+  if (savingsPattern && savingsPattern.typical_savings) {
+    return {
+      type: "comparison-graphic",
+      purpose: `${savingsPattern.name} optimization impact`,
+      comparison_data: {
+        title: savingsPattern.name,
+        before: { label: "Before optimization", value: "Baseline" },
+        after: { label: "After optimization", value: savingsPattern.typical_savings },
+        improvement: savingsPattern.typical_savings,
+      },
+    };
+  }
+
+  // Try to build a stat-card from a specific claim with a dollar amount or percentage
+  const numberClaim = claims.find((c) => /\$[\d,]+|\d+%/.test(c.claim));
+  if (numberClaim) {
+    const match = numberClaim.claim.match(/(\$[\d,]+(?:\/\w+)?|\d+(?:\.\d+)?%)/);
+    if (match) {
+      return {
+        type: "stat-card",
+        purpose: "Key metric from industry research",
+        stat_data: {
+          headline: match[1],
+          subtext: numberClaim.claim.replace(match[1], "").trim().replace(/^[,.\s]+|[,.\s]+$/g, ""),
+          source: numberClaim.source,
+        },
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Builds a metric-highlight visual from multiple research claims/patterns.
+ * Used when a section has 2+ quantified data points to display as a grid.
+ */
+function buildMetricVisual(
+  claims: ResearchClaim[],
+  patterns: ResearchPattern[],
+): VisualRecommendation | null {
+  const metrics: Array<{ label: string; value: string; trend?: "up" | "down" }> = [];
+
+  // Extract numbers from claims
+  for (const claim of claims.slice(0, 3)) {
+    const match = claim.claim.match(/(\$[\d,]+(?:\/\w+)?|\d+(?:\.\d+)?%)/);
+    if (match) {
+      const isNegative = /waste|cost|spend|loss|overprovisioned/i.test(claim.claim);
+      metrics.push({
+        label: claim.claim.slice(0, 40).replace(match[1], "").trim().replace(/^[,.\s]+|[,.\s]+$/g, "") || claim.source,
+        value: match[1],
+        trend: isNegative ? "down" : "up",
+      });
+    }
+  }
+
+  // Extract from patterns
+  for (const p of patterns.slice(0, 2)) {
+    if (p.typical_savings && metrics.length < 4) {
+      metrics.push({
+        label: p.name,
+        value: p.typical_savings,
+        trend: "up",
+      });
+    }
+  }
+
+  if (metrics.length >= 2) {
+    return {
+      type: "metric-highlight",
+      purpose: "Key metrics overview",
+      metrics_data: metrics.slice(0, 4),
+    };
+  }
+
+  return null;
+}
+
 // ── Section generation (research-aware) ─────────────────────────────────────
 
 function generateSections(
@@ -109,13 +199,25 @@ function generateSections(
     );
   }) || [];
 
+  // Find research patterns relevant to this chapter (moved up for image visual builders)
+  const relevantPatterns = research?.common_patterns?.filter((p) => {
+    return chapter.key_concepts.some((concept) =>
+      p.name.toLowerCase().includes(concept.toLowerCase().split(" ")[0]) ||
+      p.description.toLowerCase().includes(concept.toLowerCase().split(" ")[0])
+    );
+  }) || [];
+
   // 1. Opening — use industry data, not fictional incidents
+  // Add a metric-highlight image if we have enough quantified data points
   const topClaim = relevantClaims[0] || research?.industry_data?.[0];
+  const openingVisual = (density.level !== "light")
+    ? buildMetricVisual(relevantClaims, relevantPatterns)
+    : null;
   sections.push({
     id: "opening",
     heading: "The Challenge",
     word_target: density.level === "full" ? 400 : 300,
-    visual: null,
+    visual: openingVisual,
     notes: topClaim
       ? `Open with industry context: "${topClaim.claim}" (${topClaim.source}). Frame the problem this chapter addresses.`
       : "Open with the industry problem this chapter addresses. Use real benchmarks and data.",
@@ -185,13 +287,7 @@ function generateSections(
     });
   }
 
-  // 4. Decision framework table
-  const relevantPatterns = research?.common_patterns?.filter((p) => {
-    return chapter.key_concepts.some((concept) =>
-      p.name.toLowerCase().includes(concept.toLowerCase().split(" ")[0]) ||
-      p.description.toLowerCase().includes(concept.toLowerCase().split(" ")[0])
-    );
-  }) || [];
+  // 4. Decision framework table (relevantPatterns already computed above)
 
   if (relevantPatterns.length >= 2) {
     sections.push({
@@ -215,12 +311,13 @@ function generateSections(
     });
   }
 
-  // 6. Results / Impact section
+  // 6. Results / Impact section — with stat-card or comparison-graphic image
+  const impactVisual = buildImpactVisual(relevantPatterns, relevantClaims);
   sections.push({
     id: "impact",
     heading: "Expected Impact",
     word_target: 200,
-    visual: null,
+    visual: impactVisual,
     notes: relevantPatterns.length > 0
       ? `Quantify expected outcomes: ${relevantPatterns.map((p) => `${p.name} → ${p.typical_savings || "significant savings"}`).join("; ")}. Use specific numbers.`
       : "Quantify the expected outcomes of applying these strategies. Use industry benchmarks.",
@@ -376,11 +473,42 @@ async function planChapterWithLLM(
   // (more reliable than LLM for research data matching)
   const contentSeeds = llmPlan.content_seeds || buildContentSeeds(chapter, research, context);
 
+  // Post-process: ensure at least one image visual exists (stat-card, comparison-graphic, metric-highlight, key-number)
+  let sections = llmPlan.sections || [];
+  const imageTypes = ["stat-card", "comparison-graphic", "metric-highlight", "key-number", "illustration"];
+  const hasImageVisual = sections.some((s: PlanSection) => s.visual && imageTypes.includes(s.visual.type));
+
+  if (!hasImageVisual) {
+    // Try to inject an image visual from research data
+    const relevantClaims = research?.industry_data?.filter((c) => {
+      const claimLower = c.claim.toLowerCase();
+      return chapter.key_concepts.some((concept) =>
+        claimLower.includes(concept.toLowerCase().split(" ")[0])
+      );
+    }) || [];
+    const relevantPatterns = research?.common_patterns?.filter((p) => {
+      return chapter.key_concepts.some((concept) =>
+        p.name.toLowerCase().includes(concept.toLowerCase().split(" ")[0]) ||
+        p.description.toLowerCase().includes(concept.toLowerCase().split(" ")[0])
+      );
+    }) || [];
+
+    const impactVisual = buildImpactVisual(relevantPatterns, relevantClaims);
+    if (impactVisual) {
+      // Add to opening section or first section without a visual
+      const targetSection = sections.find((s: PlanSection) => s.id === "opening" && !s.visual)
+        || sections.find((s: PlanSection) => !s.visual && s.id !== "summary");
+      if (targetSection) {
+        targetSection.visual = impactVisual;
+      }
+    }
+  }
+
   return {
     chapter_id: chapter.id,
     density_level: density.level,
     word_target: density.wordTarget,
-    sections: llmPlan.sections || [],
+    sections,
     content_seeds: contentSeeds,
   };
 }

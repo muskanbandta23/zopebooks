@@ -180,7 +180,7 @@ books/{id}/diagrams/              # Ebook-specific diagrams
 
 **Implementation:**
 - Use `scripts/diagram-utils.ts` for D2 operations
-- All templates use Zopdev brand colors (#0052FF, #00C48C, #FFB020, #FF6B6B)
+- All templates use Zopdev brand colors (#0891b2, #16a34a, #fbbf24, #ef4444)
 - Validation with `make diagrams ebook={id}` or `d2 validate`
 - Embed in chapters with ```{d2} code fence
 
@@ -519,14 +519,14 @@ interface ContentQuality {
 
 **Color Palette (Zopdev Brand):**
 ```d2
-style.fill: "#e6f0ff"        # Primary tint (backgrounds)
-style.stroke: "#0052FF"       # Primary (borders, arrows)
-style.fill: "#e8f5e9"         # Success tint (positive states)
-style.stroke: "#00C48C"       # Success (checkmarks, savings)
-style.fill: "#fff8e1"         # Warning tint (caution states)
-style.stroke: "#FFB020"       # Warning (alerts, pending)
-style.fill: "#ffebee"         # Danger tint (error states)
-style.stroke: "#FF6B6B"       # Danger (errors, waste)
+style.fill: "#ecfeff"        # Primary tint (backgrounds)
+style.stroke: "#0891b2"       # Primary (borders, arrows)
+style.fill: "#f0fdf4"         # Success tint (positive states)
+style.stroke: "#16a34a"       # Success (checkmarks, savings)
+style.fill: "#fffbeb"         # Warning tint (caution states)
+style.stroke: "#fbbf24"       # Warning (alerts, pending)
+style.fill: "#fef2f2"         # Danger tint (error states)
+style.stroke: "#ef4444"       # Danger (errors, waste)
 ```
 
 **Layout Engines:**
@@ -593,7 +593,7 @@ Interactive calculator available in HTML version.
 
 **Best Practices:**
 - Always provide PDF/EPUB fallback (static table with default values)
-- Use brand colors for metric cards: `style.fill: "#0052FF"`
+- Use brand colors for metric cards: `style.fill: "#0891b2"`
 - Format numbers: `d3.format("$,.0f")(value)` for currency
 - Add labels to all inputs (don't rely on tooltips)
 
@@ -1125,6 +1125,7 @@ books/{id}/
 └── chapters/              # Markdown content (.qmd)
 
 scripts/
+├── cli.ts                 # Unified CLI entry point (ebook <command> [slug] [options])
 ├── brand-utils.ts         # Brand loading & merging (incl. author resolution)
 ├── content-utils.ts       # Content loading, author resolution, reading time
 ├── diagram-utils.ts       # D2 diagram validation, listing, copying, rendering
@@ -1352,40 +1353,60 @@ runHealingLoop(config: LoopConfig): Promise<LoopResult>
 generateBlogPosts(slug: string): BlogResult[]
 ```
 
-### Make Commands
+### CLI Commands
 ```bash
-make validate                  # Validate all configs (YAML, D2, OJS)
-make render ebook={id}         # Generate all formats (HTML, PDF, EPUB)
+# Content Pipeline
+ebook new --slug={id} --title="Title"           # Scaffold new ebook
+ebook create                                     # Interactive creator
+ebook pipeline {id}                              # Full pipeline: research → outline → plan → transform
+ebook research {id}                              # Stage 0: Research topic via search APIs
+ebook outline {id}                               # Stage 1: Generate book outline
+ebook plan {id} [--chapter=01]                   # Stage 2: Generate chapter plans
+ebook transform {id} [--chapter=01]              # Stage 3: Generate prose from plans
+
+# Output Generation
+ebook render {id} [--format=html|pdf|epub]       # Render with Quarto
+ebook landing [id]                               # Generate landing page (all if no slug)
+ebook social {id} [--type=linkedin|instagram|og] # Generate social assets
+ebook blog [id]                                  # Generate blog posts (all if no slug)
+ebook hub                                        # Generate multi-book hub page
+ebook publish {id}                               # Generate ALL modalities
+
+# Quality & Evaluation
+ebook validate                                   # Validate all configs (YAML, D2, OJS)
+ebook audit [id]                                 # Content quality audit (6 metrics)
+ebook eval {id} [--report-only]                  # A/B eval: template vs LLM (11 metrics)
+ebook eval-all {id} [--modalities=ebook,blog]    # Unified eval across all modalities
+ebook heal {id} [--max-iter=5]                   # Self-healing eval loop
+ebook eval-pdf {id}                              # PDF quality evaluation
+ebook freshness [id]                             # Check pricing data freshness
+ebook diagrams {id}                              # Validate D2 diagrams
+
+# Utilities
+ebook list [--json]                              # List all ebooks with status
+ebook cost-report [id]                           # Show LLM cost breakdown
+ebook setup                                      # Symlink brand into all ebooks
+ebook clean                                      # Remove all generated output
+ebook test                                       # Run unit tests
+```
+
+### Make Commands (equivalent)
+```bash
+make validate                  # Validate all configs
+make render ebook={id}         # Render with Quarto
 make landing ebook={id}        # Generate landing page
 make social ebook={id}         # Generate social assets
-make diagrams ebook={id}       # Validate all D2 diagrams
-make audit ebook={id}          # Run content quality audit (6 metrics)
-make audit-all                 # Audit all ebooks
-make code-validate ebook={id}  # Validate code block syntax
-make compare ebook={id} before={path} after={path}  # Compare before/after quality
-make new-ebook slug={id}       # Scaffold new ebook
-make clean                     # Clear outputs
-make all                       # Full pipeline
-
-# LLM Content Pipeline
-make research ebook={id}       # Stage 0: Research topic via search APIs
-make outline ebook={id}        # Stage 1: Generate book outline
-make plan ebook={id}           # Stage 2: Generate chapter plans
-make transform ebook={id}     # Stage 3: Generate prose from plans
-make pipeline ebook={id}       # Full pipeline: research → outline → plan → transform
-make eval ebook={id}           # A/B eval: template vs LLM engine (11 metrics)
-make eval-report ebook={id}    # Re-run eval from existing snapshots
-
-# Blog Posts
-make blog ebook={id}           # Generate blog posts from chapters
-make blog-all                  # Generate blog posts for all ebooks
-
-# Self-Healing Eval Loop
-make eval-all ebook={id}       # Unified eval across all modalities (dry-run)
-make heal ebook={id}           # Self-healing loop: evaluate → fix → re-evaluate
-make heal ebook={id} max-iter=5  # Custom max iterations
+make blog ebook={id}           # Generate blog posts
+make pipeline ebook={id}       # Full content pipeline
+make publish ebook={id}        # All modalities
+make audit ebook={id}          # Content quality audit
+make eval ebook={id}           # A/B engine evaluation
+make heal ebook={id}           # Self-healing eval loop
+make hub                       # Generate hub page
+make freshness ebook={id}      # Check pricing freshness
+make clean                     # Remove all output
 ```
 
 ---
 
-**Last Updated:** 2026-02-18 (after self-healing eval loop + blog modality)
+**Last Updated:** 2026-02-22 (after CLI + documentation overhaul)

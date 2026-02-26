@@ -76,7 +76,10 @@ This pattern captures the essential mechanics: continuous polling, detection, an
 
 The framework in this chapter represents what zopnight automates across your clusters—continuously evaluating which workloads can safely absorb spot interruptions, orchestrating the termination lifecycle, and maintaining visibility into the operational boundaries between aggressive cost optimization and production reliability.
 
-<!-- D2 template "spot-interruption-workflow" not available: Template not found: spot-interruption-workflow.d2. Available templates: finops-workflow, data-pipeline, before-after-optimization, multi-cloud-comparison, cloud-architecture -->
+```{.d2 width="100%" file="../diagrams/before-after-optimization.d2"}
+```
+
+*Spot instance interruption handling: cost savings vs. availability trade-off before and after a graceful shutdown strategy*
 
 
 ## Karpenter vs. Cluster Autoscaler: Decision Framework
@@ -99,7 +102,10 @@ The financial impact reflects these efficiencies. Organizations combining Karpen
 
 Choose Cluster Autos
 
-<!-- D2 template "karpenter-architecture" not available: Template not found: karpenter-architecture.d2. Available templates: finops-workflow, data-pipeline, before-after-optimization, multi-cloud-comparison, cloud-architecture -->
+```{.d2 width="100%" file="../diagrams/karpenter-architecture.d2"}
+```
+
+*Karpenter event-driven provisioning: from unschedulable pod to cheapest matching node in under 90 seconds*
 
 
 ## Node Pool Consolidation Strategies

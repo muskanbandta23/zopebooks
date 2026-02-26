@@ -7,18 +7,18 @@
 // Gradient hero sections, branded chapter openers, decorative dividers,
 // pull-quotes, stat blocks, and a polished reading experience.
 
-// Brand colors
-$brand-primary: #0052FF;
-$brand-secondary: #4F46E5;
-$brand-navy: #0A1628;
-$brand-success: #00C48C;
-$brand-warning: #FFB020;
-$brand-danger: #FF6B6B;
+// Brand colors — aligned with ZopNight Design System
+$brand-primary: #0891b2;
+$brand-secondary: #0e7490;
+$brand-navy: #111827;
+$brand-success: #16a34a;
+$brand-warning: #fbbf24;
+$brand-danger: #ef4444;
 
 // Supplementary semantic colors
-$success: #10B981;
-$warning: #F59E0B;
-$danger: #EF4444;
+$success: #16a34a;
+$warning: #fbbf24;
+$danger: #ef4444;
 
 // Typography — optimized for long-form reading
 $font-size-base: 1.125rem; // 18px — optimal for sustained reading
@@ -404,7 +404,7 @@ pre:hover .code-copy-button {
 
 .callout-tip,
 .callout.callout-style-default.callout-tip {
-  background: rgba(16, 185, 129, 0.05);
+  background: rgba($success, 0.05);
   border-left-color: $success;
   .callout-icon { color: $success; }
   .callout-title { color: darken($success, 15%); }
@@ -420,7 +420,7 @@ pre:hover .code-copy-button {
 
 .callout-warning,
 .callout.callout-style-default.callout-warning {
-  background: rgba(245, 158, 11, 0.05);
+  background: rgba($warning, 0.05);
   border-left-color: $warning;
   .callout-icon { color: $warning; }
   .callout-title { color: darken($warning, 15%); }
@@ -428,7 +428,7 @@ pre:hover .code-copy-button {
 
 .callout-important,
 .callout.callout-style-default.callout-important {
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba($danger, 0.05);
   border-left-color: $danger;
   .callout-icon { color: $danger; }
   .callout-title { color: darken($danger, 10%); }
@@ -1323,7 +1323,7 @@ figure:has(.cell[data-engine="d2"]) figcaption {
     background: #f5f5f5 !important;
     color: black !important;
     border: 1px solid #d4d4d4;
-    border-left: 3px solid #0052FF;
+    border-left: 3px solid #0891b2;
     box-shadow: none;
   }
 

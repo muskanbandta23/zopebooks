@@ -4,122 +4,114 @@
 chapter_id: 01-the-50000-month-incident
 density_level: light
 word_target:
-  - 1500
-  - 2500
+  - 800
+  - 1200
 sections:
   - id: opening
     heading: ""
-    word_target: 200
-    visual: null
-    notes: "Open with a striking industry statistic hook. Use the Sedai research: '96% of enterprises are now running
-      Kubernetes' combined with 'Only 13% of requested CPU is used on average, while 20–45% of requested resources
-      actually power workloads.' Frame the problem immediately: most teams are burning 70-80% of their K8s budget on
-      resources they don't need. This sets up the chapter's core thesis without a fictional story—pure industry data.
-      Mention that this isn't just a technical problem, it's a financial one affecting 88% of teams with year-over-year
-      TCO increases."
-  - id: request_vs_usage_gap
+    word_target: 150
+    visual:
+      type: stat-card
+      stat_data:
+        headline: 96%
+        subtext: of enterprises run Kubernetes, but 88% report year-over-year TCO increases
+        source: Sedai, Arc82
+      purpose: Open with a compelling industry statistic that establishes the universality of the problem and the business
+        impact
+      style: callout
+    notes: "Open with the hook: 96% of enterprises are running Kubernetes (Sedai), yet 88% report year-over-year TCO
+      increases (Arc82). This paradox — widespread adoption coupled with uncontrolled costs — frames the chapter's
+      central question: why does your Kubernetes bill keep growing? State clearly that this chapter will decode the root
+      causes and provide a decision framework for regaining control. Avoid any fictional narrative; use only industry
+      data."
+  - id: background
     heading: The Request vs. Actual Usage Gap
-    word_target: 300
+    word_target: 200
     visual:
-      type: d2
-      template: before-after-optimization
-      purpose: Visualize the gap between requested resources (requests) and actual consumption (usage) showing how much is
-        wasted
-      style: clean-side-by-side-comparison
-    notes: "Define the fundamental disconnect: when developers set resource requests (CPU/memory limits), they often
-      over-estimate to 'be safe.' But Kubernetes schedules based on requests, not actual usage. Explain that 13% average
-      CPU utilization means you're paying for 87% of capacity you're not using. This is the core problem. Include the
-      specific benchmark: 20-45% of requested resources actually power workloads. Make clear this isn't about bad
-      engineering—it's about defensive defaults and lack of visibility."
-  - id: resource_efficiency_ratio
-    heading: Understanding Your Resource Efficiency Ratio
-    word_target: 250
+      type: metric-highlight
+      metrics_data:
+        - label: Requested CPU
+          value: 100%
+          trend: up
+        - label: Actual CPU Used
+          value: 13%
+          trend: down
+        - label: Resources Powering Workloads
+          value: 20-45%
+          trend: down
+      purpose: Visualize the massive inefficiency between what teams request and what workloads actually consume
+      style: comparison
+    notes: "Explain the fundamental disconnect between requested resources and actual consumption. Use the key statistic:
+      only 13% of requested CPU is used on average, while 20–45% of requested resources actually power workloads
+      (Sedai). Define 'Request' (what you configure in your Deployment/StatefulSet) vs. 'Actual Usage' (what the
+      container actually consumes at runtime). Explain that this gap is the primary driver of waste. Mention that up to
+      30% of cloud spending is wasted due to over-provisioned resources (Sedai)."
+  - id: config_usage_gap
+    heading: "Visualizing the Gap: A Config Comparison"
+    word_target: 200
     visual:
-      type: table
-      purpose: Show efficiency ratio benchmarks across different workload types
-      style: comparison-table
-    notes: "Introduce Resource Efficiency Ratio (RER) as a key metric: actual usage divided by requested resources. Explain
-      that below 50% efficiency is common and indicates significant waste. Provide a simple formula: Efficiency =
-      (Actual CPU Used / Requested CPU) × 100. Include a table showing typical ratios: stateless APIs (30-40%), batch
-      jobs (40-60%), databases (60-80%), dev environments (10-20%). Emphasize that knowing your RER is the first step to
-      fixing the problem."
-  - id: cost_attribution_models
-    heading: How to Actually Attribute Kubernetes Costs
-    word_target: 250
-    visual:
-      type: callout
-      purpose: Highlight the complexity of K8s cost allocation vs traditional cloud billing
-      style: warning-box
-    notes: "Explain why traditional cloud billing (by instance or by hour) doesn't work for Kubernetes. The shared node
-      model means multiple teams' workloads run on the same infrastructure. Cover the three main attribution models: 1)
-      Capacity allocation (pro-rata by requests), 2) Actual usage (by real consumption), 3) Blended rates. Note that the
-      choice affects how you report costs and who gets blamed for overruns. Briefly mention that tools like zopnight
-      automate this with namespace-level visibility."
-  - id: over_provisioning_spiral
+      type: comparison-graphic
+      comparison_data:
+        title: Requested vs. Actual Usage
+        before:
+          label: Requested (spec.resources)
+          value: 4 CPU, 8Gi RAM
+        after:
+          label: Actual Usage (measured)
+          value: 0.5 CPU, 1.2Gi RAM
+        improvement: 87.5% over-provisioned — typical for unoptimized deployments
+      purpose: Show a before/after config comparison to make the usage gap concrete and actionable
+      style: callout
+    notes: Provide a concrete code example showing a typical over-provisioned Deployment spec alongside what actual usage
+      reveals. Include a short YAML snippet (under 30 lines) showing resources.requests vs. resources.limits with
+      commented actual consumption metrics. Explain that most teams copy-paste configs from samples or documentation
+      without measuring actual needs. This sets up the next section on the over-provisioning spiral.
+  - id: patterns_over_provisioning
     heading: The Over-Provisioning Spiral
     word_target: 250
     visual:
-      type: d2
-      template: data-pipeline
-      purpose: Diagram the feedback loop showing how over-provisioning compounds over time
-      style: cycle-diagram
-    notes: "Describe the dangerous pattern: team sets generous requests → gets allocated capacity → application runs fine →
-      no incentive to optimize → next team does the same → cluster fills up → teams request even more capacity to be
-      'safe.' Explain that this creates the 30% waste figure mentioned in research. Show how this compounds monthly—each
-      $50K month could be $35K of actual work. Frame this as a cultural problem, not just a technical one."
-  - id: optimization_strategies
-    heading: Six Strategies to Right-Size Your Clusters
-    word_target: 450
-    visual:
-      type: table
-      purpose: Compare all six optimization patterns with savings, effort, and when to use each
-      style: decision-matrix
-    notes: "This is the core actionable section. Present all six patterns in a comparison table: VPA (20-40% savings, medium
-      effort, for production stateless apps), Spot Instances (60-90% savings, medium effort, for
-      batch/tolerable-interruption workloads), Karpenter Cluster Autoscaler (30-50% savings, medium effort, for dynamic
-      workloads), Resource Quotas (10-20% savings, low effort, for preventing runaway pods), Graviton ARM Migration
-      (20-40% savings, medium effort, for compute-heavy apps), Scheduled Scaling (65-75% savings, low effort, for
-      dev/test environments). For each, provide a one-sentence use case. Avoid long code—keep config examples to 5-10
-      lines max."
-  - id: vpa_config_example
-    heading: "A Practical Example: Vertical Pod Autoscaling in Action"
+      type: stat-card
+      stat_data:
+        headline: 30%
+        subtext: of cloud spending is wasted due to over-provisioned resources and idle services
+        source: Sedai
+      purpose: Reinforce the scale of waste with a single impactful metric
+      style: callout
+    notes: "Explain the self-reinforcing cycle: teams request extra capacity 'just to be safe' → they never measure actual
+      usage → the gap grows → costs rise → teams request even more to 'fix' performance issues that don't exist. Name
+      this the 'Over-Provisioning Spiral.' Discuss contributing factors: fear of OOM kills, lack of visibility, no
+      feedback loop between billing and engineering. Frame this as a cultural problem, not just a technical one.
+      Introduce the concept of 'Resource Efficiency Ratio' as a key metric to track."
+  - id: decision_framework
+    heading: "Cost Attribution Models: Who Pays for What"
     word_target: 200
     visual:
-      type: code
-      language: yaml
-      purpose: Show minimal VPA configuration that readers can understand and adapt
-      style: kubectl-snippet
-    notes: "Provide a short, readable VPA YAML config (under 20 lines total) showing the basic structure: apiVersion:
-      autoscaling.k8s.io/v1, kind: VerticalPodAutoscaler, spec: targetRef, updatePolicy, resourcePolicy. Explain what
-      each field controls in plain English. Include a brief note on 'recommender' vs 'auto' modes. Keep this as an
-      illustration of how the tool works, not a full tutorial. Emphasize that VPA is one of the highest-impact changes
-      for production workloads."
-  - id: tco_vs_compute
-    heading: "TCO vs. Raw Compute: What's Actually in Your Bill"
-    word_target: 200
-    visual:
-      type: callout
-      purpose: Clarify that K8s costs extend far beyond compute instances
-      style: info-box
-    notes: "Explain that 'compute cost' is just the base—TCO includes: node pools, load balancers, persistent volumes,
-      egress networking, management fees, and (often forgotten) the engineering time to maintain it. Reference the 88%
-      of teams seeing YoY TCO increases. Explain that optimization isn't just about reducing node counts—it's about
-      reducing the total surface area of your infrastructure. Briefly position zopnight as providing namespace-level TCO
-      visibility."
+      type: key-number
+      stat_data:
+        headline: $50K/month
+        subtext: typical unmanaged cluster bill that prompts teams to seek optimization
+        source: Industry benchmark
+      purpose: Ground the discussion in real-world dollar amounts that readers can relate to
+      style: callout
+    notes: "Explain three cost attribution models: (1) node-level, (2) namespace-level, (3) workload-level. Discuss TCO vs.
+      raw compute cost — TCO includes management overhead, idle capacity, and operational burden, not just the compute
+      bill. Provide a brief framework for choosing an attribution model based on team structure (FinOps maturity, team
+      autonomy vs. accountability). Mention that namespace-level visibility is the recommended starting point for most
+      organizations."
   - id: summary
-    heading: "Summary: From $50K to $35K—Your First Steps"
-    word_target: 200
+    heading: "Summary: The Path Forward"
+    word_target: 150
     visual: null
-    notes: "Wrap up with a clear recap: the problem is over-provisioning driven by the request vs. usage gap, with 30% of
-      spending typically wasted. Recap the key metrics (13% CPU utilization, Resource Efficiency Ratio) and the decision
-      framework for choosing optimization strategies. End with 3 concrete first steps: 1) Measure your current RER, 2)
-      Implement resource quotas on dev namespaces, 3) Enable VPA on one production workload. Keep this authoritative—no
-      fluff, no product pitch, just clear action items backed by the data presented throughout."
+    notes: "Synthesize the chapter's key takeaways: (1) the Request vs. Actual usage gap is the primary cost leak — 87%
+      over-provisioning is common, (2) the Over-Provisioning Spiral compounds without intervention, (3) understanding
+      your cost attribution model is essential for accountability. Preview the solutions chapter: VPA for right-sizing
+      (20-40% savings), Karpenter for efficient scaling (30-50%), and Spot instances for stateless workloads (60-90%).
+      End with a forward-looking statement that controlling Kubernetes costs is a solvable problem with the right
+      visibility and automation."
 content_seeds:
-  opening_hook: 96% of enterprises run Kubernetes—yet only 13% of the CPU they request actually powers workloads. The rest
-    is waste. If your bill hit $50K last month, $15K-$20K went to resources no application ever used.
+  opening_hook: "96% of enterprises run Kubernetes. 88% report year-over-year TCO increases. This is the paradox of
+    cloud-native computing: everyone has adopted it, almost no one controls its cost."
   key_claims:
-    - 96% of enterprises are now running Kubernetes (Sedai)
     - Only 13% of requested CPU is used on average (Sedai)
     - 20-45% of requested resources actually power workloads (Sedai)
     - Up to 30% of cloud spending is wasted on over-provisioned resources (Sedai)
@@ -128,32 +120,24 @@ content_seeds:
     - name: Vertical Pod Autoscaling (VPA)
       savings: 20-40%
       effort: Medium
-      use_case: Production stateless applications with variable resource needs
     - name: Spot Instance Integration
       savings: 60-90%
       effort: Medium
-      use_case: Batch jobs, stateless workloads, development environments that tolerate interruption
     - name: Cluster Autoscaler with Karpenter
       savings: 30-50%
       effort: Medium
-      use_case: Dynamic workloads with variable demand patterns
     - name: Resource Quotas and Limits
       savings: 10-20%
       effort: Low
-      use_case: Preventing runaway workloads and setting team budgets
     - name: ARM Migration (Graviton)
       savings: 20-40%
       effort: Medium
-      use_case: Compute-intensive applications that run on x86
     - name: Scheduled Scaling
       savings: 65-75%
       effort: Low
-      use_case: Development and test environments that only run during work hours
   configs:
-    - type: VPA
-      description: Basic VerticalPodAutoscaler configuration
-      language: yaml
-      lines: 15
-  product_tie_in: zopnight provides namespace-level cost visibility that makes the Request vs. Actual Usage Gap visible at
-    a glance, automates VPA-driven right-sizing recommendations, and manages spot node lifecycle—turning these
-    optimization strategies into a continuous process rather than a one-time project.
+    - name: Request vs. Actual Usage
+      type: comparison
+      purpose: Show typical over-provisioned deployment spec vs. actual measured usage
+  product_tie_in: zopnight — Automates Kubernetes cost optimization with namespace-level visibility, VPA-driven
+    right-sizing recommendations, and spot node management

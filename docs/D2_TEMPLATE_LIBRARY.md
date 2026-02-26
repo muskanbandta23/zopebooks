@@ -31,13 +31,13 @@ aws_cloud: AWS Cloud {
   
   vpc: Production VPC\nus-east-1 {
     style.fill: "#ffffff"
-    style.stroke: "#0052FF"
+    style.stroke: "#0891b2"
     style.stroke-width: 2
     
     cost_annotation: $45K/month {
       shape: text
       style.font-size: 12
-      style.font-color: "#0052FF"
+      style.font-color: "#0891b2"
       style.bold: true
     }
     
@@ -53,7 +53,7 @@ aws_cloud: AWS Cloud {
     
     eks_cluster: EKS Cluster\n(v1.28) {
       style.fill: "#e3f2fd"
-      style.stroke: "#0052FF"
+      style.stroke: "#0891b2"
       
       cluster_cost: Control Plane: $73/mo {
         shape: text
@@ -61,7 +61,7 @@ aws_cloud: AWS Cloud {
       }
       
       node_group_1: Node Group: Production\n(m5.2xlarge × 12) {
-        style.fill: "#0052FF"
+        style.fill: "#0891b2"
         style.font-color: "#ffffff"
         
         node_cost: $3,317/mo {
@@ -71,7 +71,7 @@ aws_cloud: AWS Cloud {
       }
       
       node_group_2: Node Group: Batch\n(c5.large × 8) {
-        style.fill: "#00C48C"
+        style.fill: "#16a34a"
         style.font-color: "#ffffff"
         
         batch_cost: $561/mo {
@@ -103,7 +103,7 @@ aws_cloud: AWS Cloud {
   }
   
   cloudwatch: CloudWatch\nLogs + Metrics {
-    style.fill: "#FFB020"
+    style.fill: "#fbbf24"
     
     monitoring_cost: $892/mo {
       shape: text
@@ -114,7 +114,7 @@ aws_cloud: AWS Cloud {
 
 zopnight: ZopNight {
   shape: rectangle
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
   style.stroke: "#002D8E"
   style.font-color: "#ffffff"
   style.shadow: true
@@ -134,19 +134,19 @@ aws_cloud.vpc.eks_cluster -> aws_cloud.vpc.s3: Object Storage
 aws_cloud.vpc -> aws_cloud.cloudwatch: Metrics & Logs
 
 zopnight -> aws_cloud.vpc.eks_cluster: Schedule Actions {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-dash: 5
 }
 
 zopnight -> aws_cloud.cloudwatch: Read Metrics {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-dash: 5
 }
 
 # Savings annotation
 savings_badge: Potential Savings:\n$18K/month (40%) {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
   style.font-size: 16
   style.shadow: true
@@ -154,7 +154,7 @@ savings_badge: Potential Savings:\n$18K/month (40%) {
 }
 
 zopnight -> savings_badge {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-dash: 3
 }
 ```
@@ -180,7 +180,7 @@ vars: {
 inform_phase: INFORM PHASE {
   shape: rectangle
   style.fill: "#e3f2fd"
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-width: 3
   
   visibility: 1. Visibility {
@@ -226,7 +226,7 @@ inform_phase: INFORM PHASE {
 optimize_phase: OPTIMIZE PHASE {
   shape: rectangle
   style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 3
   
   rate: 4. Rate Optimization {
@@ -272,7 +272,7 @@ optimize_phase: OPTIMIZE PHASE {
 operate_phase: OPERATE PHASE {
   shape: rectangle
   style.fill: "#fff3e0"
-  style.stroke: "#FFB020"
+  style.stroke: "#fbbf24"
   style.stroke-width: 3
   
   governance: 7. Governance {
@@ -316,17 +316,17 @@ operate_phase: OPERATE PHASE {
 
 # Flow between phases
 inform_phase -> optimize_phase: Data-Driven Actions {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-width: 2
 }
 
 optimize_phase -> operate_phase: Sustained Savings {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
 }
 
 operate_phase -> inform_phase: Feedback Loop {
-  style.stroke: "#FFB020"
+  style.stroke: "#fbbf24"
   style.stroke-width: 2
   style.stroke-dash: 5
 }
@@ -340,19 +340,19 @@ maturity: Current Maturity Level {
 
 crawl: Crawl\n(Basic visibility) {
   shape: circle
-  style.fill: "#FF6B6B"
+  style.fill: "#ef4444"
   style.font-color: "#ffffff"
 }
 
 walk: Walk\n(Proactive optimization) {
   shape: circle
-  style.fill: "#FFB020"
+  style.fill: "#fbbf24"
   style.font-color: "#ffffff"
 }
 
 run: Run\n(Automated excellence) {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
 }
 
@@ -520,7 +520,7 @@ workload -> azure: Deploy Option 3
 
 winner: Best Value: GCP\nSavings: $409/mo vs AWS {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
   style.shadow: true
 }
@@ -540,7 +540,7 @@ direction: right
 
 before_state: BEFORE OPTIMIZATION {
   style.fill: "#ffebee"
-  style.stroke: "#FF6B6B"
+  style.stroke: "#ef4444"
   style.stroke-width: 2
   
   problem_desc: |md
@@ -577,7 +577,7 @@ before_state: BEFORE OPTIMIZATION {
     shape: text
     style.font-size: 20
     style.bold: true
-    style.font-color: "#FF6B6B"
+    style.font-color: "#ef4444"
   }
   
   problem_desc -> architecture -> total_before
@@ -585,7 +585,7 @@ before_state: BEFORE OPTIMIZATION {
 
 after_state: AFTER OPTIMIZATION {
   style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
   
   solution_desc: |md
@@ -622,14 +622,14 @@ after_state: AFTER OPTIMIZATION {
     shape: text
     style.font-size: 20
     style.bold: true
-    style.font-color: "#00C48C"
+    style.font-color: "#16a34a"
   }
   
   solution_desc -> architecture -> total_after
 }
 
 transformation: Transformation {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-width: 3
   style.stroke-dash: 5
 }
@@ -644,7 +644,7 @@ savings_impact: |md
   **ROI:** 2,664%
 | {
   shape: rectangle
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
   style.font-color: "#ffffff"
   style.shadow: true
   style.multiple: true
@@ -669,7 +669,7 @@ user: Engineering Team {
 }
 
 zopnight_ui: ZopNight Dashboard {
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
   style.font-color: "#ffffff"
   
   features: |md
@@ -719,7 +719,7 @@ cloud_providers: Cloud Infrastructure {
 }
 
 monitoring: Observability {
-  style.fill: "#FFB020"
+  style.fill: "#fbbf24"
   
   cloudwatch: CloudWatch
   prometheus: Prometheus
@@ -733,17 +733,17 @@ user -> zopnight_ui: Configure Policies
 zopnight_ui -> zopnight_api: API Calls
 
 zopnight_api.scheduler -> cloud_providers.aws: Start/Stop Actions {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
 }
 
 zopnight_api.scheduler -> cloud_providers.gcp: Schedule Resources {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
 }
 
 zopnight_api.metrics_collector -> monitoring: Read Metrics {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-dash: 5
 }
 
@@ -755,7 +755,7 @@ cloud_providers -> monitoring: Emit Metrics {
 # Savings annotation
 savings: Automated Savings:\n$45K/month {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
   style.shadow: true
   style.font-size: 16
@@ -778,7 +778,7 @@ aws: AWS {
   ec2: EC2 Instances
 }
 zopnight: ZopNight {
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
 }
 zopnight -> aws.ec2: Schedule
 ```
@@ -816,11 +816,11 @@ The FinOps lifecycle showing Inform → Optimize → Operate phases with continu
 ### Zopdev Color Palette
 ```d2
 # Always use Zopdev brand colors:
-primary: #0052FF   (Zop Blue)
+primary: #0891b2   (Zop Blue)
 secondary: #002D8E (Zop Dark Blue)
-success: #00C48C   (Green)
-warning: #FFB020   (Orange)
-danger: #FF6B6B    (Red)
+success: #16a34a   (Green)
+warning: #fbbf24   (Orange)
+danger: #ef4444    (Red)
 neutral: #6c757d   (Gray)
 ```
 

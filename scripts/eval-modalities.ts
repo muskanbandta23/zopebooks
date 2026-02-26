@@ -11,13 +11,15 @@ import { readFileSync, existsSync, readdirSync } from "fs";
 import { join, dirname, basename } from "path";
 import { parse } from "yaml";
 import { auditEbook, type AuditReport, type ThresholdViolation } from "./content-audit.js";
+import { analyzePdf, findPdfPath, type PdfEvalResult } from "./pdf-eval.js";
+import { checkFreshness, type FreshnessReport } from "./freshness-check.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-export type Modality = "ebook" | "landing" | "social" | "blog";
+export type Modality = "ebook" | "landing" | "social" | "blog" | "pdf" | "hub";
 
 export interface ModalityMetric {
   name: string;
@@ -82,6 +84,11 @@ interface ModalityThresholds {
     require_meta_description: boolean;
     require_cta: boolean;
   };
+  pdf: {
+    require_cover_page: boolean;
+    max_blank_pages: number;
+    require_embedded_fonts: boolean;
+  };
   heal: {
     max_iterations: number;
     max_cost_usd: number;
@@ -107,6 +114,11 @@ const DEFAULT_MODALITY_THRESHOLDS: ModalityThresholds = {
     require_meta_description: true,
     require_cta: true,
   },
+  pdf: {
+    require_cover_page: true,
+    max_blank_pages: 2,
+    require_embedded_fonts: true,
+  },
   heal: {
     max_iterations: 3,
     max_cost_usd: 5.0,
@@ -126,6 +138,7 @@ export function loadModalityThresholds(): ModalityThresholds {
       landing: { ...DEFAULT_MODALITY_THRESHOLDS.landing, ...(mods.landing || {}) },
       social: { ...DEFAULT_MODALITY_THRESHOLDS.social, ...(mods.social || {}) },
       blog: { ...DEFAULT_MODALITY_THRESHOLDS.blog, ...(mods.blog || {}) },
+      pdf: { ...DEFAULT_MODALITY_THRESHOLDS.pdf, ...(mods.pdf || {}) },
       heal: { ...DEFAULT_MODALITY_THRESHOLDS.heal, ...(mods.heal || {}) },
     };
   } catch {
@@ -143,6 +156,7 @@ const HEAL_STRATEGY_MAP: Record<string, { healable: boolean; strategy: string }>
   reading_level: { healable: true, strategy: "simplify_prose" },
   interactive_elements: { healable: false, strategy: "add_ojs_calculator" },
   untagged_code: { healable: false, strategy: "" },
+  image_density: { healable: true, strategy: "add_image" },
 };
 
 function inferHealStrategy(metric: string): { healable: boolean; strategy: string } {
@@ -172,6 +186,9 @@ function inferHealStrategy(metric: string): { healable: boolean; strategy: strin
   if (metric.includes("interactive") || metric.includes("Interactive")) {
     return HEAL_STRATEGY_MAP.interactive_elements;
   }
+  if (metric.includes("image") || metric.includes("Image")) {
+    return HEAL_STRATEGY_MAP.image_density;
+  }
   return { healable: false, strategy: "" };
 }
 
@@ -188,7 +205,7 @@ function computeScore(violations: ModalityViolation[]): string {
 
 // ── Ebook Evaluator ─────────────────────────────────────────────────────────
 
-export function evalEbookChapters(slug: string): ModalityEvalResult {
+export async function evalEbookChapters(slug: string): Promise<ModalityEvalResult> {
   const chaptersDir = join(PROJECT_ROOT, "books", slug, "chapters");
   if (!existsSync(chaptersDir)) {
     return {
@@ -265,7 +282,35 @@ export function evalEbookChapters(slug: string): ModalityEvalResult {
       direction: "lower-is-better",
       passed: audit.readability.averageGradeLevel <= 14 && audit.readability.averageGradeLevel >= 8,
     },
+    {
+      name: "image_density",
+      actual: audit.images.imagesPer800Words,
+      threshold: 1,
+      direction: "higher-is-better",
+      passed: audit.images.imagesPer800Words >= 1,
+    },
   ];
+
+  // Advisory: freshness check (never fails — informational only)
+  try {
+    const freshness: FreshnessReport = await checkFreshness(slug);
+    metrics.push({
+      name: "freshness_stale_prices",
+      actual: freshness.stalePrices,
+      threshold: 0,
+      direction: "lower-is-better",
+      passed: true, // Always passes — advisory only
+    });
+    metrics.push({
+      name: "freshness_total_prices",
+      actual: freshness.totalPricesExtracted,
+      threshold: 0,
+      direction: "higher-is-better",
+      passed: true, // Always passes — advisory only
+    });
+  } catch {
+    // Freshness check failure is non-fatal
+  }
 
   return {
     modality: "ebook",
@@ -466,16 +511,151 @@ export function evalBlogPosts(slug: string): ModalityEvalResult {
   };
 }
 
+// ── Hub Evaluator ───────────────────────────────────────────────────────────
+
+export function evalHub(slug: string): ModalityEvalResult {
+  const metrics: ModalityMetric[] = [];
+  const violations: ModalityViolation[] = [];
+
+  const hubPath = join(PROJECT_ROOT, "_output", "hub", "index.html");
+  if (!existsSync(hubPath)) {
+    violations.push({
+      modality: "hub",
+      metric: "hub_exists",
+      actual: 0,
+      threshold: 1,
+      direction: "below",
+      message: "Hub page not generated. Run: make hub",
+      healable: true,
+      healStrategy: "regenerate_hub",
+    });
+    return { modality: "hub", slug, passed: false, metrics, violations, score: "F" };
+  }
+
+  const html = readFileSync(hubPath, "utf-8");
+  const fileSizeKb = Math.round(Buffer.byteLength(html) / 1024);
+
+  // Count ebook cards
+  const cardCount = (html.match(/class="book-card"/g) || []).length;
+  const booksDir = join(PROJECT_ROOT, "books");
+  const expectedCount = existsSync(booksDir) ? readdirSync(booksDir, { withFileTypes: true }).filter(d => d.isDirectory()).length : 0;
+
+  metrics.push({ name: "ebook_cards", actual: cardCount, threshold: expectedCount, direction: "higher-is-better", passed: cardCount >= expectedCount });
+  if (cardCount < expectedCount) {
+    violations.push({ modality: "hub", metric: "ebook_cards", actual: cardCount, threshold: expectedCount, direction: "below", message: `Hub lists ${cardCount}/${expectedCount} ebooks`, healable: true, healStrategy: "regenerate_hub" });
+  }
+
+  // Search input
+  const hasSearch = /id=["']search-input["']/i.test(html);
+  metrics.push({ name: "has_search", actual: hasSearch ? 1 : 0, threshold: 1, direction: "higher-is-better", passed: hasSearch });
+  if (!hasSearch) {
+    violations.push({ modality: "hub", metric: "has_search", actual: 0, threshold: 1, direction: "below", message: "Hub missing search input", healable: true, healStrategy: "regenerate_hub" });
+  }
+
+  // File size
+  metrics.push({ name: "file_size_kb", actual: fileSizeKb, threshold: 300, direction: "lower-is-better", passed: fileSizeKb <= 300 });
+  if (fileSizeKb > 300) {
+    violations.push({ modality: "hub", metric: "file_size_kb", actual: fileSizeKb, threshold: 300, direction: "above", message: `Hub too large: ${fileSizeKb}KB > 300KB`, healable: false });
+  }
+
+  return {
+    modality: "hub",
+    slug,
+    passed: violations.length === 0,
+    metrics,
+    violations,
+    score: computeScore(violations),
+  };
+}
+
+// ── PDF Evaluator ───────────────────────────────────────────────────────────
+
+export async function evalPdfOutput(slug: string): Promise<ModalityEvalResult> {
+  const thresholds = loadModalityThresholds().pdf;
+  const metrics: ModalityMetric[] = [];
+  const violations: ModalityViolation[] = [];
+
+  const pdfPath = findPdfPath(slug);
+  if (!pdfPath) {
+    violations.push({
+      modality: "pdf",
+      metric: "pdf_exists",
+      actual: 0,
+      threshold: 1,
+      direction: "below",
+      message: `No PDF found for "${slug}". Run: make render-pdf ebook=${slug}`,
+      healable: true,
+      healStrategy: "regenerate_pdf",
+    });
+    metrics.push({ name: "pdf_exists", actual: 0, threshold: 1, direction: "higher-is-better", passed: false });
+    return { modality: "pdf", slug, passed: false, metrics, violations, score: "F" };
+  }
+
+  const result = await analyzePdf(pdfPath);
+  if (!result || !result.exists) {
+    violations.push({
+      modality: "pdf",
+      metric: "pdf_readable",
+      actual: 0,
+      threshold: 1,
+      direction: "below",
+      message: `PDF exists but could not be parsed: ${pdfPath}`,
+      healable: true,
+      healStrategy: "regenerate_pdf",
+    });
+    return { modality: "pdf", slug, passed: false, metrics, violations, score: "F" };
+  }
+
+  // Page count
+  metrics.push({ name: "page_count", actual: result.pageCount, threshold: 1, direction: "higher-is-better", passed: result.pageCount > 0 });
+  if (result.pageCount === 0) {
+    violations.push({ modality: "pdf", metric: "page_count", actual: 0, threshold: 1, direction: "below", message: "PDF has zero pages", healable: true, healStrategy: "regenerate_pdf" });
+  }
+
+  // Cover page
+  metrics.push({ name: "has_cover_page", actual: result.hasCoverPage ? 1 : 0, threshold: 1, direction: "higher-is-better", passed: result.hasCoverPage });
+  if (thresholds.require_cover_page && !result.hasCoverPage) {
+    violations.push({ modality: "pdf", metric: "has_cover_page", actual: 0, threshold: 1, direction: "below", message: "PDF missing cover page (no title metadata)", healable: true, healStrategy: "regenerate_pdf" });
+  }
+
+  // Embedded fonts
+  metrics.push({ name: "has_embedded_fonts", actual: result.hasEmbeddedFonts ? 1 : 0, threshold: 1, direction: "higher-is-better", passed: result.hasEmbeddedFonts });
+  if (thresholds.require_embedded_fonts && !result.hasEmbeddedFonts) {
+    violations.push({ modality: "pdf", metric: "has_embedded_fonts", actual: 0, threshold: 1, direction: "below", message: "PDF does not appear to have embedded fonts", healable: false });
+  }
+
+  // Image count (informational — no threshold)
+  metrics.push({ name: "image_count", actual: result.imageCount, threshold: 0, direction: "higher-is-better", passed: true });
+
+  // Blank pages
+  metrics.push({ name: "blank_pages", actual: result.blankPageCount, threshold: thresholds.max_blank_pages, direction: "lower-is-better", passed: result.blankPageCount <= thresholds.max_blank_pages });
+  if (result.blankPageCount > thresholds.max_blank_pages) {
+    violations.push({ modality: "pdf", metric: "blank_pages", actual: result.blankPageCount, threshold: thresholds.max_blank_pages, direction: "above", message: `PDF has ${result.blankPageCount} blank pages (max: ${thresholds.max_blank_pages}), pages: ${result.blankPageNumbers.join(", ")}`, healable: true, healStrategy: "regenerate_pdf" });
+  }
+
+  // Page size
+  metrics.push({ name: "is_letter_size", actual: result.isLetterSize ? 1 : 0, threshold: 1, direction: "higher-is-better", passed: result.isLetterSize });
+
+  return {
+    modality: "pdf",
+    slug,
+    passed: violations.length === 0,
+    metrics,
+    violations,
+    score: computeScore(violations),
+  };
+}
+
 // ── Unified Evaluator ───────────────────────────────────────────────────────
 
-export function evaluateAll(slug: string, modalities?: Modality[]): ModalityEvalResult[] {
+export async function evaluateAll(slug: string, modalities?: Modality[]): Promise<ModalityEvalResult[]> {
   const mods = modalities || (["ebook", "landing", "social", "blog"] as Modality[]);
   const results: ModalityEvalResult[] = [];
 
   for (const mod of mods) {
     switch (mod) {
       case "ebook":
-        results.push(evalEbookChapters(slug));
+        results.push(await evalEbookChapters(slug));
         break;
       case "landing":
         results.push(evalLandingPage(slug));
@@ -485,6 +665,12 @@ export function evaluateAll(slug: string, modalities?: Modality[]): ModalityEval
         break;
       case "blog":
         results.push(evalBlogPosts(slug));
+        break;
+      case "pdf":
+        results.push(await evalPdfOutput(slug));
+        break;
+      case "hub":
+        results.push(evalHub(slug));
         break;
     }
   }
