@@ -108,6 +108,6 @@ export class OpenAIImageProvider implements ImageProvider {
     };
 
     const prefix = stylePrefix[options.style || "illustration"];
-    return `${prefix} ${options.prompt}. Brand colors: indigo (#4F46E5) and emerald (#10B981). Clean off-white background. No text, no watermarks, no logos. High contrast, sharp edges.`;
+    return `${prefix} ${options.prompt}. Brand colors: cyan (#0891b2) and green (#16a34a). Clean off-white background. No text, no watermarks, no logos. High contrast, sharp edges.`;
   }
 }

@@ -5,7 +5,7 @@ target_icps:
   - "devops-engineer"
 
 colors:
-  primary: "#0047AB"  # Cobalt blue for K8s audience (brand default: #0052FF)
+  primary: "#0e7490"  # Cobalt blue for K8s audience (brand default: #0891b2)
 
 tone:
   voice: "Hands-on, container-native, cost-aware"

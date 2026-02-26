@@ -1,6 +1,6 @@
 # FinOps Workflow / Process Flow
 # Purpose: Show the FinOps lifecycle — Inform -> Optimize -> Operate
-# Brand: Zopdev (#0052FF primary, #00C48C success, #FFB020 warning)
+# Brand: Zopdev (#0891b2 primary, #16a34a success, #fbbf24 warning)
 
 direction: down
 
@@ -14,8 +14,8 @@ vars: {
 # Phase 1: Inform
 inform_phase: INFORM PHASE {
   shape: rectangle
-  style.fill: "#e3f2fd"
-  style.stroke: "#0052FF"
+  style.fill: "#ecfeff"
+  style.stroke: "#0891b2"
   style.stroke-width: 3
 
   visibility: 1. Visibility {
@@ -60,8 +60,8 @@ inform_phase: INFORM PHASE {
 # Phase 2: Optimize
 optimize_phase: OPTIMIZE PHASE {
   shape: rectangle
-  style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.fill: "#f0fdf4"
+  style.stroke: "#16a34a"
   style.stroke-width: 3
 
   rate: 4. Rate Optimization {
@@ -106,8 +106,8 @@ optimize_phase: OPTIMIZE PHASE {
 # Phase 3: Operate
 operate_phase: OPERATE PHASE {
   shape: rectangle
-  style.fill: "#fff3e0"
-  style.stroke: "#FFB020"
+  style.fill: "#fffbeb"
+  style.stroke: "#fbbf24"
   style.stroke-width: 3
 
   governance: 7. Governance {
@@ -151,17 +151,17 @@ operate_phase: OPERATE PHASE {
 
 # Flow between phases
 inform_phase -> optimize_phase: Data-Driven Actions {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-width: 2
 }
 
 optimize_phase -> operate_phase: Sustained Savings {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
 }
 
 operate_phase -> inform_phase: Feedback Loop {
-  style.stroke: "#FFB020"
+  style.stroke: "#fbbf24"
   style.stroke-width: 2
   style.stroke-dash: 5
 }
@@ -169,19 +169,19 @@ operate_phase -> inform_phase: Feedback Loop {
 # Maturity indicator
 crawl: Crawl\n(Basic visibility) {
   shape: circle
-  style.fill: "#FF6B6B"
+  style.fill: "#ef4444"
   style.font-color: "#ffffff"
 }
 
 walk: Walk\n(Proactive optimization) {
   shape: circle
-  style.fill: "#FFB020"
+  style.fill: "#fbbf24"
   style.font-color: "#ffffff"
 }
 
 run: Run\n(Automated excellence) {
   shape: circle
-  style.fill: "#00C48C"
+  style.fill: "#16a34a"
   style.font-color: "#ffffff"
 }
 

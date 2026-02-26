@@ -1,5 +1,5 @@
 # FinOps Lifecycle: Inform → Optimize → Operate
-# Brand: Zopdev (#0052FF primary, #00C48C success, #FFB020 warning)
+# Brand: Zopdev (#0891b2 primary, #16a34a success, #fbbf24 warning)
 
 direction: right
 
@@ -12,8 +12,8 @@ vars: {
 
 inform: INFORM {
   shape: rectangle
-  style.fill: "#e3f2fd"
-  style.stroke: "#0052FF"
+  style.fill: "#ecfeff"
+  style.stroke: "#0891b2"
   style.stroke-width: 3
   style.border-radius: 8
 
@@ -25,8 +25,8 @@ inform: INFORM {
 
 optimize: OPTIMIZE {
   shape: rectangle
-  style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.fill: "#f0fdf4"
+  style.stroke: "#16a34a"
   style.stroke-width: 3
   style.border-radius: 8
 
@@ -38,8 +38,8 @@ optimize: OPTIMIZE {
 
 operate: OPERATE {
   shape: rectangle
-  style.fill: "#fff3e0"
-  style.stroke: "#FFB020"
+  style.fill: "#fffbeb"
+  style.stroke: "#fbbf24"
   style.stroke-width: 3
   style.border-radius: 8
 
@@ -50,17 +50,17 @@ operate: OPERATE {
 }
 
 inform -> optimize: Data-driven actions {
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   style.stroke-width: 2
 }
 
 optimize -> operate: Sustained savings {
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   style.stroke-width: 2
 }
 
 operate -> inform: Feedback loop {
-  style.stroke: "#FFB020"
+  style.stroke: "#fbbf24"
   style.stroke-width: 2
   style.stroke-dash: 5
 }

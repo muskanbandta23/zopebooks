@@ -198,9 +198,9 @@ d2 validate books/<slug>/diagrams/my-architecture.d2
 
 Always use these colors in diagrams:
 
-- **Primary Blue**: `#0052FF` — Main elements, Zopdev products
-- **Success Green**: `#00C48C` — Savings, optimization wins
-- **Warning Orange**: `#FFB020` — Alerts, moderate issues
+- **Primary Blue**: `#0891b2` — Main elements, Zopdev products
+- **Success Green**: `#16a34a` — Savings, optimization wins
+- **Warning Orange**: `#fbbf24` — Alerts, moderate issues
 - **Danger Red**: `#FF6B6B` — Problems, waste
 
 **See:** [guides/D2_DIAGRAM_GUIDE.md](guides/D2_DIAGRAM_GUIDE.md) for comprehensive D2 guide.

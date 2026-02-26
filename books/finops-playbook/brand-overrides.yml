@@ -7,7 +7,7 @@ target_icps:
   - "finops-practitioner"
 
 colors:
-  primary: "#003DBF"  # Darker blue for technical audience (brand default: #0052FF)
+  primary: "#0e7490"  # Darker cyan for technical audience (brand default: #0891b2)
 
 tone:
   voice: "Deeply technical, code-heavy, field-tested"

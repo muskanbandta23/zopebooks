@@ -43,7 +43,7 @@ When we say SOTA quality, we mean ebooks that:
 
 **Premium Visual Foundation:**
 - Custom Zopdev theme (Inter + JetBrains Mono typography)
-- SCSS styling system with brand colors (#0052FF)
+- SCSS styling system with brand colors (#0891b2)
 - Responsive layout optimized for web and PDF
 - Professional code block styling with copy buttons
 

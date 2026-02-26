@@ -12,7 +12,7 @@ describe("cross-ebook brand comparison", () => {
   const k8s = loadMergedBrand(PROJECT_ROOT, "k8s-cost-guide");
 
   test("primary colors differ between ebooks", () => {
-    expect(finops.resolved.colors.primary).toBe("#003DBF");
+    expect(finops.resolved.colors.primary).toBe("#0e7490");
     expect(k8s.resolved.colors.primary).toBe("#0047AB");
     expect(finops.resolved.colors.primary).not.toBe(k8s.resolved.colors.primary);
   });
@@ -58,8 +58,8 @@ describe("no-override ebook vs overridden ebook", () => {
   const finops = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
 
   test("no-override gets default primary color", () => {
-    expect(noOverride.resolved.colors.primary).toBe("#4F46E5");
-    expect(finops.resolved.colors.primary).toBe("#003DBF");
+    expect(noOverride.resolved.colors.primary).toBe("#0891b2");
+    expect(finops.resolved.colors.primary).toBe("#0e7490");
   });
 
   test("no-override gets all 3 ICPs (no filtering)", () => {

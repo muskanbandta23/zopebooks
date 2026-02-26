@@ -69,11 +69,11 @@ Create `/styles/custom-zopdev.scss`:
 /*-- scss:defaults --*/
 
 // Zopdev Brand Colors
-$primary: #0052FF;
-$secondary: #002D8E;
-$success: #00C48C;
-$warning: #FFB020;
-$danger: #FF6B6B;
+$primary: #0891b2;
+$secondary: #155e75;
+$success: #16a34a;
+$warning: #fbbf24;
+$danger: #ef4444;
 
 // Sophisticated Grays
 $body-bg: #ffffff;
@@ -95,7 +95,7 @@ $headings-margin-bottom: 1.5rem;
 
 // Premium Title Block
 .quarto-title-block {
-  background: linear-gradient(135deg, #0052FF 0%, #002D8E 100%);
+  background: linear-gradient(135deg, #0891b2 0%, #155e75 100%);
   color: white;
   padding: 4rem 2rem;
   margin-bottom: 3rem;
@@ -182,28 +182,28 @@ code {
   
   &.callout-tip {
     background: #e8f5e9;
-    border-left-color: #00C48C;
+    border-left-color: #16a34a;
     
     .callout-icon {
-      color: #00C48C;
+      color: #16a34a;
     }
   }
   
   &.callout-note {
     background: #e3f2fd;
-    border-left-color: #0052FF;
+    border-left-color: #0891b2;
     
     .callout-icon {
-      color: #0052FF;
+      color: #0891b2;
     }
   }
   
   &.callout-warning {
     background: #fff3e0;
-    border-left-color: #FFB020;
+    border-left-color: #fbbf24;
     
     .callout-icon {
-      color: #FFB020;
+      color: #fbbf24;
     }
   }
   
@@ -342,7 +342,7 @@ Create `/styles/premium-layout.css`:
   color: #6c757d;
   padding: 1rem;
   background: #f8f9fa;
-  border-left: 3px solid #0052FF;
+  border-left: 3px solid #0891b2;
   border-radius: 4px;
 }
 
@@ -424,31 +424,31 @@ cloud: AWS Cloud {
   
   vpc: VPC {
     style.fill: "#ffffff"
-    style.stroke: "#0052FF"
+    style.stroke: "#0891b2"
     
     cluster: EKS Cluster {
       style.fill: "#e3f2fd"
       
       nodes: EC2 Instances {
-        style.fill: "#0052FF"
+        style.fill: "#0891b2"
         style.font-color: "#ffffff"
       }
       
       pods: Application Pods {
-        style.fill: "#00C48C"
+        style.fill: "#16a34a"
         style.font-color: "#ffffff"
       }
     }
   }
   
   monitoring: CloudWatch {
-    style.fill: "#FFB020"
+    style.fill: "#fbbf24"
   }
 }
 
 zopnight: ZopNight Agent {
-  style.fill: "#0052FF"
-  style.stroke: "#002D8E"
+  style.fill: "#0891b2"
+  style.stroke: "#155e75"
   style.font-color: "#ffffff"
   style.shadow: true
 }
@@ -466,7 +466,7 @@ direction: down
 inform: Inform Phase {
   shape: rectangle
   style.fill: "#e3f2fd"
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
   
   visibility: "Visibility\n80% Tag Coverage"
   allocation: "Allocation\nTeam-wise costs"
@@ -476,7 +476,7 @@ inform: Inform Phase {
 optimize: Optimize Phase {
   shape: rectangle
   style.fill: "#e8f5e9"
-  style.stroke: "#00C48C"
+  style.stroke: "#16a34a"
   
   rate: "Rate Optimization\n40% RI coverage"
   usage: "Usage Optimization\nRight-sizing"
@@ -486,7 +486,7 @@ optimize: Optimize Phase {
 operate: Operate Phase {
   shape: rectangle
   style.fill: "#fff3e0"
-  style.stroke: "#FFB020"
+  style.stroke: "#fbbf24"
   
   governance: "Governance\nTagging policies"
   automation: "Automation\nCost alerts"
@@ -510,7 +510,7 @@ Create `/diagrams/mermaid-config.json`:
   "themeVariables": {
     "primaryColor": "#ffffff",
     "primaryTextColor": "#1a1a1a",
-    "primaryBorderColor": "#0052FF",
+    "primaryBorderColor": "#0891b2",
     "lineColor": "#6c757d",
     "secondaryColor": "#f8f9fa",
     "tertiaryColor": "#ffffff",
@@ -550,7 +550,7 @@ graph TD
     B --> C[Operate]
     C --> A
     
-    classDef default fill:#fff,stroke:#0052FF,stroke-width:2px
+    classDef default fill:#fff,stroke:#0891b2,stroke-width:2px
 ```
 ```
 
@@ -727,7 +727,7 @@ savings = monthly_on_demand - monthly_with_scheduling
 savings_percent = (savings / monthly_on_demand * 100).toFixed(1)
 
 html`
-<div style="background: linear-gradient(135deg, #0052FF 0%, #002D8E 100%); 
+<div style="background: linear-gradient(135deg, #0891b2 0%, #155e75 100%); 
             color: white; padding: 2rem; border-radius: 8px; margin: 2rem 0;">
   <h3 style="margin-top: 0;">ZopNight Scheduling Savings</h3>
   <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
@@ -741,7 +741,7 @@ html`
     </div>
     <div>
       <div style="font-size: 0.875rem; opacity: 0.8;">Monthly Savings</div>
-      <div style="font-size: 2rem; font-weight: 700; color: #00C48C;">
+      <div style="font-size: 2rem; font-weight: 700; color: #16a34a;">
         $${savings.toLocaleString()} (${savings_percent}%)
       </div>
     </div>
@@ -764,7 +764,7 @@ Create a premium technical book cover in a minimalist, high-tech style:
 Visual Elements:
 - Abstract 3D isometric cloud infrastructure wireframes
 - Glass-morphism effect with translucent surfaces
-- Glowing network nodes in electric blue (#0052FF)
+- Glowing network nodes in electric blue (#0891b2)
 - Clean geometric shapes suggesting data flow
 - Subtle gradient from deep blue to white
 - Professional, not playful

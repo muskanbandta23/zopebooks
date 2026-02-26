@@ -80,7 +80,7 @@ aws: AWS Cloud {
 }
 
 zopnight: ZopNight {
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
   style.font-color: "#ffffff"
 }
 
@@ -273,7 +273,7 @@ target_cost = instances * pricing[target_type] * 730
 savings = current_cost - target_cost
 
 html`
-<div style="background: linear-gradient(135deg, #0052FF, #002D8E); 
+<div style="background: linear-gradient(135deg, #0891b2, #155e75); 
             color: white; padding: 2rem; border-radius: 8px;">
   <h3 style="margin:0; color: white;">Your Potential Savings</h3>
   <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
@@ -291,7 +291,7 @@ html`
     </div>
     <div>
       <div style="opacity: 0.8; font-size: 0.875rem;">Annual Savings</div>
-      <div style="font-size: 2rem; font-weight: 700; color: #00C48C;">
+      <div style="font-size: 2rem; font-weight: 700; color: #16a34a;">
         $${(savings * 12).toLocaleString()}
       </div>
     </div>
@@ -323,13 +323,13 @@ Plot.plot({
     Plot.line(monthly_data, {
       x: "month",
       y: "cost",
-      stroke: d => d.optimized ? "#00C48C" : "#FF6B6B",
+      stroke: d => d.optimized ? "#16a34a" : "#ef4444",
       strokeWidth: 3
     }),
     Plot.dot(monthly_data, {
       x: "month",
       y: "cost",
-      fill: d => d.optimized ? "#00C48C" : "#FF6B6B",
+      fill: d => d.optimized ? "#16a34a" : "#ef4444",
       r: 6
     }),
     Plot.ruleY([0])
@@ -378,7 +378,7 @@ Visual Style:
 - Minimalist, high-tech aesthetic
 - Abstract 3D isometric cloud infrastructure wireframes
 - Glass-morphism effect with translucent blue surfaces
-- Glowing network nodes in electric blue (#0052FF)
+- Glowing network nodes in electric blue (#0891b2)
 - Clean geometric shapes suggesting data flow
 - Professional gradient: deep blue to white
 

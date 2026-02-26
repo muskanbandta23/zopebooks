@@ -180,7 +180,7 @@ books/{id}/diagrams/              # Ebook-specific diagrams
 
 **Implementation:**
 - Use `scripts/diagram-utils.ts` for D2 operations
-- All templates use Zopdev brand colors (#0052FF, #00C48C, #FFB020, #FF6B6B)
+- All templates use Zopdev brand colors (#0891b2, #16a34a, #fbbf24, #ef4444)
 - Validation with `make diagrams ebook={id}` or `d2 validate`
 - Embed in chapters with ```{d2} code fence
 
@@ -519,14 +519,14 @@ interface ContentQuality {
 
 **Color Palette (Zopdev Brand):**
 ```d2
-style.fill: "#e6f0ff"        # Primary tint (backgrounds)
-style.stroke: "#0052FF"       # Primary (borders, arrows)
-style.fill: "#e8f5e9"         # Success tint (positive states)
-style.stroke: "#00C48C"       # Success (checkmarks, savings)
-style.fill: "#fff8e1"         # Warning tint (caution states)
-style.stroke: "#FFB020"       # Warning (alerts, pending)
-style.fill: "#ffebee"         # Danger tint (error states)
-style.stroke: "#FF6B6B"       # Danger (errors, waste)
+style.fill: "#ecfeff"        # Primary tint (backgrounds)
+style.stroke: "#0891b2"       # Primary (borders, arrows)
+style.fill: "#f0fdf4"         # Success tint (positive states)
+style.stroke: "#16a34a"       # Success (checkmarks, savings)
+style.fill: "#fffbeb"         # Warning tint (caution states)
+style.stroke: "#fbbf24"       # Warning (alerts, pending)
+style.fill: "#fef2f2"         # Danger tint (error states)
+style.stroke: "#ef4444"       # Danger (errors, waste)
 ```
 
 **Layout Engines:**
@@ -593,7 +593,7 @@ Interactive calculator available in HTML version.
 
 **Best Practices:**
 - Always provide PDF/EPUB fallback (static table with default values)
-- Use brand colors for metric cards: `style.fill: "#0052FF"`
+- Use brand colors for metric cards: `style.fill: "#0891b2"`
 - Format numbers: `d3.format("$,.0f")(value)` for currency
 - Add labels to all inputs (don't rely on tooltips)
 

@@ -1,17 +1,17 @@
 /* Hub Library Styles — Consistent with _landing/styles.css design language */
 
 :root {
-  --primary: #0052FF;
-  --primary-dark: #3730A3;
-  --navy: #0A1628;
-  --gray-50: #FAFAFA;
-  --gray-100: #F5F5F5;
-  --gray-300: #D4D4D4;
-  --gray-500: #737373;
-  --gray-700: #404040;
-  --gray-900: #171717;
-  --success: #10B981;
-  --warning: #F59E0B;
+  --primary: #0891b2;
+  --primary-dark: #0e7490;
+  --navy: #111827;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --success: #16a34a;
+  --warning: #fbbf24;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
@@ -168,7 +168,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   color: var(--primary);
-  background: rgba(0, 82, 255, 0.08);
+  background: rgba(8, 145, 178, 0.08);
   padding: 4px 12px;
   border-radius: 20px;
 }
@@ -184,12 +184,12 @@ body {
 
 .book-card-status--ready {
   color: var(--success);
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(22, 163, 74, 0.1);
 }
 
 .book-card-status--draft {
   color: var(--warning);
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(251, 191, 36, 0.1);
 }
 
 .book-card-title {

@@ -390,10 +390,10 @@ html`<div class="ojs-recommendation">
 
 ```ojs
 colors = {
-  primary: "#0052FF",
-  success: "#00C48C",
-  warning: "#FFB020",
-  danger: "#FF6B6B",
+  primary: "#0891b2",
+  success: "#16a34a",
+  warning: "#fbbf24",
+  danger: "#ef4444",
   secondary: "#64748B",
   background: "#F8FAFC"
 }
@@ -426,14 +426,14 @@ Plot.plot({
     Plot.line(projections, {
       x: "month",
       y: "cumSavings",
-      stroke: "#00C48C",
+      stroke: "#16a34a",
       strokeWidth: 2,
       tip: true
     }),
     Plot.line(projections, {
       x: "month",
       y: "cumInvestment",
-      stroke: "#FF6B6B",
+      stroke: "#ef4444",
       strokeWidth: 2,
       tip: true
     }),
@@ -459,7 +459,7 @@ Plot.plot({
     Plot.barY(costData, {
       x: "category",
       y: "cost",
-      fill: "#0052FF",
+      fill: "#0891b2",
       tip: true
     })
   ]
@@ -477,7 +477,7 @@ Plot.plot({
     Plot.dot(comparison, {
       x: "total",
       y: "name",
-      fill: "#0052FF",
+      fill: "#0891b2",
       r: 8
     })
   ]

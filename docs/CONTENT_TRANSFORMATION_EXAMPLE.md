@@ -83,7 +83,7 @@ before: Before Right-Sizing {
   }
   
   asg: Auto Scaling Group\n(m5.4xlarge × 180) {
-    style.fill: "#FF6B6B"
+    style.fill: "#ef4444"
     
     metrics: |md
       CPU: 12% avg
@@ -105,7 +105,7 @@ after: After Right-Sizing {
   }
   
   asg2: Auto Scaling Group\n(m5.xlarge × 180) {
-    style.fill: "#00C48C"
+    style.fill: "#16a34a"
     
     metrics: |md
       CPU: 45% avg
@@ -119,12 +119,12 @@ after: After Right-Sizing {
 
 before -> after: Migration {
   style.stroke-dash: 5
-  style.stroke: "#0052FF"
+  style.stroke: "#0891b2"
 }
 
 savings: Annual Savings:\n$1.4M {
   shape: circle
-  style.fill: "#0052FF"
+  style.fill: "#0891b2"
   style.font-color: "#ffffff"
   style.font-size: 18
   style.shadow: true
@@ -461,7 +461,7 @@ monthly_savings = current_monthly - target_monthly
 annual_savings = monthly_savings * 12
 
 html`
-<div style="background: linear-gradient(135deg, #0052FF 0%, #002D8E 100%); 
+<div style="background: linear-gradient(135deg, #0891b2 0%, #155e75 100%); 
             color: white; padding: 2rem; border-radius: 8px; margin: 2rem 0;">
   <h3 style="margin-top: 0; color: white;">Right-Sizing Impact</h3>
   <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
@@ -481,7 +481,7 @@ html`
     </div>
     <div>
       <div style="font-size: 0.875rem; opacity: 0.8;">Annual Savings</div>
-      <div style="font-size: 2rem; font-weight: 700; color: #00C48C;">
+      <div style="font-size: 2rem; font-weight: 700; color: #16a34a;">
         $${annual_savings.toLocaleString('en-US', {maximumFractionDigits: 0})}
       </div>
       <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 0.25rem;">
