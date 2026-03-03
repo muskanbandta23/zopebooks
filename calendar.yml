@@ -146,3 +146,19 @@ ebooks:
       linkedin_carousel: true
       instagram_posts: true
       og_image: true
+
+  - slug: devsecops-pipeline-security
+    title: "DevSecOps Pipeline Security"
+    subtitle: "A Practical Guide to DevSecOps Pipeline Security"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [devsecops, pipeline, security]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true

@@ -393,16 +393,45 @@
 
     /* ─── D2 SVG Diagrams ─── */
     .diagram-svg-wrapper {
-      margin: 2rem 0;
+      margin: 2.5rem 0;
       text-align: center;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      border: 2px solid #d0d7de;
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
     }
     .diagram-svg-wrapper svg {
-      max-width: 100%;
-      height: auto;
       display: block;
       margin: 0 auto;
+      height: auto;
+      min-height: 200px;
+    }
+    /* Force D2 SVG internals to have good contrast */
+    .diagram-svg-wrapper svg text {
+      fill: #1a1a2e !important;
+    }
+    .diagram-svg-wrapper svg .text {
+      fill: #1a1a2e !important;
+    }
+    /* Wide diagrams: scale to fit column, auto-height for readability */
+    .diagram-svg-wrapper.diagram-wide {
+      text-align: center;
+      padding: 1.5rem;
+    }
+    .diagram-svg-wrapper.diagram-wide svg {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      min-height: 280px;
+    }
+    /* Normal/tall diagrams: fill column generously */
+    .diagram-svg-wrapper.diagram-normal svg {
+      max-width: 100%;
+      width: 100%;
+      min-height: 300px;
     }
 
     /* ─── Static Calculator Card ─── */

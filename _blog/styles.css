@@ -427,6 +427,47 @@ body {
 .diagram-figure {
   margin: 2.5rem 0;
   text-align: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 2px solid #d0d7de;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.diagram-figure svg {
+  display: block;
+  margin: 0 auto;
+  height: auto;
+  min-height: 200px;
+}
+
+/* Force D2 SVG text to have strong contrast */
+.diagram-figure svg text {
+  fill: #1a1a2e !important;
+}
+.diagram-figure svg .text {
+  fill: #1a1a2e !important;
+}
+
+/* Wide diagrams: scale to fit column, auto-height for readability */
+.diagram-figure.diagram-wide {
+  text-align: center;
+  padding: 1.5rem;
+}
+.diagram-figure.diagram-wide svg {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 280px;
+}
+
+/* Normal/tall diagrams: fill column generously */
+.diagram-figure.diagram-normal svg {
+  max-width: 100%;
+  width: 100%;
+  min-height: 300px;
 }
 
 .diagram-figure .blog-diagram {

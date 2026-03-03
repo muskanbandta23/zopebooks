@@ -44,15 +44,15 @@ function stepHeader(num: number, total: number, label: string): void {
   console.log(`\n${BLUE}── [${num}/${total}]${RESET} ${BOLD}${label}${RESET}\n`);
 }
 
-// Detect TS runtime: bun > npx tsx > node --import tsx
+// Detect TS runtime: npx tsx (most reliable) > bun > node --import tsx
 function detectTsRunner(): { cmd: string; runArgs: string[] } {
   try {
-    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe", timeout: 10000 });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
   } catch { /* not available */ }
   try {
-    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe", timeout: 5000 });
+    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
   } catch { /* not available */ }
   return { cmd: "node", runArgs: ["--import", "tsx"] };
 }
@@ -664,6 +664,24 @@ if (hasQuarto) {
 } else {
   console.log(`  ${YELLOW}⚠${RESET} Quarto not found — skipping PDF/HTML render`);
   console.log(`  ${DIM}Install Quarto from https://quarto.org for PDF output${RESET}`);
+}
+
+// Copy images to chapters/ output subdirectory so relative paths work
+// Quarto renders chapters in _output/books/{slug}/chapters/ but images are
+// in _output/books/{slug}/images/. Chapter HTML references src="images/..."
+// which needs the images inside the chapters/ directory.
+const outputImagesDir = join(ROOT, "_output", "books", slug, "images");
+const chaptersOutputDir = join(ROOT, "_output", "books", slug, "chapters");
+if (existsSync(outputImagesDir) && existsSync(chaptersOutputDir)) {
+  const chapImagesDir = join(chaptersOutputDir, "images");
+  if (!existsSync(chapImagesDir)) mkdirSync(chapImagesDir, { recursive: true });
+  const imgFiles = readdirSync(outputImagesDir).filter(f => /\.(png|jpg|jpeg|svg|webp|gif)$/i.test(f));
+  for (const img of imgFiles) {
+    writeFileSync(join(chapImagesDir, img), readFileSync(join(outputImagesDir, img)));
+  }
+  if (imgFiles.length > 0) {
+    console.log(`  ${GREEN}✓${RESET} Copied ${imgFiles.length} images to chapters output for correct relative paths`);
+  }
 }
 
 // Always generate standalone HTML reader (works with or without Quarto)

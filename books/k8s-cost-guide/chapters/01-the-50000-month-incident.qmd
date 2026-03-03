@@ -68,7 +68,9 @@ kubectl top pods --all-namespaces --no-headers | \
 
 # Compare against requests (requires kubectl resource-capacity plugin)
 kubectl resource-capacity --namespace <team-ns> --util --sort cpu.util
-``` If your organization sits in the 20-45% range (Sedai), right-sizing conversations become measurable rather than theoretical. zopnight enables this shift by surfacing efficiency metrics at the namespace level, generating VPA-driven right-sizing recommendations, and managing spot node pools to reduce idle capacity. The spiral ends when engineering sees what finance pays for.
+```
+
+If your organization sits in the 20-45% range (Sedai), right-sizing conversations become measurable rather than theoretical. zopnight enables this shift by surfacing efficiency metrics at the namespace level, generating VPA-driven right-sizing recommendations, and managing spot node pools to reduce idle capacity. The spiral ends when engineering sees what finance pays for.
 
 
 ## Cost Attribution Models: Who Pays for What

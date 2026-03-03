@@ -94,22 +94,24 @@ export function StatCard(props: StatCardProps) {
       >
         <h1
           style={{
-            fontSize: 72,
+            fontSize: headline.length <= 12 ? 72 : headline.length <= 20 ? 56 : headline.length <= 30 ? 44 : 36,
             fontWeight: 700,
-            lineHeight: 1.1,
+            lineHeight: 1.2,
             letterSpacing: "-0.03em",
             margin: 0,
+            maxWidth: 680,
+            wordBreak: "break-word",
           }}
         >
           {headline}
         </h1>
         <p
           style={{
-            fontSize: 24,
+            fontSize: subtext.length <= 40 ? 24 : subtext.length <= 80 ? 20 : 17,
             lineHeight: 1.4,
             margin: 0,
             opacity: 0.85,
-            maxWidth: 600,
+            maxWidth: 650,
           }}
         >
           {subtext}

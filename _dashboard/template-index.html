@@ -1,47 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{company_name}} — Ebook Dashboard</title>
   <meta name="description" content="Browse, download, and explore technical ebooks by {{company_name}}.">
   <meta name="theme-color" content="#0891b2">
-  <meta name="color-scheme" content="dark">
-  <meta property="og:title" content="{{company_name}} Ebook Dashboard">
-  <meta property="og:description" content="Free technical ebooks for cloud-native teams.">
-  <meta property="og:type" content="website">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- ═══ Header ═══ -->
+  <!-- ═══ Floating Pill Nav ═══ -->
+  <nav class="dash-nav">
+    <div class="dash-nav-pill">
+      <a href="{{{home_url}}}" class="dash-nav-logo">{{company_name}}</a>
+      <div class="dash-nav-center">
+        <a href="{{{home_url}}}" class="dash-nav-link">Home</a>
+        <a href="#" class="dash-nav-link active">Ebooks</a>
+      </div>
+      <div class="dash-nav-search">
+        <span class="dash-nav-search-icon">&#128269;</span>
+        <input type="text" id="search-input" placeholder="Search ebooks..." aria-label="Search ebooks">
+      </div>
+      <button class="dash-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <svg class="theme-icon--light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="theme-icon--dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══ Hero Header ═══ -->
   <header class="dash-header">
+    <!-- Animated orbs -->
+    <div class="dash-header-orb dash-header-orb--1"></div>
+    <div class="dash-header-orb dash-header-orb--2"></div>
+    <div class="dash-header-orb dash-header-orb--3"></div>
+
     <div class="dash-container">
-      <div class="dash-header-top">
-        <a href="{{{home_url}}}" class="dash-back-link">&larr; Back to Landing Page</a>
-        <div class="dash-brand">{{company_name}}</div>
-      </div>
-      <h1 class="dash-title">Ebook Dashboard</h1>
-      <p class="dash-subtitle">Browse, read, and download production-ready technical guides for cloud-native engineering teams.</p>
-
-      <div class="dash-stats">
-        <div class="dash-stat">
-          <span class="dash-stat-value">{{ebook_count}}</span>
-          <span class="dash-stat-label">Ebooks</span>
+      <div class="dash-header-content">
+        <div class="dash-brand-badge">
+          <span class="dash-brand-dot"></span>
+          {{company_name}} Ebooks
         </div>
-        <button class="dash-btn-generate" onclick="openGenerateModal()">+ New Ebook</button>
-      </div>
 
-      <div class="dash-controls">
-        <div class="dash-search">
-          <span class="dash-search-icon">&#128269;</span>
-          <input type="text" id="search-input" class="dash-search-input" placeholder="Search by title, topic, or tag..." aria-label="Search ebooks">
+        <h1 class="dash-title">
+          Ebook <span class="dash-title-accent">Dashboard</span>
+        </h1>
+
+        <p class="dash-subtitle">Browse, read, and download production-ready technical guides for cloud-native engineering teams.</p>
+
+        <div class="dash-stats">
+          <div class="dash-stat">
+            <span class="dash-stat-value">{{ebook_count}}</span>
+            <span class="dash-stat-label">Ebooks</span>
+          </div>
+          <button class="dash-btn-generate" onclick="openGenerateModal()">+ New Ebook</button>
         </div>
+
         <div class="dash-tags" id="tag-filters">
           <button class="tag-btn active" data-tag="all">All</button>
           {{#tags}}
@@ -167,8 +187,27 @@
     </div>
   </div>
 
-  <!-- ═══ Search & Filter JS ═══ -->
+  <!-- ═══ Scripts ═══ -->
   <script>
+    /* ── Theme Toggle ── */
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlEl = document.documentElement;
+
+    // Check saved preference or system preference
+    const savedTheme = localStorage.getItem('zopdev-dash-theme');
+    if (savedTheme) {
+      htmlEl.dataset.theme = savedTheme;
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      htmlEl.dataset.theme = 'light';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const next = htmlEl.dataset.theme === 'dark' ? 'light' : 'dark';
+      htmlEl.dataset.theme = next;
+      localStorage.setItem('zopdev-dash-theme', next);
+    });
+
+    /* ── Search & Filter ── */
     const searchInput = document.getElementById('search-input');
     const grid = document.getElementById('ebook-grid');
     const cards = grid.querySelectorAll('.dash-card');

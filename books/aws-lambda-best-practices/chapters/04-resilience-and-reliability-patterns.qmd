@@ -1113,8 +1113,6 @@ html`<div class="ojs-calculator">
     </tbody>
   </table>
   <p class="ojs-savings">
-```
-
     <strong>Best option:</strong> ${comparison.reduce((a, b) => a.total < b.total ? a : b).name}
     — saves ${fmt((comparison.reduce((a, b) => a.total > b.total ? a : b).total - comparison.reduce((a, b) => a.total < b.total ? a : b).total) * 12)}/year
     vs. the most expensive option.
@@ -1153,8 +1151,6 @@ Adjust values in the interactive HTML version.*
 :::
 
 ## Thundering Herd Prevention
-
-```
 
 The thundering herd problem occurs when thousands of functions retry simultaneously after a downstream service recovers. Even with exponential backoff and jitter, a recovered system faces a wave of requests that can trigger another failure. Prevention requires both architectural patterns and explicit configuration.
 

@@ -63,15 +63,18 @@ export function KeyNumber(props: KeyNumberProps) {
         style={{
           display: "flex",
           alignItems: "baseline",
+          justifyContent: "center",
           gap: 12,
           marginBottom: 12,
+          maxWidth: 700,
+          flexWrap: "wrap",
         }}
       >
         <div
           style={{
-            fontSize: 96,
+            fontSize: number.length <= 6 ? 96 : number.length <= 12 ? 72 : 56,
             fontWeight: 700,
-            lineHeight: 1,
+            lineHeight: 1.1,
             letterSpacing: "-0.04em",
             color: brandColors.primary,
           }}
@@ -80,7 +83,7 @@ export function KeyNumber(props: KeyNumberProps) {
         </div>
         <div
           style={{
-            fontSize: 28,
+            fontSize: unit.length <= 15 ? 28 : 22,
             fontWeight: 600,
             color: brandColors.foreground,
             opacity: 0.7,
@@ -93,11 +96,12 @@ export function KeyNumber(props: KeyNumberProps) {
       {/* Context line */}
       <div
         style={{
-          fontSize: 20,
+          fontSize: context.length <= 50 ? 20 : 17,
           color: brandColors.foreground,
           opacity: 0.55,
           textAlign: "center",
-          maxWidth: 600,
+          maxWidth: 650,
+          lineHeight: 1.4,
         }}
       >
         {context}

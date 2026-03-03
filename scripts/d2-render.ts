@@ -20,7 +20,7 @@ export function renderD2ToSvg(d2Source: string, options?: {
 }): string {
   const layout = options?.layout || "elk";
   const theme = options?.theme || "0"; // CLI accepts numeric themes
-  const pad = options?.pad || 20;
+  const pad = options?.pad || 40;
 
   const tmpInput = join(tmpdir(), `d2-input-${Date.now()}-${Math.random().toString(36).slice(2)}.d2`);
   const tmpOutput = join(tmpdir(), `d2-output-${Date.now()}-${Math.random().toString(36).slice(2)}.svg`);

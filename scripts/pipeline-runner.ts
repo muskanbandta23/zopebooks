@@ -73,12 +73,12 @@ async function runWithConcurrency<T>(
 
 function detectTsRunner(): { cmd: string; runArgs: string[] } {
   try {
-    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe", timeout: 10000 });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
   } catch { /* not available */ }
   try {
-    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe", timeout: 5000 });
+    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
   } catch { /* not available */ }
   return { cmd: "node", runArgs: ["--import", "tsx"] };
 }

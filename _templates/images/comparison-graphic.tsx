@@ -23,8 +23,20 @@ export interface ComparisonGraphicProps {
   brandColors: BrandColors;
 }
 
+// Auto-scale font size based on text length to prevent clipping
+function valueFontSize(text: string): number {
+  const len = text.length;
+  if (len <= 8) return 36;
+  if (len <= 14) return 28;
+  if (len <= 20) return 22;
+  return 18;
+}
+
 export function ComparisonGraphic(props: ComparisonGraphicProps) {
   const { title, before, after, improvement, brandColors } = props;
+
+  const beforeSize = valueFontSize(before.value);
+  const afterSize = valueFontSize(after.value);
 
   return (
     <div
@@ -54,6 +66,8 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
             marginBottom: 32,
             color: brandColors.foreground,
             letterSpacing: "-0.01em",
+            textAlign: "center",
+            maxWidth: 700,
           }}
         >
           {title}
@@ -65,8 +79,8 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
         style={{
           display: "flex",
           justifyContent: "center",
-          alignItems: "center",
-          gap: 40,
+          alignItems: "stretch",
+          gap: 32,
           width: "100%",
         }}
       >
@@ -76,11 +90,13 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            padding: 32,
+            justifyContent: "center",
+            padding: "28px 24px",
             borderRadius: 12,
             backgroundColor: "#FF6B6B18",
             border: "2px solid #FF6B6B40",
-            width: 280,
+            flex: 1,
+            maxWidth: 300,
           }}
         >
           <div
@@ -96,11 +112,13 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
           </div>
           <div
             style={{
-              fontSize: 36,
+              fontSize: beforeSize,
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1.3,
               color: "#FF6B6B",
               marginBottom: 8,
+              textAlign: "center",
+              wordBreak: "break-word",
             }}
           >
             {before.value}
@@ -111,6 +129,7 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
               color: brandColors.foreground,
               opacity: 0.7,
               textAlign: "center",
+              lineHeight: 1.4,
             }}
           >
             {before.label}
@@ -123,7 +142,9 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            justifyContent: "center",
             gap: 8,
+            flexShrink: 0,
           }}
         >
           <div style={{ fontSize: 28, color: brandColors.primary }}>→</div>
@@ -133,8 +154,10 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
               color: "#FFFFFF",
               padding: "8px 16px",
               borderRadius: 20,
-              fontSize: 16,
+              fontSize: improvement.length > 20 ? 13 : 16,
               fontWeight: 700,
+              textAlign: "center",
+              maxWidth: 140,
             }}
           >
             {improvement}
@@ -147,11 +170,13 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            padding: 32,
+            justifyContent: "center",
+            padding: "28px 24px",
             borderRadius: 12,
             backgroundColor: "#00C48C18",
             border: "2px solid #00C48C40",
-            width: 280,
+            flex: 1,
+            maxWidth: 300,
           }}
         >
           <div
@@ -167,11 +192,13 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
           </div>
           <div
             style={{
-              fontSize: 36,
+              fontSize: afterSize,
               fontWeight: 700,
-              lineHeight: 1.2,
+              lineHeight: 1.3,
               color: "#00C48C",
               marginBottom: 8,
+              textAlign: "center",
+              wordBreak: "break-word",
             }}
           >
             {after.value}
@@ -182,6 +209,7 @@ export function ComparisonGraphic(props: ComparisonGraphicProps) {
               color: brandColors.foreground,
               opacity: 0.7,
               textAlign: "center",
+              lineHeight: 1.4,
             }}
           >
             {after.label}

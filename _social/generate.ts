@@ -123,6 +123,88 @@ for (const ebook of calendar.ebooks) {
     continue;
   }
 
+  // ── Auto-populate placeholder social content from chapter data ──────
+  const PLACEHOLDER_RE = /replace with|key takeaway #\d|lorem ipsum|auto-populated from/i;
+  const hasPlaceholderSlides = social.linkedin_carousel?.slides?.some(s => PLACEHOLDER_RE.test(s.body) || PLACEHOLDER_RE.test(s.heading));
+  const hasPlaceholderQuotes = social.instagram_posts?.quotes?.some(q => PLACEHOLDER_RE.test(q.text));
+
+  if (hasPlaceholderSlides || hasPlaceholderQuotes) {
+    // Collect key claims from chapter plan files
+    const chapDir = join(ROOT_DIR, "books", ebook.slug, "chapters");
+    const keyClaims: string[] = [];
+    if (existsSync(chapDir)) {
+      const planFiles = readdirSync(chapDir).filter(f => f.endsWith(".plan.yml")).sort();
+      for (const pf of planFiles) {
+        try {
+          const plan = parse(readFileSync(join(chapDir, pf), "utf-8")) as any;
+          const claims = plan?.content_seeds?.key_claims || plan?.content_seeds?.key_takeaways || [];
+          for (const c of claims) {
+            const claim = typeof c === "string" ? c.trim() : "";
+            // Only keep claims that are concise enough for a slide (< 120 chars)
+            if (claim && claim.length > 10 && claim.length < 120) keyClaims.push(claim);
+          }
+        } catch { /* skip unparseable plans */ }
+      }
+    }
+
+    // Also try key_takeaways from ebook.yml chapters metadata
+    if (keyClaims.length < 4 && ebookMeta.chapters) {
+      for (const ch of (ebookMeta as any).chapters || []) {
+        for (const kt of ch.key_takeaways || []) {
+          const claim = typeof kt === "string" ? kt.trim() : "";
+          if (claim && claim.length > 10 && claim.length < 120 && !keyClaims.includes(claim)) {
+            keyClaims.push(claim);
+          }
+        }
+      }
+    }
+
+    if (keyClaims.length > 0) {
+      console.log(`  📝 Auto-populating social content from ${keyClaims.length} key claims`);
+
+      // Replace LinkedIn carousel placeholder slides
+      if (hasPlaceholderSlides && social.linkedin_carousel?.slides) {
+        const title = ebookMeta.meta.title;
+        const newSlides: Array<{ heading: string; body: string }> = [
+          { heading: title, body: "A comprehensive guide by Zopdev" },
+        ];
+        // Add up to 4 key claim slides with meaningful headings
+        const selectedClaims = keyClaims.slice(0, 4);
+        for (let i = 0; i < selectedClaims.length; i++) {
+          // Extract a short heading from the claim (first phrase before dash/comma/colon, or first ~5 words)
+          const claim = selectedClaims[i];
+          let heading = claim.split(/[—–:,]/)[0].trim();
+          // Truncate to ~40 chars max for heading
+          if (heading.length > 40) {
+            const words = heading.split(/\s+/).slice(0, 5);
+            heading = words.join(" ");
+          }
+          // If heading is the same as full claim, use first few words
+          if (heading === claim || heading.length < 5) {
+            heading = claim.split(/\s+/).slice(0, 4).join(" ");
+          }
+          newSlides.push({
+            heading,
+            body: claim,
+          });
+        }
+        newSlides.push({ heading: "Get the Full Guide", body: "Download now at zopdev.com" });
+        social.linkedin_carousel.slides = newSlides;
+      }
+
+      // Replace Instagram placeholder quotes
+      if (hasPlaceholderQuotes && social.instagram_posts?.quotes) {
+        // Pick the most impactful claims (those with numbers/percentages)
+        const impactful = keyClaims.filter(c => /\d+%|\$[\d,]+|\d+[xX]/.test(c));
+        const quoteSources = impactful.length >= 2 ? impactful : keyClaims;
+        social.instagram_posts.quotes = quoteSources.slice(0, 3).map(text => ({
+          text,
+          attribution: "Zopdev Team",
+        }));
+      }
+    }
+  }
+
   // Load merged brand config (core + extended + per-ebook overrides)
   const brandConfig = loadMergedBrand(ROOT_DIR, ebook.slug);
   const themeValues = getSocialThemeValues(brandConfig.resolved);

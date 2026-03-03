@@ -197,8 +197,6 @@ projections = {
       cumInvestment,
       cumSavings,
       cumNet,
-```
-
       roi: cumInvestment > 0 ? ((cumSavings - cumInvestment) / cumInvestment * 100) : 0
     });
   }
@@ -331,8 +329,6 @@ Savings: $15,000/month direct + $5,000/month labor (40 hrs at $125/hr).
 :::
 
 ## Continuous Improvement Workflow
-
-```
 
 A mature Lambda practice treats optimization as a continuous cycle rather than a one-time project. The workflow begins with monitoring: Lambda Insights and CloudWatch provide the monitoring foundation for data-driven optimization (Source: FACT SHEET). Collect metrics on invocation count, duration distribution, error rates, and cold start frequency. This visibility feeds directly into analysis.
 

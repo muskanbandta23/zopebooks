@@ -337,6 +337,30 @@ function findD2Cli(): string | null {
 
 const d2Cli = findD2Cli();
 
+/**
+ * Classify SVG as "diagram-wide" or "diagram-normal" based on aspect ratio.
+ * Wide diagrams (>3:1) get horizontal scroll at a readable minimum width.
+ */
+function classifyDiagramWidth(svg: string): string {
+  const vb = svg.match(/viewBox=["']([^"']+)["']/);
+  if (vb) {
+    const parts = vb[1].split(/\s+/).map(Number);
+    if (parts.length === 4 && parts[3] > 0) {
+      const ratio = parts[2] / parts[3];
+      if (ratio > 3) return "diagram-wide";
+    }
+  }
+  // Also check explicit width/height attributes
+  const wMatch = svg.match(/\bwidth=["'](\d+)/);
+  const hMatch = svg.match(/\bheight=["'](\d+)/);
+  if (wMatch && hMatch) {
+    const w = parseInt(wMatch[1], 10);
+    const h = parseInt(hMatch[1], 10);
+    if (h > 0 && w / h > 3) return "diagram-wide";
+  }
+  return "diagram-normal";
+}
+
 function compileD2ToSvg(source: string): string {
   if (!d2Cli) return renderD2AsHtml(source);
 
@@ -344,14 +368,14 @@ function compileD2ToSvg(source: string): string {
     const tmpIn = join(tmpdir(), `d2-${Date.now()}-${Math.random().toString(36).slice(2)}.d2`);
     const tmpOut = join(tmpdir(), `d2-${Date.now()}-${Math.random().toString(36).slice(2)}.svg`);
     writeFileSync(tmpIn, source);
-    execSync(`"${d2Cli}" --layout=elk --theme=200 "${tmpIn}" "${tmpOut}"`, { stdio: "pipe" });
+    execSync(`"${d2Cli}" --layout=elk --theme=0 --pad=40 "${tmpIn}" "${tmpOut}"`, { stdio: "pipe" });
     let svg = readFileSync(tmpOut, "utf-8");
     try { unlinkSync(tmpIn); } catch { }
     try { unlinkSync(tmpOut); } catch { }
     // Clean SVG for HTML5: strip XML declaration and CDATA markers
     svg = svg.replace(/<\?xml[^?]*\?>\s*/g, "").replace(/<!\[CDATA\[/g, "").replace(/\]\]>/g, "");
-    // Wrap SVG in a responsive container
-    return `<div class="diagram-svg-wrapper">${svg}</div>`;
+    // Wrap SVG in a responsive container with size class
+    return `<div class="diagram-svg-wrapper ${classifyDiagramWidth(svg)}">${svg}</div>`;
   } catch (err) {
     return renderD2AsHtml(source);
   }
@@ -397,7 +421,7 @@ function markdownToHtml(md: string, bookDir?: string): string {
 
   html = html.replace(/:{3,4}\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:{3,4}/g, (_, svgContent, caption) => {
     const cleanSvg = cleanSvgForHtml(svgContent.trim());
-    const rendered = `<div class="diagram-svg-wrapper">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const rendered = `<div class="diagram-svg-wrapper ${classifyDiagramWidth(cleanSvg)}">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
     const idx = diagramStore.length;
     diagramStore.push(rendered);
     return `\n<div data-diagram="${idx}"></div>\n`;
@@ -406,7 +430,7 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // Also handle bare ::: {.chapter-diagram} without nested content-visible (legacy format)
   html = html.replace(/:::\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:::/g, (_, svgContent, caption) => {
     const cleanSvg = cleanSvgForHtml(svgContent.trim());
-    const rendered = `<div class="diagram-svg-wrapper">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const rendered = `<div class="diagram-svg-wrapper ${classifyDiagramWidth(cleanSvg)}">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
     const idx = diagramStore.length;
     diagramStore.push(rendered);
     return `\n<div data-diagram="${idx}"></div>\n`;
@@ -416,7 +440,10 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // These contain the static ROI tables we want to show
   const staticFallbacks: string[] = [];
   html = html.replace(/:{3,4}\s*\{\.content-visible\s+when-format="(?:pdf|epub)"\}\s*\n([\s\S]*?):{3,4}/g, (_, content) => {
-    staticFallbacks.push(content.trim());
+    // Strip image references from fallback — reader has inline SVGs for diagrams,
+    // PDF-only refs (e.g. ![...](diagrams/xx.svg)) would be broken
+    let cleaned = content.trim().replace(/!\[[^\]]*\]\([^)]+\)\s*/g, "").trim();
+    if (cleaned) staticFallbacks.push(cleaned);
     return ""; // Remove — we'll use the first one found after removing OJS blocks
   });
 
@@ -453,6 +480,18 @@ function markdownToHtml(md: string, bookDir?: string): string {
 
   // Remove empty fenced code blocks (```\n``` with no content between them)
   html = html.replace(/```\s*\n```/g, "");
+
+  // Fix malformed: bare ``` on its own line after a heading — remove the stray fence opener
+  // This catches cases like: ## Heading\n\n```\n\nProse text...
+  html = html.replace(/^(#{1,6}\s+.+)\n\n```\s*\n\n/gm, "$1\n\n");
+
+  // Fix malformed: ``` merged with prose on same line (close fence not on own line)
+  // e.g., "``` If your organization..." → close fence + newline + prose
+  html = html.replace(/^```\s+([A-Z])/gm, "```\n\n$1");
+
+  // Clean any leaked OJS template expressions (${...}) from split OJS blocks
+  html = html.replace(/^\s*<strong>Best option:<\/strong>\s*\$\{comparison\.reduce[\s\S]*?vs\.\s*the most expensive option\.\s*<\/p>\s*<\/div>`?\s*$/gm, "");
+  html = html.replace(/^\s*roi:\s*cumInvestment\s*>[\s\S]*?return found \? found\.month : null;\s*\}$/gm, "");
 
   // Replace *Visualize ...* text descriptions with styled diagram boxes (use placeholder store)
   html = html.replace(/^\*Visualize ([^*]+)\*(?:\s*\*\(diagram:[^)]*\)\*)?$/gm, (_, desc) => {

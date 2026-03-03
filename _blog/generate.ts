@@ -91,13 +91,29 @@ function markdownToHtml(md: string, bookDir?: string): string {
       .replace(/\]\]>/g, "");
   }
 
+  // Classify SVG as wide or normal based on aspect ratio
+  function classifyDiagramWidth(svg: string): string {
+    const vb = svg.match(/viewBox=["']([^"']+)["']/);
+    if (vb) {
+      const parts = vb[1].split(/\s+/).map(Number);
+      if (parts.length === 4 && parts[3] > 0 && parts[2] / parts[3] > 3) return "diagram-wide";
+    }
+    const wMatch = svg.match(/\bwidth=["'](\d+)/);
+    const hMatch = svg.match(/\bheight=["'](\d+)/);
+    if (wMatch && hMatch) {
+      const w = parseInt(wMatch[1], 10), h = parseInt(hMatch[1], 10);
+      if (h > 0 && w / h > 3) return "diagram-wide";
+    }
+    return "diagram-normal";
+  }
+
   // Handle ::: {.chapter-diagram} blocks with inline SVG → extract to placeholder store
   // These must be stored to protect SVG content from paragraph wrapping
   const chapterDiagramStore: string[] = [];
 
   html = html.replace(/:{3,4}\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:{3,4}/g, (_, svgContent, caption) => {
     const cleanSvg = cleanSvgForHtml(svgContent.trim());
-    const rendered = `<div class="diagram-figure">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const rendered = `<div class="diagram-figure ${classifyDiagramWidth(cleanSvg)}">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
     const idx = chapterDiagramStore.length;
     chapterDiagramStore.push(rendered);
     return `<div data-chapterdiagram="${idx}"></div>`;
@@ -106,7 +122,7 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // Also handle bare ::: {.chapter-diagram} (legacy format)
   html = html.replace(/:::\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:::/g, (_, svgContent, caption) => {
     const cleanSvg = cleanSvgForHtml(svgContent.trim());
-    const rendered = `<div class="diagram-figure">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const rendered = `<div class="diagram-figure ${classifyDiagramWidth(cleanSvg)}">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
     const idx = chapterDiagramStore.length;
     chapterDiagramStore.push(rendered);
     return `<div data-chapterdiagram="${idx}"></div>`;
@@ -115,7 +131,10 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // Extract static fallback from content-visible blocks (show ROI tables in HTML)
   const staticFallbacks: string[] = [];
   html = html.replace(/:{3,4}\s*\{\.content-visible\s+when-format="(?:pdf|epub)"\}\s*\n([\s\S]*?):{3,4}/g, (_, content) => {
-    staticFallbacks.push(content.trim());
+    // Strip image references from fallback content — the blog already has inline SVGs
+    // for diagrams, so PDF-only image refs (e.g. ![...](diagrams/xx.svg)) would be broken
+    let cleaned = content.trim().replace(/!\[[^\]]*\]\([^)]+\)\s*/g, "").trim();
+    if (cleaned) staticFallbacks.push(cleaned);
     return "";
   });
 
@@ -130,7 +149,7 @@ function markdownToHtml(md: string, bookDir?: string): string {
       if (existsSync(d2Path)) {
         const src = readFileSync(d2Path, "utf-8");
         const svg = renderD2ToSvg(src);
-        rendered = svg ? `<div class="diagram-figure">${svg}</div>` : renderD2AsHtmlCard(src);
+        rendered = svg ? `<div class="diagram-figure ${svg ? classifyDiagramWidth(svg) : ""}">${svg}</div>` : renderD2AsHtmlCard(src);
       }
     }
     if (!rendered) rendered = renderD2AsHtmlCard("");
@@ -142,7 +161,7 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // D2 inline diagram blocks — render from inline source
   html = html.replace(/```\{\.?d2[^}]*\}\n([\s\S]*?)```/g, (_, source) => {
     const svg = renderD2ToSvg(source);
-    const rendered = svg ? `<div class="diagram-figure">${svg}</div>` : renderD2AsHtmlCard(source);
+    const rendered = svg ? `<div class="diagram-figure ${svg ? classifyDiagramWidth(svg) : ""}">${svg}</div>` : renderD2AsHtmlCard(source);
     const idx = diagramStore.length;
     diagramStore.push(rendered);
     return `<div data-diagram="${idx}"></div>`;
@@ -160,6 +179,16 @@ function markdownToHtml(md: string, bookDir?: string): string {
 
   // Remove empty fenced code blocks (only ``` immediately followed by ``` on next line)
   html = html.replace(/```\s*\n```\s*\n/g, "");
+
+  // Fix stray ``` after headings (e.g., ## Heading\n\n```\n\nProse)
+  html = html.replace(/^(#{1,6}\s+.+)\n\n```\s*\n\n/gm, "$1\n\n");
+
+  // Fix ``` merged with prose (e.g., "``` If your org...")
+  html = html.replace(/^```\s+([A-Z])/gm, "```\n\n$1");
+
+  // Clean leaked OJS template expressions from split blocks
+  html = html.replace(/^\s*<strong>Best option:<\/strong>\s*\$\{comparison\.reduce[\s\S]*?vs\.\s*the most expensive option\.\s*<\/p>\s*<\/div>`?\s*$/gm, "");
+  html = html.replace(/^\s*roi:\s*cumInvestment\s*>[\s\S]*?return found \? found\.month : null;\s*\}$/gm, "");
 
   // Replace *Visualize ...* text descriptions with styled boxes
   html = html.replace(/^\*Visualize ([^*]+)\*(?:\s*\*\(diagram:[^)]*\)\*)?$/gm, (_, desc) => {

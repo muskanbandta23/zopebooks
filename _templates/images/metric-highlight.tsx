@@ -87,18 +87,21 @@ export function MetricHighlight(props: MetricHighlightProps) {
           width: "100%",
         }}
       >
-        {displayMetrics.map((metric, idx) => (
+        {displayMetrics.map((metric, idx) => {
+          const valSize = metric.value.length <= 8 ? 40 : metric.value.length <= 16 ? 30 : 24;
+          return (
           <div
             key={idx}
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              padding: 28,
+              justifyContent: "center",
+              padding: "24px 20px",
               borderRadius: 12,
               backgroundColor: brandColors.lightBackground,
-              width: displayMetrics.length <= 2 ? 320 : 320,
-              minWidth: 280,
+              width: displayMetrics.length <= 2 ? 320 : 300,
+              minWidth: 0,
             }}
           >
             {/* Value + trend arrow */}
@@ -106,16 +109,20 @@ export function MetricHighlight(props: MetricHighlightProps) {
               style={{
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 8,
                 marginBottom: 8,
+                maxWidth: "100%",
               }}
             >
               <div
                 style={{
-                  fontSize: 40,
+                  fontSize: valSize,
                   fontWeight: 700,
-                  lineHeight: 1.1,
+                  lineHeight: 1.2,
                   color: brandColors.primary,
+                  textAlign: "center",
+                  wordBreak: "break-word",
                 }}
               >
                 {metric.value}
@@ -126,6 +133,7 @@ export function MetricHighlight(props: MetricHighlightProps) {
                     fontSize: 24,
                     color: metric.trend === "up" ? "#00C48C" : "#FF6B6B",
                     fontWeight: 700,
+                    flexShrink: 0,
                   }}
                 >
                   {metric.trend === "up" ? "↑" : "↓"}
@@ -134,16 +142,18 @@ export function MetricHighlight(props: MetricHighlightProps) {
             </div>
             <div
               style={{
-                fontSize: 14,
+                fontSize: metric.label.length <= 25 ? 14 : 12,
                 color: brandColors.foreground,
                 opacity: 0.65,
                 textAlign: "center",
+                lineHeight: 1.4,
               }}
             >
               {metric.label}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Footer branding */}

@@ -190,9 +190,10 @@ function handleGenerate(url: URL, res: ServerResponse): void {
     }
   }
 
-  // Ensure TinyTeX, Quarto, and D2 are in PATH for PDF rendering
+  // Ensure TinyTeX, Quarto, D2, and Bun are in PATH for child process
   const home = process.env.HOME || "";
   const extraPaths = [
+    join(home, ".bun", "bin"),
     join(home, "Library", "TinyTeX", "bin", "universal-darwin"),
     join(home, ".TinyTeX", "bin", "x86_64-linux"),
     join(home, ".local", "quarto", "bin"),
@@ -343,15 +344,37 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   res.end("Not Found");
 });
 
-server.listen(PORT, () => {
-  console.log(`
+// Find an available port starting from PORT
+import { createServer as createNetServer } from "net";
+
+function isPortFree(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const tester = createNetServer();
+    tester.once("error", () => resolve(false));
+    tester.listen(port, () => { tester.close(() => resolve(true)); });
+  });
+}
+
+async function findPort(): Promise<number> {
+  for (let p = PORT; p < PORT + 10; p++) {
+    if (await isPortFree(p)) return p;
+    console.log(`  Port ${p} in use, trying ${p + 1}...`);
+  }
+  console.error(`Could not find an available port (tried ${PORT}-${PORT + 9})`);
+  process.exit(1);
+}
+
+findPort().then((port) => {
+  server.listen(port, () => {
+    console.log(`
 \x1b[36m╔══════════════════════════════════════════════════╗\x1b[0m
 \x1b[36m║\x1b[0m  \x1b[1mZopdev Ebook Engine — Dev Server\x1b[0m
 \x1b[36m║\x1b[0m
-\x1b[36m║\x1b[0m  http://localhost:${PORT}
+\x1b[36m║\x1b[0m  http://localhost:${port}
 \x1b[36m║\x1b[0m
 \x1b[36m║\x1b[0m  Serving: _output/
 \x1b[36m║\x1b[0m  Press Ctrl+C to stop
 \x1b[36m╚══════════════════════════════════════════════════╝\x1b[0m
 `);
+  });
 });

@@ -65,19 +65,15 @@ interface CommandDef {
 // ── Runtime Detection ──────────────────────────────────────────────────────
 
 function detectTsRunner(): { cmd: string; runArgs: string[] } {
-  // Check if we're already running in Bun
-  if (typeof (globalThis as any).Bun !== "undefined") {
-    return { cmd: "bun", runArgs: ["run"] };
-  }
+  // Try npx tsx first (most reliable)
+  try {
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe", timeout: 10000 });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+  } catch { /* not available */ }
   // Try bun
   try {
-    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe", timeout: 5000 });
     if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
-  } catch { /* not available */ }
-  // Try npx tsx
-  try {
-    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
   } catch { /* not available */ }
   // Fallback
   return { cmd: "node", runArgs: ["--import", "tsx"] };

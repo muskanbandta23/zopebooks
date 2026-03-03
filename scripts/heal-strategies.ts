@@ -19,15 +19,15 @@ import { parse, stringify } from "yaml";
 import type { ModalityViolation } from "./eval-modalities.js";
 import { loadPipelineConfig } from "./provider-config.js";
 
-// Runtime detection: bun > npx tsx > node --import tsx
+// Runtime detection: npx tsx (most reliable) > bun > node --import tsx
 function _detectRunner(): { cmd: string; runArgs: string[] } {
   try {
-    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe", timeout: 10000 });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
   } catch { /* not available */ }
   try {
-    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
-    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe", timeout: 5000 });
+    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
   } catch { /* not available */ }
   return { cmd: "node", runArgs: ["--import", "tsx"] };
 }

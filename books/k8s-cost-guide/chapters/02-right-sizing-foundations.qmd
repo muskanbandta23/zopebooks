@@ -150,7 +150,9 @@ spec:
       - nodes: "0"
         schedule: "0 0 * * 6"      # Saturday midnight → all weekend
         duration: 48h
-``` Karpenter, GKE, and AKS all support cron-based node pool schedules that resize capacity based on calendar patterns. A simple expression like `0 19 * * 1-5` shuts down non-essential nodes at 7pm weekdays, while `0 7 * * 1-5` brings them back Monday through Friday morning. Development and staging environments can extend this further—scaling to zero throughout weekends and holidays.
+```
+
+Karpenter, GKE, and AKS all support cron-based node pool schedules that resize capacity based on calendar patterns. A simple expression like `0 19 * * 1-5` shuts down non-essential nodes at 7pm weekdays, while `0 7 * * 1-5` brings them back Monday through Friday morning. Development and staging environments can extend this further—scaling to zero throughout weekends and holidays.
 
 The 65-75% savings on eligible workloads materialize because you are not merely optimizing requests; you are actually deprovisioning idle infrastructure. An e-commerce platform reduced dev/test spending from $89,000 to $52,000 monthly in six weeks through scheduled scaling alone (Source: Customer Data). A fintech company achieved $34,000 to $
 
