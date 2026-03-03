@@ -768,6 +768,7 @@ function generateBookHtml(slug: string): boolean {
       is_preface: ch.number === 0,
     })),
     dashboard_url: `../../dashboard/detail/${slug}/index.html`,
+    landing_url: `../../landing/index.html`,
     has_pdf: existsSync(join(PROJECT_ROOT, "_output", "books", slug)) &&
       readdirSync(join(PROJECT_ROOT, "_output", "books", slug)).some(f => f.endsWith(".pdf")),
     pdf_filename: (() => {

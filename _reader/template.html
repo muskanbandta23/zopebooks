@@ -757,6 +757,171 @@
       color: var(--reader-text-muted);
     }
 
+    /* ─── Download CTA with Lead Form ─── */
+    .reader-cta {
+      padding: 4rem 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .reader-cta-card {
+      max-width: 560px;
+      width: 100%;
+      background: linear-gradient(135deg, #111827 0%, #155e75 50%, #0891b2 100%);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+    .reader-cta-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(8, 145, 178, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 30%, rgba(14, 116, 144, 0.2) 0%, transparent 40%);
+      pointer-events: none;
+    }
+    .reader-cta-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      position: relative;
+      z-index: 1;
+    }
+    .reader-cta-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+      position: relative;
+      z-index: 1;
+    }
+    .reader-cta-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9375rem;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .reader-cta-desc strong {
+      color: #ffffff;
+    }
+    .reader-cta-form {
+      position: relative;
+      z-index: 1;
+    }
+    .reader-cta-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+    .reader-cta-field {
+      text-align: left;
+    }
+    .reader-cta-field label {
+      display: block;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .reader-cta-field input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 0.9375rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+    }
+    .reader-cta-field input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+    .reader-cta-field input:focus {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .reader-cta-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2rem;
+      background: #ffffff;
+      color: #0891b2;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      letter-spacing: -0.01em;
+    }
+    .reader-cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+    .reader-cta-privacy {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 0.75rem;
+    }
+    .reader-cta-success {
+      position: relative;
+      z-index: 1;
+    }
+    .reader-cta-check {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      font-size: 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      border: 2px solid rgba(16, 185, 129, 0.4);
+    }
+    .reader-cta-success p {
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .reader-cta-redirect {
+      font-size: 0.8125rem !important;
+      font-weight: 400 !important;
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+    @media (max-width: 900px) {
+      .reader-cta {
+        padding: 3rem 1.25rem;
+      }
+      .reader-cta-card {
+        padding: 2rem 1.5rem;
+      }
+      .reader-cta-title {
+        font-size: 1.5rem;
+      }
+    }
+
     /* ─── Footer ─── */
     .reader-footer {
       margin-left: 300px;
@@ -842,7 +1007,7 @@
 
     /* ─── Print ─── */
     @media print {
-      .sidebar, .sidebar-toggle, .reading-progress, .reader-footer { display: none !important; }
+      .sidebar, .sidebar-toggle, .reading-progress, .reader-footer, .reader-cta { display: none !important; }
       .main-content { margin-left: 0 !important; }
       .chapter-section { break-inside: avoid; page-break-inside: avoid; }
       body { font-size: 12pt; }
@@ -916,6 +1081,47 @@
       </div>
     </section>
     {{/chapters}}
+
+    <!-- ═══ Download CTA with Lead Form ═══ -->
+    {{#has_pdf}}
+    <section class="reader-cta" id="download-cta">
+      <div class="reader-cta-card">
+        <div class="reader-cta-icon">&#128218;</div>
+        <h2 class="reader-cta-title">Download Free Ebook</h2>
+        <p class="reader-cta-desc">Get the complete <strong>{{title}}</strong> as a PDF — {{chapter_count}} chapters, production-ready code, and actionable insights you can use today.</p>
+
+        <form class="reader-cta-form" id="lead-capture-form" onsubmit="return handleLeadSubmit(event)">
+          <div class="reader-cta-fields">
+            <div class="reader-cta-field">
+              <label for="lead-name">Full Name</label>
+              <input type="text" id="lead-name" name="name" placeholder="John Doe" required autocomplete="name">
+            </div>
+            <div class="reader-cta-field">
+              <label for="lead-email">Work Email</label>
+              <input type="email" id="lead-email" name="email" placeholder="john@company.com" required autocomplete="email">
+            </div>
+            <div class="reader-cta-field">
+              <label for="lead-org">Organization</label>
+              <input type="text" id="lead-org" name="organization" placeholder="Acme Corp" required autocomplete="organization">
+            </div>
+          </div>
+          <button type="submit" class="reader-cta-btn">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="flex-shrink:0">
+              <path d="M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5M4 15h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download Free PDF
+          </button>
+          <p class="reader-cta-privacy">We respect your privacy. No spam, ever.</p>
+        </form>
+
+        <div class="reader-cta-success" id="lead-success" style="display:none;">
+          <div class="reader-cta-check">&#10003;</div>
+          <p>Thank you! Your download is starting&hellip;</p>
+          <p class="reader-cta-redirect">Redirecting to landing page&hellip;</p>
+        </div>
+      </div>
+    </section>
+    {{/has_pdf}}
   </div>
 
   <!-- ═══ Footer ═══ -->
@@ -967,6 +1173,48 @@
     }, { rootMargin: '-20% 0px -70% 0px' });
 
     sections.forEach(section => observer.observe(section));
+
+    // Lead capture form — download PDF + redirect to landing page
+    function handleLeadSubmit(e) {
+      e.preventDefault();
+      var form = document.getElementById('lead-capture-form');
+      var success = document.getElementById('lead-success');
+      var name = document.getElementById('lead-name').value.trim();
+      var email = document.getElementById('lead-email').value.trim();
+      var org = document.getElementById('lead-org').value.trim();
+
+      if (!name || !email || !org) return false;
+
+      // Store lead data in localStorage for potential future use
+      try {
+        var leads = JSON.parse(localStorage.getItem('zopdev-leads') || '[]');
+        leads.push({
+          name: name,
+          email: email,
+          organization: org,
+          ebook: '{{slug}}',
+          timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('zopdev-leads', JSON.stringify(leads));
+      } catch(err) {}
+
+      // Show success state
+      form.style.display = 'none';
+      success.style.display = 'block';
+
+      // Open PDF in new tab for preview
+      var pdfUrl = '{{pdf_filename}}';
+      if (pdfUrl) {
+        window.open(pdfUrl, '_blank');
+      }
+
+      // Redirect to landing page after a short delay
+      setTimeout(function() {
+        window.location.href = '{{{landing_url}}}';
+      }, 2000);
+
+      return false;
+    }
   </script>
 </body>
 </html>
