@@ -74,7 +74,7 @@
         <a href="{{{html_url}}}" class="detail-action detail-action--primary">&#128214; Read Ebook</a>
         {{/has_html}}
         {{#has_pdf}}
-        <a href="{{{pdf_url}}}" class="detail-action detail-action--download btn-pdf-download" data-home="{{{home_url}}}" download>&#128229; Download Ebook</a>
+        <a href="{{{pdf_url}}}" class="detail-action detail-action--download" target="_blank">&#128229; Download Ebook</a>
         {{/has_pdf}}
         {{^has_pdf}}
         <span class="detail-action detail-action--disabled">&#128196; PDF Not Generated</span>
@@ -342,27 +342,7 @@
       if (e.key === 'Escape') closeDeleteModal();
     });
 
-    // ── Download PDF + redirect to landing page ──
-    document.querySelectorAll('.btn-pdf-download').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        const href = this.getAttribute('href');
-        const homeUrl = this.getAttribute('data-home');
-        if (href && href !== '#') {
-          e.preventDefault();
-          const a = document.createElement('a');
-          a.href = href;
-          a.download = '';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          if (homeUrl) {
-            setTimeout(() => {
-              window.location.href = homeUrl;
-            }, 1500);
-          }
-        }
-      });
-    });
+    // PDF link opens in new tab for preview — no forced download
   </script>
 
 </body>

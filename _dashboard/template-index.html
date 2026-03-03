@@ -99,7 +99,7 @@
 
           <div class="dash-card-actions">
             {{#has_pdf}}
-            <a href="{{{pdf_url}}}" class="dash-card-action dash-card-action--download btn-pdf-download" data-home="{{{home_url}}}" download>&#128229; Download</a>
+            <a href="{{{pdf_url}}}" class="dash-card-action dash-card-action--download" target="_blank">&#128229; Download</a>
             {{/has_pdf}}
             {{^has_pdf}}
             <span class="dash-card-action dash-card-action--disabled">&#128229; Coming Soon</span>
@@ -435,28 +435,7 @@
       window.location.reload();
     }
 
-    // ── Download PDF + redirect to landing page ──
-    document.querySelectorAll('.btn-pdf-download').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        const href = this.getAttribute('href');
-        const homeUrl = this.getAttribute('data-home');
-        if (href && href !== '#') {
-          e.preventDefault();
-          e.stopPropagation();
-          const a = document.createElement('a');
-          a.href = href;
-          a.download = '';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          if (homeUrl) {
-            setTimeout(() => {
-              window.location.href = homeUrl;
-            }, 1500);
-          }
-        }
-      });
-    });
+    // PDF link opens in new tab for preview — no forced download
   </script>
 
 </body>
