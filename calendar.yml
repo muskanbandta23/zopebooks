@@ -162,3 +162,19 @@ ebooks:
       linkedin_carousel: true
       instagram_posts: true
       og_image: true
+
+  - slug: kubernetes-cost-optimization
+    title: "Kubernetes Cost Optimization"
+    subtitle: "A Practical Guide to Kubernetes Cost Optimization"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [kubernetes, cost, optimization]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true

@@ -417,8 +417,8 @@ export function generateBlogPosts(slug: string): BlogResult[] {
       ? readdirSync(outputBookDir).filter(f => f.endsWith(".pdf"))
       : [];
     const pdfUrl = pdfFiles.length > 0 ? `../../books/${slug}/${pdfFiles[0]}` : null;
-    const landingUrl = existsSync(join(PROJECT_ROOT, "_output", "landing", slug, "index.html"))
-      ? `../../landing/${slug}/index.html`
+    const landingUrl = existsSync(join(PROJECT_ROOT, "_output", "landing", "index.html"))
+      ? `../../landing/index.html`
       : companyWebsite;
 
     const data = {

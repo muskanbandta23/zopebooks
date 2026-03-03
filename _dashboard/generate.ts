@@ -69,8 +69,10 @@ interface ChapterItem {
   is_advanced: boolean;
   html_url?: string;
   blog_url?: string;
+  reader_url?: string;
   has_html: boolean;
   has_blog: boolean;
+  has_reader: boolean;
 }
 
 interface SocialAsset {
@@ -396,6 +398,10 @@ function buildDetailData(slug: string, card: DashboardCard): EbookDetail {
       const htmlChapterPath = join(PROJECT_ROOT, "_output", "books", slug, `chapters/${chapterSlug}.html`);
       const hasHtml = existsSync(htmlChapterPath);
 
+      // Check for reader page (single-page reader with chapter anchors)
+      const readerPath = join(PROJECT_ROOT, "_output", "books", slug, "index.html");
+      const hasReader = existsSync(readerPath);
+
       chapters.push({
         number: i + 1,
         id: chapterSlug,
@@ -408,8 +414,10 @@ function buildDetailData(slug: string, card: DashboardCard): EbookDetail {
         is_advanced: difficulty === "advanced",
         html_url: hasHtml ? `../../../books/${slug}/chapters/${chapterSlug}.html` : undefined,
         blog_url: hasBlog ? `../../../blog/${slug}/${chapterSlug}.html` : undefined,
+        reader_url: hasReader ? `../../../books/${slug}/index.html#chapter-${chapterSlug}` : undefined,
         has_html: hasHtml,
         has_blog: hasBlog,
+        has_reader: hasReader,
       });
     }
   }

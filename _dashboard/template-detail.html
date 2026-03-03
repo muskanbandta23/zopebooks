@@ -120,6 +120,9 @@
             </div>
           </div>
           <div class="chapter-links">
+            {{#has_reader}}
+            <a href="{{{reader_url}}}" class="chapter-link chapter-link--read">Read</a>
+            {{/has_reader}}
             {{#has_blog}}
             <a href="{{{blog_url}}}" class="chapter-link chapter-link--article">Blog</a>
             {{/has_blog}}

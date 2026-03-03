@@ -853,6 +853,13 @@
       border-color: rgba(255, 255, 255, 0.5);
       background: rgba(255, 255, 255, 0.15);
     }
+    .reader-field-error {
+      display: block;
+      font-size: 0.75rem;
+      color: #fca5a5;
+      margin-top: 0.25rem;
+      min-height: 1em;
+    }
     .reader-cta-btn {
       width: 100%;
       display: inline-flex;
@@ -1032,12 +1039,6 @@
       <span class="sidebar-meta-item">&#9201; {{total_reading_time}} min</span>
     </div>
 
-    {{#has_pdf}}
-    <div style="padding-top: 0.75rem;">
-      <a href="{{pdf_filename}}" class="sidebar-download" target="_blank">&#128196; Download PDF</a>
-    </div>
-    {{/has_pdf}}
-
     <div class="sidebar-toc">
       <div class="toc-label">Table of Contents</div>
       {{#toc}}
@@ -1093,16 +1094,19 @@
         <form class="reader-cta-form" id="lead-capture-form" onsubmit="return handleLeadSubmit(event)">
           <div class="reader-cta-fields">
             <div class="reader-cta-field">
-              <label for="lead-name">Full Name</label>
+              <label for="lead-name">Full Name <span style="color:#ef4444">*</span></label>
               <input type="text" id="lead-name" name="name" placeholder="John Doe" required autocomplete="name">
+              <span class="reader-field-error" id="reader-name-error"></span>
             </div>
             <div class="reader-cta-field">
-              <label for="lead-email">Work Email</label>
+              <label for="lead-email">Work Email <span style="color:#ef4444">*</span></label>
               <input type="email" id="lead-email" name="email" placeholder="john@company.com" required autocomplete="email">
+              <span class="reader-field-error" id="reader-email-error"></span>
             </div>
             <div class="reader-cta-field">
-              <label for="lead-org">Organization</label>
+              <label for="lead-org">Organization <span style="color:#ef4444">*</span></label>
               <input type="text" id="lead-org" name="organization" placeholder="Acme Corp" required autocomplete="organization">
+              <span class="reader-field-error" id="reader-org-error"></span>
             </div>
           </div>
           <button type="submit" class="reader-cta-btn">
@@ -1117,7 +1121,7 @@
         <div class="reader-cta-success" id="lead-success" style="display:none;">
           <div class="reader-cta-check">&#10003;</div>
           <p>Thank you! Your download is starting&hellip;</p>
-          <p class="reader-cta-redirect">Redirecting to landing page&hellip;</p>
+          <p class="reader-cta-redirect">Redirecting to ebook page&hellip;</p>
         </div>
       </div>
     </section>
@@ -1174,44 +1178,81 @@
 
     sections.forEach(section => observer.observe(section));
 
-    // Lead capture form — download PDF + redirect to landing page
+    // Lead capture form — save to server CSV + download PDF + redirect
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function clearReaderErrors() {
+      document.getElementById('reader-name-error').textContent = '';
+      document.getElementById('reader-email-error').textContent = '';
+      document.getElementById('reader-org-error').textContent = '';
+    }
+
     function handleLeadSubmit(e) {
       e.preventDefault();
+      clearReaderErrors();
+
       var form = document.getElementById('lead-capture-form');
       var success = document.getElementById('lead-success');
+      var btn = form.querySelector('.reader-cta-btn');
       var name = document.getElementById('lead-name').value.trim();
       var email = document.getElementById('lead-email').value.trim();
       var org = document.getElementById('lead-org').value.trim();
+      var valid = true;
 
-      if (!name || !email || !org) return false;
-
-      // Store lead data in localStorage for potential future use
-      try {
-        var leads = JSON.parse(localStorage.getItem('zopdev-leads') || '[]');
-        leads.push({
-          name: name,
-          email: email,
-          organization: org,
-          ebook: '{{slug}}',
-          timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('zopdev-leads', JSON.stringify(leads));
-      } catch(err) {}
-
-      // Show success state
-      form.style.display = 'none';
-      success.style.display = 'block';
-
-      // Open PDF in new tab for preview
-      var pdfUrl = '{{pdf_filename}}';
-      if (pdfUrl) {
-        window.open(pdfUrl, '_blank');
+      if (!name) {
+        document.getElementById('reader-name-error').textContent = 'Full name is required';
+        valid = false;
+      }
+      if (!email) {
+        document.getElementById('reader-email-error').textContent = 'Email address is required';
+        valid = false;
+      } else if (!isValidEmail(email)) {
+        document.getElementById('reader-email-error').textContent = 'Please enter a valid email address';
+        valid = false;
+      }
+      if (!org) {
+        document.getElementById('reader-org-error').textContent = 'Organization name is required';
+        valid = false;
       }
 
-      // Redirect to landing page after a short delay
-      setTimeout(function() {
-        window.location.href = '{{{landing_url}}}';
-      }, 2000);
+      if (!valid) return false;
+
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      var leadData = {
+        name: name,
+        email: email,
+        organization: org,
+        ebook: '{{slug}}'
+      };
+
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leadData)
+      }).catch(function() {
+        try {
+          var leads = JSON.parse(localStorage.getItem('zopdev-leads') || '[]');
+          leadData.timestamp = new Date().toISOString();
+          leads.push(leadData);
+          localStorage.setItem('zopdev-leads', JSON.stringify(leads));
+        } catch(ex) {}
+      }).finally(function() {
+        form.style.display = 'none';
+        success.style.display = 'block';
+
+        var pdfUrl = '{{pdf_filename}}';
+        if (pdfUrl) {
+          window.open(pdfUrl, '_blank');
+        }
+
+        setTimeout(function() {
+          window.location.href = '{{{dashboard_url}}}';
+        }, 2500);
+      });
 
       return false;
     }

@@ -15,7 +15,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import { join, extname, dirname } from "path";
 import { fileURLToPath } from "url";
 import { spawn, execSync, type ChildProcess } from "child_process";
-import { existsSync, statSync, readFileSync } from "fs";
+import { existsSync, statSync, readFileSync, appendFileSync, writeFileSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -106,8 +106,8 @@ function resolveStaticFile(pathname: string): string | null {
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, *",
 };
 
 function sendJson(res: ServerResponse, status: number, data: object, extraHeaders?: Record<string, string>) {
@@ -293,6 +293,51 @@ function handleGenerate(url: URL, res: ServerResponse): void {
   });
 }
 
+// ── Lead Capture Handler ──────────────────────────────────────────────────
+
+const LEADS_CSV = join(ROOT, "_output", "leads.csv");
+
+function escapeCSV(val: string): string {
+  if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
+}
+
+function handleLeadCapture(req: IncomingMessage, res: ServerResponse): void {
+  let body = "";
+  req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+  req.on("end", () => {
+    try {
+      const data = JSON.parse(body);
+      const name = (data.name || "").trim();
+      const email = (data.email || "").trim();
+      const organization = (data.organization || "").trim();
+      const ebook = (data.ebook || "").trim();
+
+      if (!name || !email) {
+        sendJson(res, 400, { error: "name and email are required" });
+        return;
+      }
+
+      // Create CSV header if file doesn't exist
+      if (!existsSync(LEADS_CSV)) {
+        writeFileSync(LEADS_CSV, "Timestamp,Name,Email,Organization,Ebook\n", "utf-8");
+      }
+
+      // Append lead row
+      const timestamp = new Date().toISOString();
+      const row = [timestamp, name, email, organization, ebook].map(escapeCSV).join(",") + "\n";
+      appendFileSync(LEADS_CSV, row, "utf-8");
+
+      console.log(`  [lead] ${name} <${email}> — ${organization} — ${ebook}`);
+      sendJson(res, 200, { success: true, message: "Lead saved" });
+    } catch (err: any) {
+      sendJson(res, 400, { error: "Invalid JSON body" });
+    }
+  });
+}
+
 // ── Server ────────────────────────────────────────────────────────────────
 
 const server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -309,6 +354,12 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   if (url.pathname === "/") {
     res.writeHead(302, { Location: "/dashboard/index.html" });
     res.end();
+    return;
+  }
+
+  // Route: Lead capture (POST)
+  if (url.pathname === "/api/lead" && req.method === "POST") {
+    handleLeadCapture(req, res);
     return;
   }
 
