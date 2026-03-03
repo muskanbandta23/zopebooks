@@ -121,7 +121,7 @@ class DataTieringManager:
 
 Two failure modes destroy savings potential. Over-tiering moves active datasets into cold storage, causing retrieval latency that degrades application performance and triggers unplanned compute costs from retry logic. Under-tiering leaves cost optimization on the table—keeping infrequently-accessed data in premium tiers wastes 60-70% of potential savings. A 1,200-resource media platform achieved 37% storage cost reduction in 8 weeks by combining systematic inventory analysis with automated policy enforcement, proving that tiering delivers measurable ROI when applied with business context rather than blind automation.
 
-```{.d2 width="100%" file="../diagrams/data-pipeline.d2"}
+```{.d2 width="100%" file="diagrams/data-pipeline.d2"}
 ```
 
 *Show data flow through lifecycle tiers (hot → warm → cold → archive) with automated transition rules*

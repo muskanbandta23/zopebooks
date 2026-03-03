@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{seo_title}}</title>
   <meta name="description" content="{{meta_description}}">
-  <meta name="theme-color" content="#4F46E5">
+  <meta name="theme-color" content="#0891b2">
   <meta name="color-scheme" content="light">
 
   <!-- Open Graph -->
@@ -37,9 +37,14 @@
 
   <header class="blog-header" id="blog-header">
     <div class="container">
-      <a href="{{company_website}}" class="blog-logo">{{company_name}}</a>
+      <div class="header-left">
+        <a href="{{dashboard_url}}" class="nav-back">&larr; Dashboard</a>
+        <span class="nav-divider">/</span>
+        <a href="{{index_url}}" class="nav-back">Blog</a>
+      </div>
       <nav class="blog-nav">
         <span class="nav-series">{{ebook_title}}</span>
+        <button onclick="window.print()" class="blog-download-btn" title="Save as PDF">&#128196; Save as PDF</button>
       </nav>
     </div>
   </header>
@@ -65,6 +70,33 @@
       </div>
     </article>
 
+    <!-- Article Navigation -->
+    <nav class="article-nav">
+      <div class="container">
+        <div class="article-nav-inner">
+          {{#has_prev}}
+          <a href="{{prev_url}}" class="article-nav-link article-nav-prev">
+            <span class="article-nav-label">&larr; Previous</span>
+            <span class="article-nav-title">{{prev_title}}</span>
+          </a>
+          {{/has_prev}}
+          {{^has_prev}}
+          <div class="article-nav-placeholder"></div>
+          {{/has_prev}}
+
+          {{#has_next}}
+          <a href="{{next_url}}" class="article-nav-link article-nav-next">
+            <span class="article-nav-label">Next &rarr;</span>
+            <span class="article-nav-title">{{next_title}}</span>
+          </a>
+          {{/has_next}}
+          {{^has_next}}
+          <div class="article-nav-placeholder"></div>
+          {{/has_next}}
+        </div>
+      </div>
+    </nav>
+
     <!-- CTA Banner -->
     <section class="blog-cta">
       <div class="container">
@@ -73,7 +105,8 @@
             <h2>Read the full guide</h2>
             <p>This post is one chapter from <strong>{{ebook_title}}</strong>. Download the complete ebook for all chapters, interactive calculators, and production-ready code examples.</p>
           </div>
-          <a href="{{company_website}}" class="cta-button">Download Free Ebook</a>
+          {{#pdf_url}}<a href="{{{pdf_url}}}" class="cta-button btn-pdf-download" data-home="../../index.html" download>Download Free Ebook</a>{{/pdf_url}}
+          {{^pdf_url}}<a href="../../index.html" class="cta-button">View All Ebooks</a>{{/pdf_url}}
         </div>
       </div>
     </section>
@@ -81,7 +114,7 @@
 
   <footer class="blog-footer">
     <div class="container">
-      <p>&copy; {{year}} <a href="{{company_website}}">{{company_name}}</a>. All rights reserved.</p>
+      <p>&copy; {{year}} <a href="{{{company_website}}}">{{company_name}}</a>. All rights reserved.</p>
     </div>
   </footer>
 
@@ -106,6 +139,28 @@
     window.addEventListener('scroll', () => {
       header.classList.toggle('scrolled', window.scrollY > 10);
     }, { passive: true });
+
+    // Download PDF + redirect to landing page
+    document.querySelectorAll('.btn-pdf-download').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        const homeUrl = this.getAttribute('data-home');
+        if (href && href !== '#') {
+          e.preventDefault();
+          const a = document.createElement('a');
+          a.href = href;
+          a.download = '';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          if (homeUrl) {
+            setTimeout(() => {
+              window.location.href = homeUrl;
+            }, 1500);
+          }
+        }
+      });
+    });
   </script>
 </body>
 </html>

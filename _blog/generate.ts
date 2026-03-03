@@ -15,43 +15,145 @@ import { parse } from "yaml";
 import Mustache from "mustache";
 import { loadMergedBrand, buildCssVars } from "../scripts/brand-utils.js";
 import { loadEbookContent } from "../scripts/content-utils.js";
-import { renderD2ToSvg, extractD2Blocks } from "../scripts/d2-render.js";
+import { renderD2ToSvg, renderD2AsHtmlCard, extractD2Blocks } from "../scripts/d2-render.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
 
+// ── YAML Syntax Highlighting ────────────────────────────────────────────────
+
+function highlightYaml(code: string): string {
+  return code.split("\n").map(line => {
+    // Comments
+    if (/^\s*#/.test(line)) {
+      return `<span class="hl-comment">${line}</span>`;
+    }
+    // Lines with key: value
+    const kvMatch = line.match(/^(\s*)([\w./-]+)(\s*:\s*)(.*)/);
+    if (kvMatch) {
+      const [, indent, key, colon, value] = kvMatch;
+      let highlightedValue = value;
+      if (value === "" || value === "|" || value === "|-" || value === ">") {
+        highlightedValue = value;
+      } else if (/^(true|false|null|yes|no)$/i.test(value.trim())) {
+        highlightedValue = `<span class="hl-bool">${value}</span>`;
+      } else if (/^\d+(\.\d+)?$/.test(value.trim())) {
+        highlightedValue = `<span class="hl-number">${value}</span>`;
+      } else if (/^['"]/.test(value.trim())) {
+        highlightedValue = `<span class="hl-string">${value}</span>`;
+      } else if (value.trim().startsWith("http")) {
+        highlightedValue = `<span class="hl-string">${value}</span>`;
+      }
+      return `${indent}<span class="hl-key">${key}</span><span class="hl-colon">${colon}</span>${highlightedValue}`;
+    }
+    // List items with - key: value
+    const listKvMatch = line.match(/^(\s*- )([\w./-]+)(\s*:\s*)(.*)/);
+    if (listKvMatch) {
+      const [, prefix, key, colon, value] = listKvMatch;
+      let highlightedValue = value;
+      if (/^['"]/.test(value.trim()) || value.trim().startsWith("http")) {
+        highlightedValue = `<span class="hl-string">${value}</span>`;
+      }
+      return `${prefix}<span class="hl-key">${key}</span><span class="hl-colon">${colon}</span>${highlightedValue}`;
+    }
+    // List items with - value (simple string list)
+    const listMatch = line.match(/^(\s*- )(["'].+["']|.+)$/);
+    if (listMatch) {
+      const [, prefix, value] = listMatch;
+      if (/^['"]/.test(value.trim())) {
+        return `${prefix}<span class="hl-string">${value}</span>`;
+      }
+    }
+    return line;
+  }).join("\n");
+}
+
 // ── Markdown to HTML (lightweight) ──────────────────────────────────────────
 
-function markdownToHtml(md: string): string {
+function markdownToHtml(md: string, bookDir?: string): string {
   let html = md;
 
   // Strip YAML frontmatter
   html = html.replace(/^---[\s\S]*?---\n*/m, "");
 
-  // Code blocks (fenced) — must come before inline patterns
+  // Remove HTML comments
+  html = html.replace(/<!--[\s\S]*?-->/g, "");
+
+  // Extract static fallback from content-visible blocks (show ROI tables in HTML)
+  const staticFallbacks: string[] = [];
+  html = html.replace(/::: \{\.content-visible when-format="(?:pdf|epub)"\}\n([\s\S]*?):::/g, (_, content) => {
+    staticFallbacks.push(content.trim());
+    return "";
+  });
+
+  // D2 diagram blocks with file= reference — render from D2 file
+  html = html.replace(/```\{\.?d2[^}]*file="([^"]+)"[^}]*\}\n([\s\S]*?)```/g, (_, fileRef) => {
+    if (bookDir) {
+      const d2Path = join(bookDir, fileRef);
+      if (existsSync(d2Path)) {
+        const src = readFileSync(d2Path, "utf-8");
+        // Try D2 CLI first, fall back to HTML card
+        const svg = renderD2ToSvg(src);
+        if (svg) return `<div class="diagram-figure">${svg}</div>`;
+        return renderD2AsHtmlCard(src);
+      }
+    }
+    return renderD2AsHtmlCard("");
+  });
+
+  // D2 inline diagram blocks — render from inline source
+  html = html.replace(/```\{\.?d2[^}]*\}\n([\s\S]*?)```/g, (_, source) => {
+    const svg = renderD2ToSvg(source);
+    if (svg) return `<div class="diagram-figure">${svg}</div>`;
+    return renderD2AsHtmlCard(source);
+  });
+
+  // OJS blocks — replace with static ROI table from fallback content
+  let ojsReplacementDone = false;
+  html = html.replace(/```\{ojs[^}]*\}[\s\S]*?```/g, () => {
+    if (!ojsReplacementDone && staticFallbacks.length > 0) {
+      ojsReplacementDone = true;
+      return `<div class="static-calculator"><strong>ROI Calculator (Default Scenario)</strong><br>${staticFallbacks[0]}</div>`;
+    }
+    return "";
+  });
+
+  // Remove empty fenced code blocks (only ``` immediately followed by ``` on next line)
+  html = html.replace(/```\s*\n```\s*\n/g, "");
+
+  // Replace *Visualize ...* text descriptions with styled boxes
+  html = html.replace(/^\*Visualize ([^*]+)\*(?:\s*\*\(diagram:[^)]*\)\*)?$/gm, (_, desc) => {
+    return `<div class="diagram-placeholder"><em>${desc.trim()}</em></div>`;
+  });
+  html = html.replace(/^Visualized as a flow: (.+)$/gm, (_, desc) => {
+    return `<div class="diagram-placeholder"><em>${desc.trim()}</em></div>`;
+  });
+
+  // Code blocks (fenced) — extract to placeholders to protect from paragraph wrapping
+  const codeBlockStore: string[] = [];
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
     const langAttr = lang ? ` class="language-${lang}"` : "";
-    const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return `<pre><code${langAttr}>${escaped}</code></pre>`;
+    const langLabel = lang ? `<span class="code-lang">${lang}</span>` : "";
+    const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\{\{/g, "&#123;&#123;").replace(/\}\}/g, "&#125;&#125;");
+    // Apply syntax highlighting for YAML
+    const highlighted = lang === "yaml" || lang === "yml" ? highlightYaml(escaped) : escaped;
+    const rendered = `<div class="code-block">${langLabel}<pre><code${langAttr}>${highlighted}</code></pre></div>`;
+    const idx = codeBlockStore.length;
+    codeBlockStore.push(rendered);
+    return `<div data-codeblock="${idx}"></div>`;
   });
 
-  // D2 diagram blocks — render as inline SVG images
-  html = html.replace(/```\{\.?d2[^}]*\}\n([\s\S]*?)```/g, (_, d2Source: string) => {
-    const svg = renderD2ToSvg(d2Source.trim());
-    if (svg) {
-      const encoded = Buffer.from(svg).toString("base64");
-      return `<figure class="diagram-figure"><img src="data:image/svg+xml;base64,${encoded}" alt="Diagram" class="blog-diagram" loading="lazy" /><figcaption>Diagram from the ebook</figcaption></figure>`;
-    }
-    return '<div class="diagram-placeholder"><em>[Diagram — see full ebook for interactive version]</em></div>';
+  // Image references — render actual images (images will be copied to blog output/images/)
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+    const filename = src.replace(/^.*\//, ""); // Extract just the filename
+    if (alt) return `<figure class="chapter-figure"><img src="images/${filename}" alt="${alt}" loading="lazy"><figcaption>${alt}</figcaption></figure>`;
+    return `<figure class="chapter-figure"><img src="images/${filename}" alt="" loading="lazy"></figure>`;
   });
-
-  // OJS blocks — render as placeholder
-  html = html.replace(/```\{ojs[^}]*\}[\s\S]*?```/g,
-    '<div class="calculator-placeholder"><em>[Interactive calculator — see full ebook for interactive version]</em></div>');
 
   // Callout blocks
   html = html.replace(/::: \{\.callout-(note|tip|warning|important)\}\n([\s\S]*?):::/g, (_, type, content) => {
-    return `<div class="callout callout-${type}"><strong>${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${content.trim()}</div>`;
+    const icons: Record<string, string> = { note: "ℹ️", tip: "💡", warning: "⚠️", important: "❗" };
+    return `<div class="callout callout-${type}"><strong>${icons[type] || ""} ${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${content.trim()}</div>`;
   });
 
   // Headers
@@ -94,8 +196,10 @@ function markdownToHtml(md: string): string {
   // Clean up empty paragraphs
   html = html.replace(/<p>\s*<\/p>/g, "");
 
-  // Remove HTML comments
-  html = html.replace(/<!--[\s\S]*?-->/g, "");
+  // Restore code blocks from placeholders
+  for (let i = 0; i < codeBlockStore.length; i++) {
+    html = html.replace(`<div data-codeblock="${i}"></div>`, codeBlockStore[i]);
+  }
 
   return html;
 }
@@ -166,7 +270,7 @@ export function generateBlogPosts(slug: string): BlogResult[] {
   const brandConfig = loadMergedBrand(PROJECT_ROOT, slug);
   const ebookContent = loadEbookContent(PROJECT_ROOT, slug);
   const companyName = brandConfig?.company?.name || "Zopdev";
-  const companyWebsite = brandConfig?.company?.website || "https://zopdev.com";
+  const companyWebsite = brandConfig?.company?.website || "https://zop.dev";
   const ebookTitle = ebookContent?.title || slug;
   const ebookSubtitle = ebookContent?.subtitle || "";
 
@@ -182,22 +286,58 @@ export function generateBlogPosts(slug: string): BlogResult[] {
     copyFileSync(cssPath, join(outputDir, "styles.css"));
   }
 
-  // Process each chapter
+  // Copy images directory if it exists
+  const imagesDir = join(bookDir, "images");
+  if (existsSync(imagesDir)) {
+    const outputImagesDir = join(outputDir, "images");
+    mkdirSync(outputImagesDir, { recursive: true });
+    const imageFiles = readdirSync(imagesDir).filter(f =>
+      /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(f)
+    );
+    for (const img of imageFiles) {
+      copyFileSync(join(imagesDir, img), join(outputImagesDir, img));
+    }
+    if (imageFiles.length > 0) {
+      console.log(`  Copied ${imageFiles.length} images to blog output`);
+    }
+  }
+
+  // Process each chapter (skip placeholder/scaffold files)
   const chapterFiles = readdirSync(chaptersDir)
     .filter(f => f.endsWith(".qmd") || f.endsWith(".md"))
+    .filter(f => {
+      const content = readFileSync(join(chaptersDir, f), "utf-8");
+      return !content.includes("Placeholder content") && !content.includes("TODO: Write chapter") && !content.includes("TODO: Write preface");
+    })
     .sort();
 
   const results: BlogResult[] = [];
 
-  for (const file of chapterFiles) {
+  // Pre-extract all chapter titles for prev/next navigation
+  const chapterTitles: string[] = chapterFiles.map(file =>
+    extractChapterTitle(readFileSync(join(chaptersDir, file), "utf-8"))
+  );
+
+  for (let i = 0; i < chapterFiles.length; i++) {
+    const file = chapterFiles[i];
     const qmdContent = readFileSync(join(chaptersDir, file), "utf-8");
-    const chapterTitle = extractChapterTitle(qmdContent);
+    const chapterTitle = chapterTitles[i];
     const seoTitle = generateSeoTitle(chapterTitle, ebookTitle, companyName);
     const metaDescription = generateMetaDescription(qmdContent);
     const readingTime = estimateReadingTime(qmdContent);
-    const articleHtml = markdownToHtml(qmdContent);
+    const articleHtml = markdownToHtml(qmdContent, bookDir);
     const wordCount = qmdContent.replace(/```[\s\S]*?```/g, "").split(/\s+/).length;
     const chapterSlug = basename(file, ".qmd").replace(".md", "");
+
+    // Find PDF file for download link
+    const outputBookDir = join(PROJECT_ROOT, "_output", "books", slug);
+    const pdfFiles = existsSync(outputBookDir)
+      ? readdirSync(outputBookDir).filter(f => f.endsWith(".pdf"))
+      : [];
+    const pdfUrl = pdfFiles.length > 0 ? `../../books/${slug}/${pdfFiles[0]}` : null;
+    const landingUrl = existsSync(join(PROJECT_ROOT, "_output", "landing", slug, "index.html"))
+      ? `../../landing/${slug}/index.html`
+      : companyWebsite;
 
     const data = {
       seo_title: seoTitle,
@@ -213,6 +353,18 @@ export function generateBlogPosts(slug: string): BlogResult[] {
       chapter_slug: chapterSlug,
       css_vars: cssVars,
       year: new Date().getFullYear(),
+      // PDF download link
+      pdf_url: pdfUrl,
+      landing_url: landingUrl,
+      // Prev/next navigation
+      has_prev: i > 0,
+      prev_title: i > 0 ? chapterTitles[i - 1] : null,
+      prev_url: i > 0 ? basename(chapterFiles[i - 1], ".qmd").replace(".md", "") + ".html" : null,
+      has_next: i < chapterFiles.length - 1,
+      next_title: i < chapterFiles.length - 1 ? chapterTitles[i + 1] : null,
+      next_url: i < chapterFiles.length - 1 ? basename(chapterFiles[i + 1], ".qmd").replace(".md", "") + ".html" : null,
+      dashboard_url: `../../dashboard/detail/${slug}/index.html`,
+      index_url: "index.html",
     };
 
     const html = Mustache.render(template, data);
@@ -220,6 +372,30 @@ export function generateBlogPosts(slug: string): BlogResult[] {
     writeFileSync(outputPath, html, "utf-8");
 
     results.push({ chapter: chapterSlug, outputPath, wordCount, title: chapterTitle });
+  }
+
+  // ── Generate Blog Index Page ──────────────────────────────────────────
+  const indexTemplatePath = join(SCRIPT_DIR, "template-index.html");
+  if (existsSync(indexTemplatePath)) {
+    const indexTemplate = readFileSync(indexTemplatePath, "utf-8");
+    const indexData = {
+      ebook_title: ebookTitle,
+      ebook_subtitle: ebookSubtitle,
+      company_name: companyName,
+      company_website: companyWebsite,
+      css_vars: cssVars,
+      articles: results.map((r, idx) => ({
+        number: idx + 1,
+        title: r.title,
+        url: `${r.chapter}.html`,
+        reading_time: estimateReadingTime(readFileSync(join(chaptersDir, chapterFiles[idx]), "utf-8")),
+        word_count: r.wordCount,
+      })),
+      year: new Date().getFullYear(),
+      dashboard_url: `../../dashboard/index.html`,
+    };
+    const indexHtml = Mustache.render(indexTemplate, indexData);
+    writeFileSync(join(outputDir, "index.html"), indexHtml, "utf-8");
   }
 
   return results;

@@ -120,7 +120,7 @@ The **Pet vs Cattle** scoring system prioritizes migration sequence: stateless A
 
 zopcloud provides automated workload assessment that accelerates this compatibility evaluation, scanning container registries and generating migration readiness reports without manual inventorying.
 
-```{.d2 width="100%" file="../diagrams/data-pipeline.d2"}
+```{.d2 width="100%" file="diagrams/data-pipeline.d2"}
 ```
 
 *Show the workload assessment workflow for determining ARM readiness*
@@ -212,7 +212,7 @@ def report_resource_utilization(pod_name: str, cpu_request: float,
 
 Second, analysis compares percentiles (P95, P99) against requests, identifying workloads with consistent headroom. Third, adjustment applies changes iteratively—modifying requests incrementally while monitoring for OOM events and throttling. This is not a one-time project but an operational discipline, as workload behavior evolves with traffic patterns, code deployments, and seasonal peaks.
 
-```{.d2 width="100%" file="../diagrams/before-after-optimization.d2"}
+```{.d2 width="100%" file="diagrams/before-after-optimization.d2"}
 ```
 
 *Visualize resource request vs actual utilization gap and post-optimization state*

@@ -3,222 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{title}} — {{subtitle}}</title>
-  <meta name="description" content="{{description}}">
-  <meta name="theme-color" content="{{theme_color}}">
+  <title>{{company_name}} — Free Technical Ebooks</title>
+  <meta name="description" content="Download free technical ebooks and guides by {{company_name}}. Production-ready guides for cloud-native engineering teams.">
+  <meta name="theme-color" content="#0891b2">
   <meta name="color-scheme" content="light">
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="{{title}}">
-  <meta property="og:description" content="{{description}}">
+  <meta property="og:title" content="{{company_name}} — Free Technical Ebooks">
+  <meta property="og:description" content="Download free technical ebooks for cloud-native engineering teams.">
   <meta property="og:type" content="website">
-  {{#og_image}}
-  <meta property="og:image" content="{{og_image}}">
-  {{/og_image}}
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{title}}">
-  <meta name="twitter:description" content="{{description}}">
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css">
-  <style>
-    :root {
-      {{#css_vars}}
-      {{name}}: {{value}};
-      {{/css_vars}}
-    }
-  </style>
 </head>
 <body>
   <header class="header">
     <div class="container">
-      <div class="logo">
-        <a href="{{company_website}}">
-          <img src="logo.svg" alt="{{company_name}}" width="120" height="32">
-        </a>
-      </div>
+      <nav class="header-nav">
+        <div class="logo">
+          <a href="{{{home_url}}}">
+            <img src="logo.svg" alt="{{company_name}}" width="120" height="32">
+          </a>
+        </div>
+        <div class="header-links">
+          <a href="{{{home_url}}}" class="header-link">Home</a>
+          <a href="{{{company_website}}}" class="header-link" target="_blank">Website</a>
+        </div>
+      </nav>
     </div>
   </header>
 
   <main>
     <section class="hero">
       <div class="container">
-        <div class="hero-content">
-          <div class="hero-text">
-            {{#tags}}
-            <div class="tags">
-              {{#items}}
-              <span class="tag">{{.}}</span>
-              {{/items}}
+        <div class="hero-text-center">
+          <h1>Free Technical Ebooks</h1>
+          <p class="subtitle">Production-ready guides for cloud-native engineering teams. No email required — instant download.</p>
+          <div class="hero-stats-row">
+            <div class="hero-stat-item">
+              <span class="hero-stat-num">{{ebook_count}}</span>
+              <span class="hero-stat-lbl">Ebooks</span>
             </div>
-            {{/tags}}
-            <h1>{{headline}}</h1>
-            <p class="subtitle">{{subtitle}}</p>
-            <p class="description">{{description}}</p>
-          </div>
-          <div class="hero-form">
-            <div class="form-card">
-              <h2>{{cta_text}}</h2>
-              <form action="{{form_action}}" method="POST">
-                <input type="hidden" name="ebook_slug" value="{{slug}}">
-                <div class="form-group">
-                  <label for="name">Full Name</label>
-                  <input type="text" id="name" name="name" placeholder="Your name" required>
-                </div>
-                <div class="form-group">
-                  <label for="email">Work Email</label>
-                  <input type="email" id="email" name="email" placeholder="you@company.com" required>
-                </div>
-                <div class="form-group">
-                  <label for="company">Company</label>
-                  <input type="text" id="company" name="company" placeholder="Your company">
-                </div>
-                <button type="submit" class="btn-primary">{{cta_text}}</button>
-                <p class="form-note">Free download. No spam. Unsubscribe anytime.</p>
-              </form>
+            <div class="hero-stat-item">
+              <span class="hero-stat-num">{{total_chapters}}</span>
+              <span class="hero-stat-lbl">Chapters</span>
+            </div>
+            <div class="hero-stat-item">
+              <span class="hero-stat-num">Free</span>
+              <span class="hero-stat-lbl">PDF Download</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    {{#stats_bar}}
-    <section class="stats-bar">
+    <section class="ebooks-section">
       <div class="container">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-value">{{chapter_count}}</span>
-            <span class="stat-label">Chapters</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">{{total_reading_time}} min</span>
-            <span class="stat-label">Reading time</span>
-          </div>
-          {{#has_code}}
-          <div class="stat-item">
-            <span class="stat-value">Production</span>
-            <span class="stat-label">Ready code examples</span>
-          </div>
-          {{/has_code}}
-          <div class="stat-item">
-            <span class="stat-value">Free</span>
-            <span class="stat-label">PDF download</span>
-          </div>
-        </div>
-      </div>
-    </section>
-    {{/stats_bar}}
-
-    {{#authors}}
-    <section class="authors animate-on-scroll">
-      <div class="container">
-        <h2>About the Authors</h2>
-        <div class="author-grid">
-          {{#items}}
-          <div class="author-card">
-            {{#avatar_url}}
-            <img class="author-avatar" src="{{avatar_url}}" alt="{{name}}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div class="author-avatar-fallback" style="display:none">{{initials}}</div>
-            {{/avatar_url}}
-            {{^avatar_url}}
-            <div class="author-avatar-fallback">{{initials}}</div>
-            {{/avatar_url}}
-            <div class="author-info">
-              <h3>{{name}}</h3>
-              {{#title}}<p class="author-title">{{title}}</p>{{/title}}
-              {{#bio}}<p class="author-bio">{{bio}}</p>{{/bio}}
-              {{#has_social}}
-              <div class="author-social">
-                {{#linkedin}}<a href="{{linkedin}}" class="social-link" aria-label="LinkedIn">LinkedIn</a>{{/linkedin}}
-                {{#github}}<a href="{{github}}" class="social-link" aria-label="GitHub">GitHub</a>{{/github}}
-                {{#twitter}}<a href="{{twitter}}" class="social-link" aria-label="Twitter">Twitter</a>{{/twitter}}
+        <div class="ebook-grid">
+          {{#ebooks}}
+          <div class="ebook-card animate-on-scroll">
+            <div class="ebook-card-header" style="background: {{gradient}};">
+              <span class="ebook-card-icon">{{icon}}</span>
+              <span class="ebook-card-chapters">{{chapter_count}} chapters</span>
+            </div>
+            <div class="ebook-card-body">
+              <h2 class="ebook-card-title">{{title}}</h2>
+              {{#subtitle}}<p class="ebook-card-subtitle">{{subtitle}}</p>{{/subtitle}}
+              {{#has_tags}}
+              <div class="ebook-card-tags">
+                {{#tag_items}}
+                <span class="ebook-tag">{{.}}</span>
+                {{/tag_items}}
               </div>
-              {{/has_social}}
-            </div>
-          </div>
-          {{/items}}
-        </div>
-      </div>
-    </section>
-    {{/authors}}
-
-    {{#chapters}}
-    <section class="chapters animate-on-scroll">
-      <div class="container">
-        <h2>What's Inside</h2>
-        <p class="chapters-subtitle">A practical guide from fundamentals to production</p>
-        <div class="chapter-grid">
-          {{#items}}
-          <div class="chapter-card">
-            <div class="chapter-header">
-              <span class="chapter-number">{{number}}</span>
-              {{#difficulty}}
-              <div class="chapter-meta">
-                <span class="chapter-difficulty chapter-difficulty--{{difficulty}}">{{difficulty}}</span>
-                {{#reading_time_minutes}}
-                <span class="chapter-reading-time">{{reading_time_minutes}} min read</span>
-                {{/reading_time_minutes}}
+              {{/has_tags}}
+              <div class="ebook-card-actions">
+                {{#has_pdf}}
+                <a href="{{{pdf_url}}}" class="btn-download" data-home="{{{home_url}}}" download>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="margin-right:6px;flex-shrink:0">
+                    <path d="M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5M4 15h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Download Free PDF
+                </a>
+                {{/has_pdf}}
+                {{^has_pdf}}
+                <span class="btn-coming-soon">Coming Soon</span>
+                {{/has_pdf}}
               </div>
-              {{/difficulty}}
             </div>
-            <h3>{{title}}</h3>
-            <p>{{summary}}</p>
-            {{#has_objectives}}
-            <ul class="chapter-objectives">
-              {{#learning_objectives}}
-              <li>{{text}}</li>
-              {{/learning_objectives}}
-            </ul>
-            {{/has_objectives}}
           </div>
-          {{/items}}
+          {{/ebooks}}
         </div>
       </div>
     </section>
-    {{/chapters}}
-
-    {{#featured_products}}
-    <section class="products animate-on-scroll">
-      <div class="container">
-        <h2>Powered by {{company_name}}</h2>
-        <div class="product-grid">
-          {{#items}}
-          <div class="product-card">
-            <h3>{{name}}</h3>
-            <p>{{description}}</p>
-            <a href="{{url}}" class="product-link">Learn more</a>
-          </div>
-          {{/items}}
-        </div>
-      </div>
-    </section>
-    {{/featured_products}}
 
     <section class="cta-bottom">
       <div class="container">
-        <h2>Ready to get started?</h2>
-        <p>Download <em>{{title}}</em> and put these ideas into practice.</p>
-        <div class="cta-buttons">
-          <a href="#" class="btn-primary" onclick="document.querySelector('.hero-form').scrollIntoView({behavior:'smooth'});return false;">
-            {{cta_text}}
-          </a>
-          {{#secondary_cta}}
-          <a href="{{url}}" class="btn-secondary">{{text}}</a>
-          {{/secondary_cta}}
-        </div>
+        <h2>Want to explore all ebooks?</h2>
+        <p>Browse the full collection with chapter details, blog posts, and social assets.</p>
+        <a href="{{{dashboard_url}}}" class="btn-secondary-cta">Browse Ebook Dashboard</a>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="container">
-      <p>&copy; {{year}} <a href="{{company_website}}">{{company_name}}</a>. All rights reserved.</p>
+      <p>&copy; {{year}} <a href="{{{company_website}}}">{{company_name}}</a>. All rights reserved.</p>
     </div>
   </footer>
 
@@ -229,7 +120,7 @@
       header.classList.toggle('scrolled', window.scrollY > 10);
     }, { passive: true });
 
-    // Scroll animations via IntersectionObserver
+    // Scroll animations
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -240,6 +131,28 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+    // Download button: trigger download then redirect to home
+    document.querySelectorAll('.btn-download').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        const homeUrl = this.getAttribute('data-home');
+        if (href && href !== '#') {
+          e.preventDefault();
+          const a = document.createElement('a');
+          a.href = href;
+          a.download = '';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          if (homeUrl) {
+            setTimeout(() => {
+              window.location.href = homeUrl;
+            }, 1500);
+          }
+        }
+      });
+    });
   </script>
 </body>
 </html>

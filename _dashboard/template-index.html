@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{company_name}} — Ebook Dashboard</title>
+  <meta name="description" content="Browse, download, and explore technical ebooks by {{company_name}}.">
+  <meta name="theme-color" content="#0891b2">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:title" content="{{company_name}} Ebook Dashboard">
+  <meta property="og:description" content="Free technical ebooks for cloud-native teams.">
+  <meta property="og:type" content="website">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ═══ Header ═══ -->
+  <header class="dash-header">
+    <div class="dash-container">
+      <div class="dash-header-top">
+        <a href="{{{home_url}}}" class="dash-back-link">&larr; Back to Landing Page</a>
+        <div class="dash-brand">{{company_name}}</div>
+      </div>
+      <h1 class="dash-title">Ebook Dashboard</h1>
+      <p class="dash-subtitle">Browse, read, and download production-ready technical guides for cloud-native engineering teams.</p>
+
+      <div class="dash-stats">
+        <div class="dash-stat">
+          <span class="dash-stat-value">{{ebook_count}}</span>
+          <span class="dash-stat-label">Ebooks</span>
+        </div>
+        <button class="dash-btn-generate" onclick="openGenerateModal()">+ New Ebook</button>
+      </div>
+
+      <div class="dash-controls">
+        <div class="dash-search">
+          <span class="dash-search-icon">&#128269;</span>
+          <input type="text" id="search-input" class="dash-search-input" placeholder="Search by title, topic, or tag..." aria-label="Search ebooks">
+        </div>
+        <div class="dash-tags" id="tag-filters">
+          <button class="tag-btn active" data-tag="all">All</button>
+          {{#tags}}
+          <button class="tag-btn" data-tag="{{name}}">{{name}}</button>
+          {{/tags}}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ Card Grid ═══ -->
+  <main class="dash-container">
+    <div class="dash-grid" id="ebook-grid">
+      {{#ebooks}}
+      <article class="dash-card" data-tags="{{tags}}" data-title="{{title}}" data-topic="{{topic}}">
+        <a href="{{{detail_url}}}" class="dash-card-link" aria-label="View {{title}}"></a>
+
+        <div class="dash-card-header" style="background: {{card_gradient}};">
+          <span class="dash-card-chapters">{{chapter_count}} chapters</span>
+          <span class="dash-card-icon">{{card_icon}}</span>
+          {{#status_ready}}<span class="dash-card-badge dash-card-badge--ready">Ready</span>{{/status_ready}}
+          {{#status_draft}}<span class="dash-card-badge dash-card-badge--draft">Draft</span>{{/status_draft}}
+          {{#status_progress}}<span class="dash-card-badge dash-card-badge--in-progress">In Progress</span>{{/status_progress}}
+        </div>
+
+        <div class="dash-card-body">
+          <h2 class="dash-card-title">{{title}}</h2>
+          <p class="dash-card-topic">{{topic}}</p>
+
+          <div class="dash-card-tags">
+            {{#tag_list}}
+            <span class="dash-card-tag">{{name}}</span>
+            {{/tag_list}}
+          </div>
+
+          <div class="dash-card-actions">
+            {{#has_pdf}}
+            <a href="{{{pdf_url}}}" class="dash-card-action dash-card-action--download btn-pdf-download" data-home="{{{home_url}}}" download>&#128229; Download</a>
+            {{/has_pdf}}
+            {{^has_pdf}}
+            <span class="dash-card-action dash-card-action--disabled">&#128229; Coming Soon</span>
+            {{/has_pdf}}
+            {{#has_blog}}
+            <a href="{{{blog_url}}}" class="dash-card-action dash-card-action--secondary">&#128221; Blog</a>
+            {{/has_blog}}
+            {{#has_social}}
+            <a href="{{{social_url}}}" class="dash-card-action dash-card-action--secondary">&#128247; Social</a>
+            {{/has_social}}
+            <button class="dash-card-action dash-card-action--delete" onclick="event.preventDefault(); event.stopPropagation(); deleteEbook('{{slug}}', '{{title}}')" title="Delete ebook">&#128465;</button>
+          </div>
+        </div>
+      </article>
+      {{/ebooks}}
+    </div>
+
+    <div class="dash-empty" id="no-results" style="display: none;">
+      <div class="dash-empty-icon">&#128269;</div>
+      <p>No ebooks match your search. Try a different keyword.</p>
+    </div>
+  </main>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="dash-footer">
+    <div class="dash-container">
+      <p>&copy; {{year}} {{company_name}} &mdash; Built with the Zopdev Ebook Engine</p>
+    </div>
+  </footer>
+
+  <!-- ═══ Delete Confirmation Modal ═══ -->
+  <div class="delete-modal-overlay" id="delete-modal" style="display: none;">
+    <div class="delete-modal">
+      <div class="delete-modal-icon">&#128465;</div>
+      <h3 class="delete-modal-title">Delete Ebook</h3>
+      <p class="delete-modal-text">Are you sure you want to delete <strong id="delete-ebook-name"></strong>?</p>
+      <p class="delete-modal-hint">Run this command in Terminal to delete:</p>
+      <code class="delete-modal-command" id="delete-command"></code>
+      <div class="delete-modal-actions">
+        <button class="delete-modal-btn delete-modal-btn--cancel" onclick="closeDeleteModal()">Cancel</button>
+        <button class="delete-modal-btn delete-modal-btn--copy" onclick="copyDeleteCommand()">&#128203; Copy Command</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Generate Ebook Modal ═══ -->
+  <div class="gen-modal-overlay" id="gen-modal" style="display: none;">
+    <div class="gen-modal">
+      <h3 class="gen-modal-title">&#128218; New Ebook</h3>
+      <p class="gen-modal-text">Enter a topic and the engine will generate a full ebook with PDF, blog posts, social assets, and dashboard entry.</p>
+      <div class="gen-form">
+        <label class="gen-label" for="gen-topic">Topic</label>
+        <input type="text" id="gen-topic" class="gen-input" placeholder="e.g., Docker Security Best Practices" autocomplete="off">
+        <label class="gen-label" for="gen-chapters">Chapters</label>
+        <select id="gen-chapters" class="gen-select">
+          <option value="3">3 chapters</option>
+          <option value="4">4 chapters</option>
+          <option value="5" selected>5 chapters</option>
+          <option value="6">6 chapters</option>
+          <option value="7">7 chapters</option>
+          <option value="8">8 chapters</option>
+        </select>
+      </div>
+      <div class="gen-modal-actions">
+        <button class="gen-btn gen-btn--cancel" onclick="closeGenerateModal()">Cancel</button>
+        <button class="gen-btn gen-btn--generate" onclick="startGeneration()">Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Generation Progress Overlay ═══ -->
+  <div class="gen-progress-overlay" id="gen-progress" style="display: none;">
+    <div class="gen-progress-card">
+      <h3 class="gen-progress-title">Generating Ebook</h3>
+      <p class="gen-progress-topic" id="gen-progress-topic"></p>
+      <div class="gen-progress-bar-track">
+        <div class="gen-progress-bar-fill" id="gen-progress-fill" style="width: 0%;"></div>
+      </div>
+      <p class="gen-progress-step" id="gen-progress-step">Starting...</p>
+      <div class="gen-progress-log" id="gen-progress-log"></div>
+      <div class="gen-progress-footer" id="gen-progress-footer" style="display: none;">
+        <a class="gen-btn gen-btn--view" id="gen-view-link" href="#">View Ebook</a>
+        <button class="gen-btn gen-btn--cancel" onclick="closeProgress()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Search & Filter JS ═══ -->
+  <script>
+    const searchInput = document.getElementById('search-input');
+    const grid = document.getElementById('ebook-grid');
+    const cards = grid.querySelectorAll('.dash-card');
+    const noResults = document.getElementById('no-results');
+    const tagButtons = document.querySelectorAll('.tag-btn');
+
+    let activeTag = 'all';
+
+    function filterCards() {
+      const query = searchInput.value.toLowerCase().trim();
+      let visible = 0;
+
+      cards.forEach(card => {
+        const title = (card.dataset.title || '').toLowerCase();
+        const topic = (card.dataset.topic || '').toLowerCase();
+        const tags = (card.dataset.tags || '').toLowerCase();
+
+        const matchesSearch = !query || title.includes(query) || topic.includes(query) || tags.includes(query);
+        const matchesTag = activeTag === 'all' || tags.includes(activeTag.toLowerCase());
+
+        const show = matchesSearch && matchesTag;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      noResults.style.display = visible === 0 ? '' : 'none';
+    }
+
+    searchInput.addEventListener('input', filterCards);
+
+    tagButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tagButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeTag = btn.dataset.tag;
+        filterCards();
+      });
+    });
+
+    // ── Delete Ebook Functions ──
+    function deleteEbook(slug, title) {
+      document.getElementById('delete-ebook-name').textContent = title;
+      document.getElementById('delete-command').textContent = 'ebook delete ' + slug + ' && ebook dashboard';
+      document.getElementById('delete-modal').style.display = 'flex';
+      document.getElementById('delete-modal').dataset.slug = slug;
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').style.display = 'none';
+    }
+
+    function copyDeleteCommand() {
+      const cmd = document.getElementById('delete-command').textContent;
+      navigator.clipboard.writeText(cmd).then(() => {
+        const btn = document.querySelector('.delete-modal-btn--copy');
+        btn.textContent = '\u2705 Copied!';
+        setTimeout(() => { btn.innerHTML = '&#128203; Copy Command'; }, 2000);
+      });
+    }
+
+    // Close modal on overlay click
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeDeleteModal();
+    });
+
+    // Close modals on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeDeleteModal();
+        closeGenerateModal();
+      }
+    });
+
+    // ── Generate Ebook Functions ──
+    function openGenerateModal() {
+      document.getElementById('gen-modal').style.display = 'flex';
+      document.getElementById('gen-topic').value = '';
+      document.getElementById('gen-topic').focus();
+    }
+
+    function closeGenerateModal() {
+      document.getElementById('gen-modal').style.display = 'none';
+    }
+
+    document.getElementById('gen-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeGenerateModal();
+    });
+
+    // Allow Enter key to submit from topic input
+    document.getElementById('gen-topic').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') startGeneration();
+    });
+
+    async function findServer() {
+      // If served from an HTTP server, use the same origin
+      if (window.location.protocol !== 'file:') return '';
+
+      // When opened from file://, scan common ports for the dev server
+      const ports = [3000, 3001, 3002, 8080, 8000];
+      for (const port of ports) {
+        const base = 'http://localhost:' + port;
+        try {
+          const resp = await fetch(base + '/api/status', { signal: AbortSignal.timeout(1500) });
+          if (resp.ok) return base;
+        } catch (e) { /* not this port */ }
+      }
+      return null; // no server found
+    }
+
+    async function startGeneration() {
+      const topic = document.getElementById('gen-topic').value.trim();
+      if (!topic) {
+        document.getElementById('gen-topic').style.borderColor = 'var(--dash-danger)';
+        document.getElementById('gen-topic').focus();
+        setTimeout(() => { document.getElementById('gen-topic').style.borderColor = ''; }, 2000);
+        return;
+      }
+      const chapters = document.getElementById('gen-chapters').value;
+
+      closeGenerateModal();
+
+      // Show progress overlay
+      const overlay = document.getElementById('gen-progress');
+      overlay.style.display = 'flex';
+      document.getElementById('gen-progress-topic').textContent = topic;
+      document.getElementById('gen-progress-fill').style.width = '0%';
+      document.getElementById('gen-progress-step').textContent = 'Connecting to server...';
+      document.getElementById('gen-progress-log').innerHTML = '';
+      document.getElementById('gen-progress-footer').style.display = 'none';
+
+      const logEl = document.getElementById('gen-progress-log');
+      let currentSlug = '';
+
+      // Find the dev server (scans ports 3000-3002, 8080, 8000)
+      const serverBase = await findServer();
+
+      if (serverBase === null) {
+        document.getElementById('gen-progress-step').textContent = 'Server not running';
+        document.getElementById('gen-progress-step').style.color = 'var(--dash-danger)';
+        const lines = [
+          'Start the dev server first, then try again:',
+          '  ebook serve',
+          '',
+          'Or generate from the command line:',
+          '  ebook generate --topic="' + topic + '" --chapters=' + chapters,
+        ];
+        lines.forEach(function(text) {
+          const el = document.createElement('div');
+          el.className = 'gen-log-line';
+          el.textContent = text;
+          logEl.appendChild(el);
+        });
+        document.getElementById('gen-progress-footer').style.display = 'flex';
+        document.getElementById('gen-view-link').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('gen-progress-step').textContent = 'Starting...';
+
+      const url = serverBase + '/api/generate?topic=' + encodeURIComponent(topic) + '&chapters=' + chapters;
+      const evtSource = new EventSource(url);
+
+      evtSource.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+
+          if (data.slug) currentSlug = data.slug;
+
+          if (data.step !== undefined && data.total) {
+            const pct = Math.round((data.step / data.total) * 100);
+            document.getElementById('gen-progress-fill').style.width = pct + '%';
+            if (data.label) {
+              document.getElementById('gen-progress-step').textContent =
+                'Step ' + data.step + '/' + data.total + ': ' + data.label;
+            }
+          }
+
+          if (data.type === 'log' && data.text) {
+            const line = document.createElement('div');
+            line.className = 'gen-log-line';
+            line.textContent = data.text;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+          }
+
+          if (data.type === 'error') {
+            document.getElementById('gen-progress-step').textContent = 'Error: ' + (data.text || 'Generation failed');
+            document.getElementById('gen-progress-step').style.color = 'var(--dash-danger)';
+            document.getElementById('gen-progress-footer').style.display = 'flex';
+            document.getElementById('gen-view-link').style.display = 'none';
+            evtSource.close();
+          }
+
+          if (data.complete) {
+            document.getElementById('gen-progress-fill').style.width = '100%';
+            document.getElementById('gen-progress-step').textContent = 'Complete!';
+            document.getElementById('gen-progress-step').style.color = 'var(--dash-success)';
+            document.getElementById('gen-progress-footer').style.display = 'flex';
+            const viewLink = document.getElementById('gen-view-link');
+            viewLink.style.display = '';
+            viewLink.href = 'detail/' + currentSlug + '/index.html';
+            evtSource.close();
+          }
+        } catch (err) {
+          // ignore parse errors
+        }
+      };
+
+      evtSource.onerror = function() {
+        evtSource.close();
+        const step = document.getElementById('gen-progress-step');
+        if (step.style.color !== 'var(--dash-success)') {
+          step.textContent = 'Connection lost. The server may have stopped.';
+          step.style.color = 'var(--dash-danger)';
+          document.getElementById('gen-progress-footer').style.display = 'flex';
+          document.getElementById('gen-view-link').style.display = 'none';
+        }
+      };
+    }
+
+    function closeProgress() {
+      document.getElementById('gen-progress').style.display = 'none';
+      document.getElementById('gen-progress-step').style.color = '';
+      // Reload to show the new ebook card (dashboard was regenerated by the pipeline)
+      window.location.reload();
+    }
+
+    // ── Download PDF + redirect to landing page ──
+    document.querySelectorAll('.btn-pdf-download').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        const homeUrl = this.getAttribute('data-home');
+        if (href && href !== '#') {
+          e.preventDefault();
+          e.stopPropagation();
+          const a = document.createElement('a');
+          a.href = href;
+          a.download = '';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          if (homeUrl) {
+            setTimeout(() => {
+              window.location.href = homeUrl;
+            }, 1500);
+          }
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

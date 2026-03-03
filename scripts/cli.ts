@@ -134,9 +134,42 @@ const COMMANDS: CommandDef[] = [
   },
 
   {
+    name: "generate",
+    group: "Content Pipeline",
+    description: "Auto-generate full ebook from a topic (ebook + PDF + blog + social + dashboard)",
+    usage: "ebook generate --topic=\"<topic>\" [--chapters=<n>] [--slug=<slug>]",
+    examples: [
+      "ebook generate --topic=\"Docker Security Best Practices\"",
+      "ebook generate --topic=\"AWS Lambda Cost Optimization\" --chapters=6",
+      "ebook generate --topic=\"Kubernetes Monitoring\" --slug=k8s-monitoring",
+    ],
+    options: [
+      { flag: "--topic", description: "Topic for the ebook (required)", valueHint: "<topic>" },
+      { flag: "--chapters", description: "Number of chapters (default: 5)", valueHint: "<n>" },
+      { flag: "--slug", description: "Custom slug (auto-generated from topic if omitted)", valueHint: "<slug>" },
+      { flag: "--title", description: "Custom title (defaults to topic)", valueHint: "<title>" },
+      { flag: "--subtitle", description: "Custom subtitle", valueHint: "<subtitle>" },
+    ],
+    requiresSlug: false,
+    handler: (_slug, opts) => {
+      if (!opts.topic) {
+        console.error(`${RED}Error: --topic is required${RESET}`);
+        console.error(`\nUsage: ebook generate --topic="Docker Security Best Practices"`);
+        process.exit(1);
+      }
+      const args: string[] = [`--topic=${opts.topic}`];
+      if (opts.chapters) args.push(`--chapters=${opts.chapters}`);
+      if (opts.slug) args.push(`--slug=${opts.slug}`);
+      if (opts.title) args.push(`--title=${opts.title}`);
+      if (opts.subtitle) args.push(`--subtitle=${opts.subtitle}`);
+      run(join(SCRIPTS, "generate-ebook.ts"), args);
+    },
+  },
+
+  {
     name: "create",
     group: "Content Pipeline",
-    description: "Interactive ebook creator (topic in, all modalities out)",
+    description: "Interactive ebook creator (Q&A wizard, all modalities out)",
     usage: "ebook create",
     examples: ["ebook create"],
     options: [],
@@ -329,6 +362,32 @@ const COMMANDS: CommandDef[] = [
   },
 
   {
+    name: "reader",
+    group: "Output Generation",
+    description: "Generate standalone HTML book reader (no Quarto needed)",
+    usage: "ebook reader [slug]",
+    examples: ["ebook reader k8s-cost-guide", "ebook reader  # all ebooks"],
+    options: [],
+    requiresSlug: false,
+    slugOptional: true,
+    handler: (slug) => {
+      const args = slug ? [slug] : [];
+      run(join(ROOT, "_reader", "generate.ts"), args);
+    },
+  },
+
+  {
+    name: "dashboard",
+    group: "Output Generation",
+    description: "Generate dashboard with ebook library and detail pages",
+    usage: "ebook dashboard",
+    examples: ["ebook dashboard"],
+    options: [],
+    requiresSlug: false,
+    handler: () => run(join(ROOT, "_dashboard", "generate.ts"), []),
+  },
+
+  {
     name: "publish",
     group: "Output Generation",
     description: "Generate ALL modalities for one ebook",
@@ -341,28 +400,35 @@ const COMMANDS: CommandDef[] = [
       console.log(`${BLUE}║${RESET}${BOLD}  Publishing: ${slug}${RESET}`);
       console.log(`${BLUE}╚══════════════════════════════════════════════════════════════╝${RESET}`);
 
-      stepHeader(1, 5, "Rendering HTML / PDF / EPUB");
+      stepHeader(1, 7, "Rendering HTML / PDF / EPUB");
       runQuarto(["render", join("books", slug!)]);
 
-      stepHeader(2, 5, "Generating landing page");
+      stepHeader(2, 7, "Generating standalone HTML reader");
+      run(join(ROOT, "_reader", "generate.ts"), [slug!]);
+
+      stepHeader(3, 7, "Generating landing page");
       run(join(ROOT, "_landing", "generate.ts"), [slug!]);
 
-      stepHeader(3, 5, "Generating social assets");
+      stepHeader(4, 7, "Generating social assets");
       run(join(ROOT, "_social", "generate.ts"), [slug!]);
 
-      stepHeader(4, 5, "Generating blog posts");
+      stepHeader(5, 7, "Generating blog posts");
       run(join(ROOT, "_blog", "generate.ts"), [slug!]);
 
-      stepHeader(5, 5, "Content quality audit");
+      stepHeader(6, 7, "Generating dashboard");
+      run(join(ROOT, "_dashboard", "generate.ts"), []);
+
+      stepHeader(7, 7, "Content quality audit");
       run(join(SCRIPTS, "content-audit.ts"), [slug!]);
 
       console.log(`\n${GREEN}╔══════════════════════════════════════════════════════════════╗${RESET}`);
       console.log(`${GREEN}║${RESET}  Done! All modalities generated for: ${BOLD}${slug}${RESET}`);
       console.log(`${GREEN}║${RESET}`);
-      console.log(`${GREEN}║${RESET}  HTML    → _output/books/${slug}/`);
-      console.log(`${GREEN}║${RESET}  Landing → _output/landing/${slug}/`);
-      console.log(`${GREEN}║${RESET}  Social  → _output/social/${slug}/`);
-      console.log(`${GREEN}║${RESET}  Blog    → _output/blog/${slug}/`);
+      console.log(`${GREEN}║${RESET}  HTML      → _output/books/${slug}/`);
+      console.log(`${GREEN}║${RESET}  Landing   → _output/landing/${slug}/`);
+      console.log(`${GREEN}║${RESET}  Social    → _output/social/${slug}/`);
+      console.log(`${GREEN}║${RESET}  Blog      → _output/blog/${slug}/`);
+      console.log(`${GREEN}║${RESET}  Dashboard → _output/dashboard/`);
       console.log(`${GREEN}║${RESET}`);
       console.log(`${GREEN}║${RESET}  Run ${CYAN}ebook eval-all ${slug}${RESET} to check quality`);
       console.log(`${GREEN}╚══════════════════════════════════════════════════════════════╝${RESET}`);
@@ -562,6 +628,60 @@ const COMMANDS: CommandDef[] = [
         .map(d => d.name);
       for (const slug of dirs) {
         runShell(join(SCRIPTS, "setup-ebook.sh"), [slug]);
+      }
+    },
+  },
+
+  {
+    name: "delete",
+    group: "Utilities",
+    description: "Delete an ebook and all its generated assets",
+    usage: "ebook delete <slug>",
+    examples: ["ebook delete docker-security-best-practices"],
+    options: [],
+    requiresSlug: true,
+    handler: (slug) => run(join(SCRIPTS, "delete-ebook.ts"), [slug]),
+  },
+
+  {
+    name: "serve",
+    group: "Utilities",
+    description: "Start local dev server with live dashboard",
+    usage: "ebook serve [--port=<n>]",
+    examples: [
+      "ebook serve",
+      "ebook serve --port=8080",
+    ],
+    options: [
+      { flag: "--port", short: "-p", description: "Port number (default: 3000)", valueHint: "<n>" },
+    ],
+    requiresSlug: false,
+    handler: (_slug, opts) => {
+      // Auto-generate dashboard if _output/dashboard doesn't exist
+      const dashOut = join(ROOT, "_output", "dashboard", "index.html");
+      if (!existsSync(dashOut)) {
+        console.log(`${DIM}Dashboard not found — generating...${RESET}`);
+        run(join(ROOT, "_dashboard", "generate.ts"), []);
+      }
+
+      const port = opts.port || "3000";
+      const env = { ...process.env, PORT: port };
+
+      // Open browser after a short delay
+      setTimeout(() => {
+        const openCmd = process.platform === "darwin" ? "open" :
+                        process.platform === "win32" ? "start" : "xdg-open";
+        spawnSync(openCmd, [`http://localhost:${port}`], { stdio: "ignore" });
+      }, 500);
+
+      // Run server (blocking)
+      const result = spawnSync("bun", ["run", join(ROOT, "_server", "server.ts")], {
+        cwd: ROOT,
+        stdio: "inherit",
+        env,
+      });
+      if (result.status !== 0) {
+        process.exit(result.status ?? 1);
       }
     },
   },

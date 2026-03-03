@@ -34,7 +34,7 @@ The invoice does not itemize environments. It presents a single resource count a
 This explains why the 500 free resource offset creates such asymmetric outcomes. A single 600-resource workspace costs approximately $8.40 monthly after the offset absorbs its first 500 resources (Terraform Cloud RUM pricing). The same workspace duplicated twice costs roughly $25.20 monthly—three times the single-environment cost despite delivering functionally identical infrastructure. The offset that appears generous in isolation becomes nearly meaningless at scale when environments multiply rather than consolidate.
 
 ::: {.column-page}
-```{.d2 width="100%" file="../diagrams/before-after-optimization.d2"}
+```{.d2 width="100%" file="diagrams/before-after-optimization.d2"}
 ```
 :::
 

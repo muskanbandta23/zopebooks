@@ -109,3 +109,56 @@ ebooks:
       description: "Stop over-provisioning with every deploy. Learn infrastructure-as-code strategies to right-size resources, prevent cost drift, and build cost-aware Terraform workflows."
       cta_text: "Download Free PDF"
       form_action: "#"
+
+  - slug: gitops-with-argocd
+    title: "GitOps with ArgoCD"
+    subtitle: "A Practical Guide to GitOps with ArgoCD"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [gitops, argocd, kubernetes, continuous-delivery]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true
+    landing:
+      headline: "Master GitOps with ArgoCD"
+      description: "Learn how to deploy, manage, and scale Kubernetes applications using GitOps principles with ArgoCD — from your first Application CRD to multi-cluster management with self-healing policies."
+      cta_text: "Download Free Ebook"
+      form_action: "#"
+
+  - slug: docker-security-best-practices
+    title: "Docker Security Best Practices"
+    subtitle: "A Practical Guide to Docker Security Best Practices"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [docker, security, practices]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true
+
+  - slug: aws-lambda-best-practices
+    title: "AWS Lambda Best Practices"
+    subtitle: "A Practical Guide to AWS Lambda Best Practices"
+    authors:
+      - "Zopdev Team"
+    status: draft
+    tags: [lambda, practices]
+    outputs:
+      html: true
+      pdf: true
+      epub: true
+      landing_page: true
+      linkedin_carousel: true
+      instagram_posts: true
+      og_image: true

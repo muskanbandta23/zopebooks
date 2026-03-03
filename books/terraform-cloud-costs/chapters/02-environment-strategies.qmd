@@ -25,7 +25,7 @@ Concurrency charges add another dimension to the calculation. Organizations requ
 
 Non-production environments represent the highest-leverage optimization target. A media-streaming platform with 1,200 resources achieved a 37% reduction in eight weeks, while a healthcare SaaS company trimmed spend by 39% in five weeks—both primarily through non-production optimization (customer case studies). The math is straightforward: production environments must exist to generate value, but development, staging, and QA environments exist only to support those production systems. Reducing their footprint directly improves the ratio of revenue-generating infrastructure to supporting infrastructure.
 
-```{.d2 width="100%" file="../diagrams/finops-workflow.d2"}
+```{.d2 width="100%" file="diagrams/finops-workflow.d2"}
 ```
 
 *Visualize how Terraform resources multiply across environments and the cost flow from workspace to cloud bill*

@@ -9,7 +9,6 @@ title: "The $50,000 Month: Why Your Kubernetes Bill Keeps Growing"
 
 This chapter decodes the root causes driving these inefficiencies and provides a decision framework for reclaiming control. You'll learn which optimization patterns match your architecture, when to apply each one, and how automation tools like zopnight can handle namespace-level visibility and VPA-driven right-sizing so you stop leaving money on the table.
 
-![Open with a compelling industry statistic that establishes the universality of the problem and the business impact](images/01-the-50000-month-incident-stat-card-opening.png)
 
 ## The Request vs. Actual Usage Gap
 
@@ -17,7 +16,6 @@ This gap between what you reserve and what you actually consume is the engine dr
 
 Developers naturally request generous resource buffers to avoid OOM kills and throttling during traffic spikes. But production environments rarely approach those ceilings, and those overestimates compound across hundreds of microservices. The result: up to 30% of cloud spending is wasted on over-provisioned infrastructure (Sedai). This isn't a configuration error—it's a structural mismatch between provisioning logic and real-world consumption patterns. Tools like zopnight address this by analyzing actual usage metrics at the namespace level and applying VPA-driven recommendations to close the gap between what you request and what you actually need.
 
-![Visualize the massive inefficiency between what teams request and what workloads actually consume](images/01-the-50000-month-incident-metric-highlight-background.png)
 
 ## Visualizing the Gap: A Config Comparison
 
@@ -51,7 +49,6 @@ spec:
 
 The container requests substantial CPU and memory but actually uses only a fraction of those resources—12.5% of requested CPU and 15% of requested memory. This gap represents pure waste that directly inflates the monthly bill.
 
-![Show a before/after config comparison to make the usage gap concrete and actionable](images/01-the-50000-month-incident-comparison-graphic-config_usage_gap.png)
 
 ## The Over-Provisioning Spiral
 
@@ -73,7 +70,6 @@ kubectl top pods --all-namespaces --no-headers | \
 kubectl resource-capacity --namespace <team-ns> --util --sort cpu.util
 ``` If your organization sits in the 20-45% range (Sedai), right-sizing conversations become measurable rather than theoretical. zopnight enables this shift by surfacing efficiency metrics at the namespace level, generating VPA-driven right-sizing recommendations, and managing spot node pools to reduce idle capacity. The spiral ends when engineering sees what finance pays for.
 
-![Reinforce the scale of waste with a single impactful metric](images/01-the-50000-month-incident-stat-card-patterns_over_provisioning.png)
 
 ## Cost Attribution Models: Who Pays for What
 
@@ -89,7 +85,6 @@ The choice depends on organizational maturity. Organizations beginning their Fin
 
 TCO versus raw compute cost matters here. The compute bill represents only the base expense; total cost of ownership adds management overhead, idle capacity that could run production workloads, and the operational burden of tuning 200 microservices. With 88% of teams reporting year-over-year TCO increases (Arc82), attribution models that surface idle capacity become strategic investments.
 
-![Ground the discussion in real-world dollar amounts that readers can relate to](images/01-the-50000-month-incident-key-number-decision_framework.png)
 
 ## Summary: The Path Forward
 

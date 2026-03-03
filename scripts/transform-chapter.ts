@@ -1163,7 +1163,10 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  for (const planFile of planFiles) {
+  // ── Parallel chapter transformation (2 concurrent — heavier than planning) ──
+  const CONCURRENCY = 2;
+
+  async function transformOne(planFile: string) {
     const planPath = join(chaptersDir, planFile);
     const qmdFile = planFile.replace(".plan.yml", ".qmd");
     const qmdPath = join(chaptersDir, qmdFile);
@@ -1179,14 +1182,14 @@ if (import.meta.main) {
     const configCount = (content.match(/```yaml/g) || []).length;
     const tableCount = (content.match(/^\|.*\|.*\|/gm) || []).length;
 
-    console.log(`  ${qmdFile}:`);
-    console.log(`    Words: ~${wordCount}`);
-    console.log(`    D2 diagrams: ${d2Count}`);
-    console.log(`    OJS calculators: ${ojsCount}`);
-    console.log(`    Config blocks: ${configCount}`);
-    console.log(`    Tables: ${tableCount > 0 ? "yes" : "none"}`);
-    console.log(`    Output: ${qmdPath}`);
-    console.log();
+    console.log(`  ✓ ${qmdFile}: ~${wordCount} words, ${configCount} configs, ${d2Count} d2, ${ojsCount} ojs`);
+  }
+
+  // Process in batches of CONCURRENCY
+  for (let i = 0; i < planFiles.length; i += CONCURRENCY) {
+    const batch = planFiles.slice(i, i + CONCURRENCY);
+    console.log(`  Writing batch ${Math.floor(i / CONCURRENCY) + 1}/${Math.ceil(planFiles.length / CONCURRENCY)} (${batch.map(f => f.replace(".plan.yml", "")).join(", ")})...`);
+    await Promise.all(batch.map(f => transformOne(f)));
   }
 
   // Print cost summary

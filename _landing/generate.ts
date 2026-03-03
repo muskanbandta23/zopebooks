@@ -1,21 +1,18 @@
 #!/usr/bin/env bun
 /**
- * Landing page generator.
- * Reads calendar.yml, _brand.yml + _brand-extended.yml, and per-ebook
- * brand-overrides.yml to generate HTML landing pages.
+ * Single Landing Page Generator.
+ * Creates ONE landing page at _output/landing/index.html showing ALL ebooks
+ * with download buttons. On clicking "Download Free PDF", the PDF downloads
+ * and the user is redirected to the home page.
  *
  * Usage:
- *   bun run _landing/generate.ts                  # all ebooks with landing_page enabled
- *   bun run _landing/generate.ts finops-playbook  # specific ebook
+ *   bun run _landing/generate.ts
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { parse } from "yaml";
 import Mustache from "mustache";
-import { loadMergedBrand, buildCssVars } from "../scripts/brand-utils.js";
-import { loadEbookContent } from "../scripts/content-utils.js";
-import type { EnrichedChapter } from "../scripts/content-utils.js";
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const ROOT_DIR = join(SCRIPT_DIR, "..");
@@ -39,168 +36,122 @@ const calendar = parse(readFileSync(calendarPath, "utf-8")) as {
     tags?: string[];
     status: string;
     outputs?: Record<string, boolean>;
-    landing?: {
-      headline?: string;
-      description?: string;
-      cta_text?: string;
-      form_action?: string;
-    };
   }>;
 };
 
 const template = readFileSync(templatePath, "utf-8");
-const targetSlug = process.argv[2] || null;
 
-// --- Generate landing pages ---
+// --- Load brand ---
 
-let generated = 0;
+const brandExtPath = join(ROOT_DIR, "_brand", "_brand-extended.yml");
+const brandExt = existsSync(brandExtPath)
+  ? parse(readFileSync(brandExtPath, "utf-8"))
+  : {};
 
-for (const ebook of calendar.ebooks) {
-  // Filter by slug if specified
-  if (targetSlug && ebook.slug !== targetSlug) continue;
+const company = brandExt.company || {
+  name: "Zopdev",
+  tagline: "Cloud Engineering Excellence",
+  website: "https://zopdev.com",
+};
 
-  // Skip if landing page not enabled
-  if (!ebook.outputs?.landing_page) {
-    console.log(`Skipping ${ebook.slug}: landing_page not enabled`);
-    continue;
-  }
+// --- Gradient palette & icons for ebook cards ---
 
-  // Skip archived
-  if (ebook.status === "archived") {
-    console.log(`Skipping ${ebook.slug}: archived`);
-    continue;
-  }
+const gradients = [
+  "linear-gradient(135deg, #0891b2, #0e7490)",
+  "linear-gradient(135deg, #7c3aed, #4f46e5)",
+  "linear-gradient(135deg, #059669, #047857)",
+  "linear-gradient(135deg, #d97706, #b45309)",
+  "linear-gradient(135deg, #dc2626, #b91c1c)",
+  "linear-gradient(135deg, #2563eb, #1d4ed8)",
+];
 
-  console.log(`Generating landing page for: ${ebook.slug}`);
+const icons = ["📘", "⚙️", "🏗️", "☁️", "🔧", "🚀"];
 
-  // Load enriched ebook content
-  const ebookContent = loadEbookContent(ROOT_DIR, ebook.slug);
-  const ebookAuthors = ebookContent?.meta?.authors || [];
+// --- Build ebook cards ---
 
-  // Load merged brand config (core + extended + overrides + author resolution)
-  const brandConfig = loadMergedBrand(ROOT_DIR, ebook.slug, ebookAuthors);
+const ebookCards = calendar.ebooks
+  .filter((e) => e.status !== "archived")
+  .map((ebook, i) => {
+    // Check for PDF
+    const bookOutputDir = join(ROOT_DIR, "_output", "books", ebook.slug);
+    let pdfUrl: string | null = null;
+    let hasPdf = false;
+    if (existsSync(bookOutputDir)) {
+      const pdfFiles = readdirSync(bookOutputDir).filter((f) =>
+        f.endsWith(".pdf")
+      );
+      if (pdfFiles.length > 0) {
+        // From _output/landing/ → _output/books/{slug}/{file}
+        pdfUrl = `../books/${ebook.slug}/${pdfFiles[0]}`;
+        hasPdf = true;
+      }
+    }
 
-  const chapters: EnrichedChapter[] = ebookContent?.chapters || [];
+    // Count chapters
+    const chaptersDir = join(ROOT_DIR, "books", ebook.slug, "chapters");
+    let chapterCount = 0;
+    if (existsSync(chaptersDir)) {
+      chapterCount = readdirSync(chaptersDir).filter(
+        (f) => f.endsWith(".qmd") && !f.startsWith("_")
+      ).length;
+    }
 
-  // Build template data
-  const landing = ebook.landing || {};
+    // Get tags (max 3)
+    const tags = (ebook.tags || []).slice(0, 3);
 
-  // Use override CTAs if available, fall back to calendar/defaults
-  const ctaText = landing.cta_text || brandConfig.resolved.ctas.primary.text || "Download Free PDF";
+    return {
+      title: ebook.title,
+      subtitle: ebook.subtitle || "",
+      slug: ebook.slug,
+      gradient: gradients[i % gradients.length],
+      icon: icons[i % icons.length],
+      tag_items: tags,
+      has_tags: tags.length > 0,
+      chapter_count: chapterCount,
+      has_pdf: hasPdf,
+      pdf_url: pdfUrl,
+    };
+  });
 
-  // Map chapters with enriched metadata for template
-  const chapterItems = chapters.map((ch, i) => ({
-    number: i + 1,
-    title: ch.title,
-    summary: ch.summary || "",
-    difficulty: ch.difficulty || null,
-    is_beginner: ch.difficulty === "beginner",
-    is_intermediate: ch.difficulty === "intermediate",
-    is_advanced: ch.difficulty === "advanced",
-    reading_time_minutes: ch.reading_time_minutes || null,
-    has_objectives: ch.learning_objectives && ch.learning_objectives.length > 0,
-    learning_objectives: ch.learning_objectives
-      ? ch.learning_objectives.map((obj) => ({ text: obj }))
-      : null,
-    has_takeaways: ch.key_takeaways && ch.key_takeaways.length > 0,
-    key_takeaways: ch.key_takeaways
-      ? ch.key_takeaways.map((t) => ({ text: t }))
-      : null,
-  }));
+// --- Count totals ---
 
-  // Map authors for template (with initials fallback)
-  const authorItems = brandConfig.resolved.authors.map((a) => ({
-    name: a.name,
-    title: a.title || "",
-    bio: a.bio || "",
-    avatar_url: a.avatar_url || null,
-    initials: a.name
-      .split(/\s+/)
-      .map((w: string) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase(),
-    has_social: a.social && Object.keys(a.social).length > 0,
-    linkedin: a.social?.linkedin || null,
-    github: a.social?.github || null,
-    twitter: a.social?.twitter || null,
-  }));
+const totalChapters = ebookCards.reduce((sum, e) => sum + e.chapter_count, 0);
 
-  // Compute stats for stats bar
-  const totalReadingTime = chapterItems.reduce(
-    (sum, ch) => sum + (ch.reading_time_minutes || 3),
-    0,
-  );
-  const statsBar =
-    chapterItems.length > 0
-      ? {
-          chapter_count: chapterItems.length,
-          total_reading_time: totalReadingTime,
-          has_code: true,
-        }
-      : null;
+// --- Home page URL (relative from _output/landing/) ---
 
-  const data = {
-    slug: ebook.slug,
-    title: ebook.title,
-    subtitle: ebook.subtitle || "",
-    headline: landing.headline || ebook.title,
-    description: landing.description || "",
-    cta_text: ctaText,
-    form_action: landing.form_action || "#",
-    year: new Date().getFullYear(),
-    theme_color: brandConfig.resolved.colors.primary,
-    css_vars: buildCssVars(brandConfig),
+const homeUrl = "../index.html";
+const dashboardUrl = "../dashboard/index.html";
 
-    // Brand-extended data
-    company_name: brandConfig.resolved.company.name,
-    company_website: brandConfig.resolved.company.website,
-    company_tagline: brandConfig.resolved.company.tagline,
+// --- Render template ---
 
-    // Secondary CTA (from overrides or brand defaults)
-    secondary_cta: brandConfig.resolved.ctas.secondary || null,
+const data = {
+  company_name: company.name,
+  company_website: company.website,
+  home_url: homeUrl,
+  dashboard_url: dashboardUrl,
+  year: new Date().getFullYear(),
 
-    // Featured products for the landing page
-    featured_products:
-      brandConfig.resolved.featuredProducts.length > 0
-        ? { items: brandConfig.resolved.featuredProducts }
-        : null,
+  ebook_count: ebookCards.length,
+  total_chapters: totalChapters,
+  ebooks: ebookCards,
+};
 
-    stats_bar: statsBar,
-    tags: ebook.tags && ebook.tags.length > 0 ? { items: ebook.tags } : null,
-    chapters: chapterItems.length > 0 ? { items: chapterItems } : null,
-    authors: authorItems.length > 0 ? { items: authorItems } : null,
-    og_image: existsSync(
-      join(ROOT_DIR, "_output", "social", ebook.slug, "og", "og-image.png"),
-    )
-      ? `../../social/${ebook.slug}/og/og-image.png`
-      : null,
-  };
+const html = Mustache.render(template, data);
 
-  // Render
-  const html = Mustache.render(template, data);
+// --- Write output ---
 
-  // Write output
-  const outputDir = join(ROOT_DIR, "_output", "landing", ebook.slug);
-  mkdirSync(outputDir, { recursive: true });
-  writeFileSync(join(outputDir, "index.html"), html, "utf-8");
+const outputDir = join(ROOT_DIR, "_output", "landing");
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(join(outputDir, "index.html"), html, "utf-8");
 
-  // Copy CSS
-  copyFileSync(cssPath, join(outputDir, "styles.css"));
+// Copy CSS
+copyFileSync(cssPath, join(outputDir, "styles.css"));
 
-  // Copy logo
-  const logoSource = join(ROOT_DIR, "_brand", "logos", "zopdev-logo-light.svg");
-  if (existsSync(logoSource)) {
-    copyFileSync(logoSource, join(outputDir, "logo.svg"));
-  }
-
-  console.log(`  → ${outputDir}/index.html`);
-  generated++;
+// Copy logo
+const logoSource = join(ROOT_DIR, "_brand", "logos", "zopdev-logo-light.svg");
+if (existsSync(logoSource)) {
+  copyFileSync(logoSource, join(outputDir, "logo.svg"));
 }
 
-if (generated === 0 && targetSlug) {
-  console.error(`No ebook found with slug '${targetSlug}' and landing_page enabled`);
-  process.exit(1);
-}
-
-console.log(`\nGenerated ${generated} landing page(s)`);
+console.log(`Landing page generated at _output/landing/index.html`);
+console.log(`  ${ebookCards.length} ebooks, ${totalChapters} total chapters`);

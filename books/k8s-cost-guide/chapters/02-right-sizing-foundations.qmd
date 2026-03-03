@@ -63,7 +63,7 @@ What makes this approach powerful is combining automated measurement with action
 
 Platforms like zopnight accelerate this workflow by surfacing VPA-driven recommendations automatically, visualizing quota enforcement status, and presenting recommendations alongside the utilization data that validates them. Instead of exploring kubectl output manually, teams receive pre-computed suggestions tied directly to the measurements they already trust. This transforms right-sizing from a periodic audit exercise into an ongoing, data-driven practice that keeps resource requests aligned with actual consumption as workloads evolve.
 
-```{.d2 width="100%" file="../diagrams/vpa-workflow.d2"}
+```{.d2 width="100%" file="diagrams/vpa-workflow.d2"}
 ```
 
 *How VPA observes actual resource consumption and right-sizes pod requests to eliminate waste*

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{company_name}} — {{company_tagline}}</title>
+  <meta name="description" content="Free technical ebooks and guides by {{company_name}}. {{company_tagline}}.">
+  <meta name="theme-color" content="#0891b2">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="home-styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <nav class="nav">
+        <div class="logo">
+          <a href="{{{company_website}}}" class="logo-link">
+            <img src="logo.svg" alt="{{company_name}}" width="120" height="32" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+            <span class="logo-text" style="display:none">{{company_name}}</span>
+          </a>
+        </div>
+        <div class="nav-links">
+          <a href="dashboard/index.html" class="nav-link">Ebooks</a>
+          <a href="{{{company_website}}}" class="nav-link" target="_blank">Website</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container hero-container">
+      <div class="hero-badge">Open Source Knowledge</div>
+      <h1 class="hero-title">Cloud Engineering<br><span class="hero-accent">Excellence</span></h1>
+      <p class="hero-subtitle">Free technical ebooks and guides to help engineering teams ship faster, spend less, and operate with confidence.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-value">{{ebook_count}}</span>
+          <span class="hero-stat-label">Free Ebooks</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">{{total_chapters}}</span>
+          <span class="hero-stat-label">Chapters</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">100%</span>
+          <span class="hero-stat-label">Free & Open</span>
+        </div>
+      </div>
+      <a href="dashboard/index.html" class="hero-cta">Browse Ebooks</a>
+    </div>
+  </section>
+
+  <!-- Products -->
+  <section class="products">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Our Products</h2>
+        <p class="section-subtitle">Tools that help engineering teams build, deploy, and optimize cloud infrastructure.</p>
+      </div>
+      <div class="product-grid">
+        {{#products}}
+        <div class="product-card">
+          <div class="product-card-accent" style="background: {{accent_color}};"></div>
+          <h3 class="product-card-name">{{name}}</h3>
+          {{#tagline}}<p class="product-card-tagline">{{tagline}}</p>{{/tagline}}
+          <p class="product-card-desc">{{description}}</p>
+          {{#features}}
+          <ul class="product-features">
+            {{#items}}
+            <li>{{.}}</li>
+            {{/items}}
+          </ul>
+          {{/features}}
+          <a href="{{{url}}}" class="product-card-link" target="_blank">Learn more &rarr;</a>
+        </div>
+        {{/products}}
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <span class="footer-logo">{{company_name}}</span>
+          <p class="footer-tagline">{{company_tagline}}</p>
+        </div>
+        <div class="footer-links">
+          {{#company_social_linkedin}}
+          <a href="{{company_social_linkedin}}" class="footer-social" target="_blank" aria-label="LinkedIn">LinkedIn</a>
+          {{/company_social_linkedin}}
+          {{#company_social_github}}
+          <a href="{{company_social_github}}" class="footer-social" target="_blank" aria-label="GitHub">GitHub</a>
+          {{/company_social_github}}
+          {{#company_social_twitter}}
+          <a href="{{company_social_twitter}}" class="footer-social" target="_blank" aria-label="Twitter">Twitter</a>
+          {{/company_social_twitter}}
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; {{year}} {{company_name}}. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Header scroll effect
+    const header = document.querySelector('.header');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
+
+    // Staggered card animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          entry.target.style.transitionDelay = `${i * 80}ms`;
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.ebook-card, .product-card').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

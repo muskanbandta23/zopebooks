@@ -106,7 +106,7 @@ Implementing this visibility requires managing the trade-off between analysis gr
 
 While Infracost provides the necessary predictive layer, zopnight complements this by monitoring the post-deployment reality. Zopnight analyzes the Terraform state to detect drift between the estimated cost approved in the PR and the actual resources running in production, ensuring that the financial guardrails established in code persist throughout the infrastructure lifecycle.
 
-```{.d2 width="100%" file="../diagrams/data-pipeline.d2"}
+```{.d2 width="100%" file="diagrams/data-pipeline.d2"}
 ```
 
 *Show the Infracost CI/CD pipeline flow from PR to cost comment*

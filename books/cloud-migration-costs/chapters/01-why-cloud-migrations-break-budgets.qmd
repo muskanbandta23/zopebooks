@@ -35,7 +35,7 @@ Organizations at the **Defined** stage implement automated cost modeling with ba
 
 The **Optimized** stage achieves real-time spend tracking with predictive analytics. Teams model cost outcomes before committing to migration paths, identifying non-production environment scheduling opportunities that yield up to 70% compute cost reduction before overspend occurs. Organizations operating at this maturity level avoid the $100B in unplanned migration expenditures that have burdened the industry globally over three years (Future Processing).
 
-```{.d2 width="100%" file="../diagrams/finops-workflow.d2"}
+```{.d2 width="100%" file="diagrams/finops-workflow.d2"}
 ```
 
 *Visualize the FinOps maturity progression for migration cost management*

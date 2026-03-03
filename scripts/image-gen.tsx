@@ -349,7 +349,7 @@ export async function generateSectionImage(opts: ImageGenOptions): Promise<Image
     console.log(`    [image-gen] Generated ${type}: ${filename} (${result.width}x${result.height})`);
 
     return {
-      filename: `images/${filename}`,
+      filename: `../images/${filename}`,
       absolutePath,
       type,
       width: result.width,

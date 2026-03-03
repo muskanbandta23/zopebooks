@@ -86,7 +86,7 @@ locals {
 
 With these two components—accurate measurement and automated scheduling—teams stop the bleeding and redirect those funds toward migration acceleration or infrastructure improvements.
 
-```{.d2 width="100%" file="../diagrams/before-after-optimization.d2"}
+```{.d2 width="100%" file="diagrams/before-after-optimization.d2"}
 ```
 
 *Visualize the cost difference between always-on vs scheduled non-production environments*
@@ -525,7 +525,7 @@ Implement Reserved Instance purchases for production baseline workloads. Combine
 
 This phased approach minimizes risk while delivering early wins that justify continued investment.
 
-```{.d2 width="100%" file="../diagrams/finops-workflow.d2"}
+```{.d2 width="100%" file="diagrams/finops-workflow.d2"}
 ```
 
 *Show the step-by-step workflow for implementing environment scheduling*
