@@ -436,51 +436,25 @@ pre:hover .code-copy-button {
 
 // ===== TABLES =====
 table {
-  border-collapse: collapse;
   width: 100%;
-  margin: 2rem 0;
-  font-size: 0.9375rem;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  border: 1px solid #ddd;
+}
 
-  thead {
-    background: linear-gradient(135deg, rgba($brand-primary, 0.08), rgba($brand-secondary, 0.06));
-    border-bottom: 2px solid rgba($brand-primary, 0.15);
+th, td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
 
-    th {
-      padding: 0.875rem 1rem;
-      text-align: left;
-      font-weight: 600;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: $brand-navy;
-    }
-  }
+th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
 
-  tbody {
-    tr {
-      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-      transition: background 150ms ease;
-
-      &:nth-child(even) {
-        background: rgba(0, 0, 0, 0.015);
-      }
-
-      &:hover {
-        background: rgba($brand-primary, 0.03);
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      td {
-        padding: 0.75rem 1rem;
-      }
-    }
-  }
+tbody tr:nth-child(even) {
+  background-color: #fafafa;
 }
 
 // ===== LINKS =====
@@ -716,13 +690,18 @@ hr {
 }
 
 // ===== IMAGES =====
+img {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .quarto-figure {
   margin: 2.5rem 0;
   text-align: center;
 
   img {
-    max-width: 100%;
-    height: auto;
     border-radius: 12px;
     border: 1px solid rgba(0, 0, 0, 0.06);
   }

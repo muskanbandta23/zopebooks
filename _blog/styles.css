@@ -388,6 +388,15 @@ body {
   color: var(--color-foreground, #111827);
 }
 
+/* ── Global Image Rules ───────────────────────────────────────────────── */
+
+.article-body img {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* ── Chapter Figures ──────────────────────────────────────────────────── */
 
 .chapter-figure {
@@ -396,6 +405,7 @@ body {
 }
 
 .chapter-figure img {
+  max-width: 100%;
   width: 100%;
   height: auto;
   border-radius: 12px;

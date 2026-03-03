@@ -8,11 +8,11 @@ book:
   date: today
   chapters:
     - index.qmd
-    - chapters/01-understanding-lambda-performance-landscape.qmd
-    - chapters/02-execution-context-reuse.qmd
-    - chapters/03-runtime-architecture-choices.qmd
-    - chapters/04-provisioned-concurrency.qmd
-    - chapters/05-memory-right-sizing.qmd
+    - chapters/01-why-lambda-optimization-matters.qmd
+    - chapters/02-eliminating-cold-starts.qmd
+    - chapters/03-performance-optimization-patterns.qmd
+    - chapters/04-resilience-and-reliability-patterns.qmd
+    - chapters/05-production-implementation-roadmap.qmd
     - chapters/99-closing.qmd
 filters:
   - d2

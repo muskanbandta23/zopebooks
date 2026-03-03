@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Pipeline Runner — Multi-Chapter Parallel Orchestrator.
  *
@@ -17,6 +17,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join, dirname } from "path";
+import { spawnSync, execSync } from "child_process";
 import { parse } from "yaml";
 import { loadPipelineConfig, type CostEntry } from "./provider-config.js";
 import { generateCostReport, writeCostReport, formatCostReport } from "./cost-report.js";
@@ -68,6 +69,21 @@ async function runWithConcurrency<T>(
   return results;
 }
 
+// ── Runtime Detection ────────────────────────────────────────────────────────
+
+function detectTsRunner(): { cmd: string; runArgs: string[] } {
+  try {
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
+    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
+  } catch { /* not available */ }
+  try {
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+  } catch { /* not available */ }
+  return { cmd: "node", runArgs: ["--import", "tsx"] };
+}
+const tsRunner = detectTsRunner();
+
 // ── Stage Runners ───────────────────────────────────────────────────────────
 
 async function runStage(stage: string, slug: string, extraArgs: string[] = []): Promise<StageResult> {
@@ -82,10 +98,9 @@ async function runStage(stage: string, slug: string, extraArgs: string[] = []): 
   if (!script) throw new Error(`Unknown stage: ${stage}`);
 
   const startTime = Date.now();
-  const args = ["bun", "run", join(PROJECT_ROOT, script), slug, ...extraArgs];
 
   try {
-    const proc = Bun.spawnSync(args, {
+    const proc = spawnSync(tsRunner.cmd, [...tsRunner.runArgs, join(PROJECT_ROOT, script), slug, ...extraArgs], {
       cwd: PROJECT_ROOT,
       timeout: stage === "transform" ? 600_000 : 300_000,
       env: { ...process.env },
@@ -95,12 +110,12 @@ async function runStage(stage: string, slug: string, extraArgs: string[] = []): 
     const stdout = proc.stdout?.toString() || "";
     const stderr = proc.stderr?.toString() || "";
 
-    if (proc.exitCode !== 0) {
+    if (proc.status !== 0) {
       return {
         stage,
         success: false,
         durationMs,
-        error: stderr.slice(0, 500) || `Exit code: ${proc.exitCode}`,
+        error: stderr.slice(0, 500) || `Exit code: ${proc.status}`,
         details: stdout.slice(-200),
       };
     }

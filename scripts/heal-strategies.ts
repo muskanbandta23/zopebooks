@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Self-healing strategy dispatch table.
  * Maps violation heal strategy keys to concrete fix functions.
@@ -14,9 +14,24 @@
 
 import { existsSync, readFileSync, writeFileSync, readdirSync } from "fs";
 import { join, dirname, basename } from "path";
+import { spawnSync } from "child_process";
 import { parse, stringify } from "yaml";
 import type { ModalityViolation } from "./eval-modalities.js";
 import { loadPipelineConfig } from "./provider-config.js";
+
+// Runtime detection: bun > npx tsx > node --import tsx
+function _detectRunner(): { cmd: string; runArgs: string[] } {
+  try {
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
+    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
+  } catch { /* not available */ }
+  try {
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+  } catch { /* not available */ }
+  return { cmd: "node", runArgs: ["--import", "tsx"] };
+}
+const _runner = _detectRunner();
 
 const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
 const PROJECT_ROOT = join(SCRIPT_DIR, "..");
@@ -157,12 +172,12 @@ async function healEbookChapters(slug: string, violations: ModalityViolation[]):
       writeFileSync(planPath, stringify(planContent), "utf-8");
 
       // Re-transform the chapter (single chapter takes ~2-4 minutes with LLM calls)
-      const proc = Bun.spawnSync(
-        ["bun", "run", join(SCRIPT_DIR, "transform-chapter.ts"), slug, chapter],
-        { cwd: PROJECT_ROOT, timeout: 300_000 },
-      );
+      const proc = spawnSync(_runner.cmd, [..._runner.runArgs, join(SCRIPT_DIR, "transform-chapter.ts"), slug, chapter], {
+        cwd: PROJECT_ROOT,
+        timeout: 300_000,
+      });
 
-      if (proc.exitCode === 0) {
+      if (proc.status === 0) {
         actions.push({
           strategy: strategies.join("+"),
           chapter,
@@ -170,7 +185,7 @@ async function healEbookChapters(slug: string, violations: ModalityViolation[]):
           success: true,
         });
       } else {
-        const stderr = proc.stderr?.toString().slice(0, 500) || proc.stdout?.toString().slice(0, 500) || `exit code ${proc.exitCode} (timeout=${proc.exitCode === null ? 'yes' : 'no'})`;
+        const stderr = proc.stderr?.toString().slice(0, 500) || proc.stdout?.toString().slice(0, 500) || `exit code ${proc.status} (timeout=${proc.status === null ? 'yes' : 'no'})`;
         actions.push({
           strategy: strategies.join("+"),
           chapter,
@@ -197,12 +212,12 @@ async function healEbookChapters(slug: string, violations: ModalityViolation[]):
 
 async function healLanding(slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
   try {
-    const proc = Bun.spawnSync(
-      ["bun", "run", join(PROJECT_ROOT, "_landing", "generate.ts"), slug],
-      { cwd: PROJECT_ROOT, timeout: 60_000 },
-    );
+    const proc = spawnSync(_runner.cmd, [..._runner.runArgs, join(PROJECT_ROOT, "_landing", "generate.ts"), slug], {
+      cwd: PROJECT_ROOT,
+      timeout: 60_000,
+    });
 
-    if (proc.exitCode === 0) {
+    if (proc.status === 0) {
       return [{ strategy: "regenerate_landing", action: `Regenerated landing page for ${slug}`, success: true }];
     } else {
       const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";
@@ -217,12 +232,12 @@ async function healLanding(slug: string, _violations: ModalityViolation[]): Prom
 
 async function healSocial(slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
   try {
-    const proc = Bun.spawnSync(
-      ["bun", "run", join(PROJECT_ROOT, "_social", "generate.ts"), slug],
-      { cwd: PROJECT_ROOT, timeout: 120_000 },
-    );
+    const proc = spawnSync(_runner.cmd, [..._runner.runArgs, join(PROJECT_ROOT, "_social", "generate.ts"), slug], {
+      cwd: PROJECT_ROOT,
+      timeout: 120_000,
+    });
 
-    if (proc.exitCode === 0) {
+    if (proc.status === 0) {
       return [{ strategy: "regenerate_social", action: `Regenerated social assets for ${slug}`, success: true }];
     } else {
       const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";
@@ -237,12 +252,12 @@ async function healSocial(slug: string, _violations: ModalityViolation[]): Promi
 
 async function healBlog(slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
   try {
-    const proc = Bun.spawnSync(
-      ["bun", "run", join(PROJECT_ROOT, "_blog", "generate.ts"), slug],
-      { cwd: PROJECT_ROOT, timeout: 60_000 },
-    );
+    const proc = spawnSync(_runner.cmd, [..._runner.runArgs, join(PROJECT_ROOT, "_blog", "generate.ts"), slug], {
+      cwd: PROJECT_ROOT,
+      timeout: 60_000,
+    });
 
-    if (proc.exitCode === 0) {
+    if (proc.status === 0) {
       return [{ strategy: "regenerate_blog", action: `Regenerated blog posts for ${slug}`, success: true }];
     } else {
       const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";
@@ -257,12 +272,12 @@ async function healBlog(slug: string, _violations: ModalityViolation[]): Promise
 
 async function healHub(_slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
   try {
-    const proc = Bun.spawnSync(
-      ["bun", "run", join(PROJECT_ROOT, "_hub", "generate.ts")],
-      { cwd: PROJECT_ROOT, timeout: 30_000 },
-    );
+    const proc = spawnSync(_runner.cmd, [..._runner.runArgs, join(PROJECT_ROOT, "_hub", "generate.ts")], {
+      cwd: PROJECT_ROOT,
+      timeout: 30_000,
+    });
 
-    if (proc.exitCode === 0) {
+    if (proc.status === 0) {
       return [{ strategy: "regenerate_hub", action: "Regenerated hub page", success: true }];
     } else {
       const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";
@@ -278,12 +293,12 @@ async function healHub(_slug: string, _violations: ModalityViolation[]): Promise
 async function healPdf(slug: string, _violations: ModalityViolation[]): Promise<HealAction[]> {
   try {
     const bookDir = join(PROJECT_ROOT, "books", slug);
-    const proc = Bun.spawnSync(
-      ["quarto", "render", bookDir, "--to", "pdf"],
-      { cwd: PROJECT_ROOT, timeout: 300_000 },
-    );
+    const proc = spawnSync("quarto", ["render", bookDir, "--to", "pdf"], {
+      cwd: PROJECT_ROOT,
+      timeout: 300_000,
+    });
 
-    if (proc.exitCode === 0) {
+    if (proc.status === 0) {
       return [{ strategy: "regenerate_pdf", action: `Re-rendered PDF for ${slug}`, success: true }];
     } else {
       const stderr = proc.stderr?.toString().slice(0, 500) || "unknown";

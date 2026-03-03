@@ -7,9 +7,11 @@
     "ebook": "./scripts/cli.ts"
   },
   "scripts": {
-    "validate": "bun run scripts/validate.ts",
-    "landing": "bun run _landing/generate.ts",
-    "social": "bun run _social/generate.ts",
+    "validate": "npx tsx scripts/validate.ts",
+    "landing": "npx tsx _landing/generate.ts",
+    "social": "npx tsx _social/generate.ts",
+    "serve": "npx tsx _server/server.ts",
+    "generate": "npx tsx scripts/generate-ebook.ts",
     "test": "bun test scripts/tests/",
     "test:watch": "bun test scripts/tests/ --watch"
   },
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@types/mustache": "^4.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.7"
   }
 }

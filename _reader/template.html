@@ -359,12 +359,22 @@
     .hl-number { color: #FAB387; }
     .hl-comment { color: #6C7086; font-style: italic; }
 
+    /* ─── Global Image Rules ─── */
+    .chapter-body img {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
     /* ─── Figures / Images ─── */
     .chapter-figure {
       margin: 2rem 0;
       text-align: center;
+      overflow: visible;
     }
     .chapter-figure img {
+      max-width: 100%;
       width: 100%;
       height: auto;
       border-radius: 10px;
@@ -379,6 +389,20 @@
       color: var(--reader-text-muted);
       font-style: italic;
       padding: 0 1rem;
+    }
+
+    /* ─── D2 SVG Diagrams ─── */
+    .diagram-svg-wrapper {
+      margin: 2rem 0;
+      text-align: center;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .diagram-svg-wrapper svg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
     }
 
     /* ─── Static Calculator Card ─── */
@@ -514,7 +538,7 @@
     .diagram-card {
       margin: 2rem 0;
       border-radius: 12px;
-      overflow: hidden;
+      overflow: visible;
       border: 1px solid rgba(8,145,178,0.2);
       background: #fff;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);

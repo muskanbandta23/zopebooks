@@ -1,20 +1,53 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Local dev server for the Zopdev Ebook Engine.
  * Serves static files from _output/ and exposes an SSE-based generation API.
  *
+ * Works with both Node.js (via tsx) and Bun.
+ *
  * Usage:
- *   bun run _server/server.ts
- *   PORT=8080 bun run _server/server.ts
+ *   npx tsx _server/server.ts
+ *   node --import tsx _server/server.ts
+ *   PORT=8080 npx tsx _server/server.ts
  */
 
-import { join, extname } from "path";
-import { spawn, type ChildProcess } from "child_process";
-import { existsSync, statSync } from "fs";
+import { createServer, type IncomingMessage, type ServerResponse } from "http";
+import { join, extname, dirname } from "path";
+import { fileURLToPath } from "url";
+import { spawn, execSync, type ChildProcess } from "child_process";
+import { existsSync, statSync, readFileSync } from "fs";
 
-const ROOT = join(import.meta.dir, "..");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ROOT = join(__dirname, "..");
 const OUTPUT = join(ROOT, "_output");
 const PORT = parseInt(process.env.PORT || "3000");
+
+// ── Runtime Detection ─────────────────────────────────────────────────────
+
+/**
+ * Find the best available TypeScript runtime.
+ * Prefers npx tsx (most reliable in Node.js projects), then bun, then node --import tsx.
+ */
+function detectRuntime(): { cmd: string; args: string[] } {
+  // Prefer npx tsx — always works when tsx is in devDependencies
+  try {
+    execSync("npx tsx --version", { stdio: "pipe", timeout: 10000 });
+    return { cmd: "npx", args: ["tsx"] };
+  } catch { /* not available */ }
+
+  // Try bun
+  try {
+    execSync("bun --version", { stdio: "pipe", timeout: 5000 });
+    return { cmd: "bun", args: ["run"] };
+  } catch { /* not available */ }
+
+  // Fallback to node (requires tsx installed globally or in project)
+  return { cmd: "node", args: ["--import", "tsx"] };
+}
+
+const runtime = detectRuntime();
+console.log(`  Runtime: ${runtime.cmd} ${runtime.args.join(" ")}`);
 
 // ── MIME Types ────────────────────────────────────────────────────────────
 
@@ -69,24 +102,38 @@ function resolveStaticFile(pathname: string): string | null {
   return null;
 }
 
+// ── CORS Headers ─────────────────────────────────────────────────────────
+
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+};
+
+function sendJson(res: ServerResponse, status: number, data: object, extraHeaders?: Record<string, string>) {
+  const body = JSON.stringify(data);
+  res.writeHead(status, {
+    "Content-Type": "application/json",
+    ...corsHeaders,
+    ...extraHeaders,
+  });
+  res.end(body);
+}
+
 // ── SSE Generation Handler ────────────────────────────────────────────────
 
-function handleGenerate(url: URL): Response {
+function handleGenerate(url: URL, res: ServerResponse): void {
   const topic = url.searchParams.get("topic");
   const chapters = url.searchParams.get("chapters") || "5";
 
   if (!topic) {
-    return new Response(JSON.stringify({ error: "topic is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    sendJson(res, 400, { error: "topic is required" });
+    return;
   }
 
   if (activeChild) {
-    return new Response(JSON.stringify({ error: "Generation already in progress" }), {
-      status: 409,
-      headers: { "Content-Type": "application/json" },
-    });
+    sendJson(res, 409, { error: "Generation already in progress" });
+    return;
   }
 
   const slug = topic
@@ -95,179 +142,209 @@ function handleGenerate(url: URL): Response {
     .replace(/^-|-$/g, "")
     .slice(0, 50);
 
-  const encoder = new TextEncoder();
-
-  const stream = new ReadableStream({
-    start(controller) {
-      const send = (data: object) => {
-        try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-        } catch {
-          // Stream may be closed
-        }
-      };
-
-      // Keepalive interval to prevent browser timeout
-      const keepalive = setInterval(() => {
-        try {
-          controller.enqueue(encoder.encode(`:keepalive\n\n`));
-        } catch {
-          clearInterval(keepalive);
-        }
-      }, 30000);
-
-      send({ step: 0, total: 10, label: "Starting generation...", status: "running", slug });
-
-      const child = spawn("bun", [
-        "run",
-        join(ROOT, "scripts", "generate-ebook.ts"),
-        `--topic=${topic}`,
-        `--chapters=${chapters}`,
-      ], {
-        cwd: ROOT,
-        env: process.env,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-
-      activeChild = child;
-      let currentStep = 0;
-
-      const processLine = (line: string) => {
-        const clean = stripAnsi(line).trim();
-        if (!clean) return;
-
-        // Detect step headers: ── [N/10] Label
-        const stepMatch = clean.match(/── \[(\d+)\/(\d+)\]\s*(.+)/);
-        if (stepMatch) {
-          currentStep = parseInt(stepMatch[1]);
-          const total = parseInt(stepMatch[2]);
-          const label = stepMatch[3].trim();
-          send({ step: currentStep, total, label, status: "running", slug });
-        } else {
-          send({ type: "log", text: clean, step: currentStep });
-        }
-      };
-
-      let stdoutBuf = "";
-      child.stdout?.on("data", (data: Buffer) => {
-        stdoutBuf += data.toString();
-        const lines = stdoutBuf.split("\n");
-        stdoutBuf = lines.pop() || "";
-        for (const line of lines) processLine(line);
-      });
-
-      let stderrBuf = "";
-      child.stderr?.on("data", (data: Buffer) => {
-        stderrBuf += data.toString();
-        const lines = stderrBuf.split("\n");
-        stderrBuf = lines.pop() || "";
-        for (const line of lines) processLine(line);
-      });
-
-      child.on("close", (code) => {
-        // Flush remaining buffer
-        if (stdoutBuf.trim()) processLine(stdoutBuf);
-        if (stderrBuf.trim()) processLine(stderrBuf);
-
-        clearInterval(keepalive);
-        activeChild = null;
-
-        if (code === 0) {
-          send({ step: 10, total: 10, label: "Complete!", status: "done", complete: true, slug });
-        } else {
-          send({ type: "error", text: `Generation failed (exit code ${code})`, step: currentStep });
-        }
-
-        try {
-          controller.close();
-        } catch {
-          // Already closed
-        }
-      });
-
-      child.on("error", (err) => {
-        clearInterval(keepalive);
-        activeChild = null;
-        send({ type: "error", text: `Failed to start: ${err.message}`, step: 0 });
-        try {
-          controller.close();
-        } catch {
-          // Already closed
-        }
-      });
-    },
-
-    cancel() {
-      // Client disconnected — kill the child process
-      if (activeChild) {
-        activeChild.kill("SIGTERM");
-        activeChild = null;
-      }
-    },
+  // SSE headers
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    ...corsHeaders,
   });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-    },
+  const send = (data: object) => {
+    try {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    } catch {
+      // Stream may be closed
+    }
+  };
+
+  // Keepalive interval to prevent browser timeout
+  const keepalive = setInterval(() => {
+    try {
+      res.write(`:keepalive\n\n`);
+    } catch {
+      clearInterval(keepalive);
+    }
+  }, 30000);
+
+  send({ step: 0, total: 10, label: "Starting generation...", status: "running", slug });
+
+  // Load .env variables for the child process
+  const childEnv = { ...process.env };
+  const envPath = join(ROOT, ".env");
+  if (existsSync(envPath)) {
+    const envContent = readFileSync(envPath, "utf-8");
+    for (const line of envContent.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx > 0) {
+        const key = trimmed.substring(0, eqIdx).trim();
+        let val = trimmed.substring(eqIdx + 1).trim();
+        // Strip surrounding quotes
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        childEnv[key] = val;
+      }
+    }
+  }
+
+  // Ensure TinyTeX, Quarto, and D2 are in PATH for PDF rendering
+  const home = process.env.HOME || "";
+  const extraPaths = [
+    join(home, "Library", "TinyTeX", "bin", "universal-darwin"),
+    join(home, ".TinyTeX", "bin", "x86_64-linux"),
+    join(home, ".local", "quarto", "bin"),
+    join(home, ".local", "bin"),
+    "/usr/local/bin",
+  ];
+  for (const p of extraPaths) {
+    if (existsSync(p) && !(childEnv.PATH || "").includes(p)) {
+      childEnv.PATH = `${p}:${childEnv.PATH || ""}`;
+    }
+  }
+
+  const child = spawn(runtime.cmd, [
+    ...runtime.args,
+    join(ROOT, "scripts", "generate-ebook.ts"),
+    `--topic=${topic}`,
+    `--chapters=${chapters}`,
+  ], {
+    cwd: ROOT,
+    env: childEnv,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  activeChild = child;
+  let currentStep = 0;
+
+  const processLine = (line: string) => {
+    const clean = stripAnsi(line).trim();
+    if (!clean) return;
+
+    // Detect step headers: ── [N/10] Label
+    const stepMatch = clean.match(/── \[(\d+)\/(\d+)\]\s*(.+)/);
+    if (stepMatch) {
+      currentStep = parseInt(stepMatch[1]);
+      const total = parseInt(stepMatch[2]);
+      const label = stepMatch[3].trim();
+      send({ step: currentStep, total, label, status: "running", slug });
+    } else {
+      send({ type: "log", text: clean, step: currentStep });
+    }
+  };
+
+  let stdoutBuf = "";
+  child.stdout?.on("data", (data: Buffer) => {
+    stdoutBuf += data.toString();
+    const lines = stdoutBuf.split("\n");
+    stdoutBuf = lines.pop() || "";
+    for (const line of lines) processLine(line);
+  });
+
+  let stderrBuf = "";
+  child.stderr?.on("data", (data: Buffer) => {
+    stderrBuf += data.toString();
+    const lines = stderrBuf.split("\n");
+    stderrBuf = lines.pop() || "";
+    for (const line of lines) processLine(line);
+  });
+
+  child.on("close", (code) => {
+    // Flush remaining buffer
+    if (stdoutBuf.trim()) processLine(stdoutBuf);
+    if (stderrBuf.trim()) processLine(stderrBuf);
+
+    clearInterval(keepalive);
+    activeChild = null;
+
+    if (code === 0) {
+      send({ step: 10, total: 10, label: "Complete!", status: "done", complete: true, slug });
+    } else {
+      send({ type: "error", text: `Generation failed (exit code ${code})`, step: currentStep });
+    }
+
+    try {
+      res.end();
+    } catch {
+      // Already closed
+    }
+  });
+
+  child.on("error", (err) => {
+    clearInterval(keepalive);
+    activeChild = null;
+    send({ type: "error", text: `Failed to start: ${err.message}`, step: 0 });
+    try {
+      res.end();
+    } catch {
+      // Already closed
+    }
+  });
+
+  // Client disconnected — kill the child process
+  res.on("close", () => {
+    if (activeChild === child) {
+      activeChild.kill("SIGTERM");
+      activeChild = null;
+    }
   });
 }
 
 // ── Server ────────────────────────────────────────────────────────────────
 
-Bun.serve({
-  port: PORT,
+const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+  const url = new URL(req.url || "/", `http://localhost:${PORT}`);
 
-  fetch(req) {
-    const url = new URL(req.url);
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "*",
-    };
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, corsHeaders);
+    res.end();
+    return;
+  }
 
-    // Handle CORS preflight
-    if (req.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders });
+  // Route: redirect / to dashboard
+  if (url.pathname === "/") {
+    res.writeHead(302, { Location: "/dashboard/index.html" });
+    res.end();
+    return;
+  }
+
+  // Route: SSE generation
+  if (url.pathname === "/api/generate") {
+    handleGenerate(url, res);
+    return;
+  }
+
+  // Route: generation status check
+  if (url.pathname === "/api/status") {
+    sendJson(res, 200, { generating: activeChild !== null });
+    return;
+  }
+
+  // Route: static files from _output/
+  const filePath = resolveStaticFile(url.pathname);
+  if (filePath) {
+    const ext = extname(filePath);
+    const contentType = MIME[ext] || "application/octet-stream";
+    try {
+      const content = readFileSync(filePath);
+      res.writeHead(200, { "Content-Type": contentType });
+      res.end(content);
+    } catch {
+      res.writeHead(500, { "Content-Type": "text/plain" });
+      res.end("Internal Server Error");
     }
+    return;
+  }
 
-    // Route: redirect / to dashboard
-    if (url.pathname === "/") {
-      return Response.redirect("/dashboard/index.html", 302);
-    }
-
-    // Route: SSE generation
-    if (url.pathname === "/api/generate") {
-      return handleGenerate(url);
-    }
-
-    // Route: generation status check
-    if (url.pathname === "/api/status") {
-      return new Response(JSON.stringify({
-        generating: activeChild !== null,
-      }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    // Route: static files from _output/
-    const filePath = resolveStaticFile(url.pathname);
-    if (filePath) {
-      const ext = extname(filePath);
-      const contentType = MIME[ext] || "application/octet-stream";
-      return new Response(Bun.file(filePath), {
-        headers: { "Content-Type": contentType },
-      });
-    }
-
-    return new Response("Not Found", { status: 404 });
-  },
+  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.end("Not Found");
 });
 
-console.log(`
+server.listen(PORT, () => {
+  console.log(`
 \x1b[36m╔══════════════════════════════════════════════════╗\x1b[0m
 \x1b[36m║\x1b[0m  \x1b[1mZopdev Ebook Engine — Dev Server\x1b[0m
 \x1b[36m║\x1b[0m
@@ -277,3 +354,4 @@ console.log(`
 \x1b[36m║\x1b[0m  Press Ctrl+C to stop
 \x1b[36m╚══════════════════════════════════════════════════╝\x1b[0m
 `);
+});

@@ -202,7 +202,8 @@ ${density.hasCalculator ? "- MUST include exactly 1 interactive calculator secti
   - "key-number": Use for a single bold number callout. Requires stat_data: {headline: "the number", subtext: "unit/label", source: "context"}
   Place image visuals on the opening or impact/results sections. They break text walls with branded graphics.
 - End with a "summary" section
-- Section notes should be detailed enough that a writer knows exactly what to write
+- Section notes should be detailed enough that a writer knows exactly what to write — NEVER use placeholder text like "Objective 1", "Concept 1", "Replace with actual content", "TODO", or "[INSERT]"
+- Every section note must contain specific, real content guidance — not generic filler like "cover important concepts"
 - For illustration visuals, include image_prompt (text description of the image) and image_style
 
 Available D2 templates: ${d2Templates || "none"}
@@ -326,14 +327,30 @@ export function sectionProsePrompt(
   return [
     {
       role: "system",
-      content: `You are a senior technical writer producing a section for a marketing ebook. Write publication-quality prose.
+      content: `You are a senior technical writer producing a section for a marketing ebook. Write publication-quality prose at CTO-readable, industry-playbook level.
 
 Tone: ${tone}
 Avoid: ${avoid}
 Emphasize: ${emphasize}
 Code policy: ${codePolicy}
 
-Rules:
+=== CONTENT QUALITY POLICY (MANDATORY — violations cause generation failure) ===
+
+ZERO TOLERANCE FOR PLACEHOLDER TEXT:
+- NEVER write "Objective 1", "Concept 1", "Replace with actual content", "TODO", "[INSERT]", or any placeholder
+- NEVER write "Key Concept X" or "Learning Objective X" as generic labels — every item must be a fully written, meaningful sentence
+- NEVER use generic filler like "This section covers important concepts" — be specific about WHAT concepts and WHY they matter
+- If you cannot write real content for a section, describe the mechanism or strategy qualitatively — never leave blanks or stubs
+
+PROFESSIONAL WRITING STANDARDS:
+- Write as if authoring an industry playbook for a Fortune 500 CTO audience
+- Every paragraph must deliver specific, actionable insight — no padding, no filler
+- Opening sections must establish strategic context, real-world stakes, and credibility through data
+- Learning objectives must be concrete and business-relevant (e.g., "Implement provisioned concurrency to eliminate cold starts below 100ms" not "Understand cold starts")
+- Overviews and key concepts must contain real explanations with technical depth, not generic definitions
+- Summaries must synthesize actionable takeaways with specific numbers, not restate headings
+
+STRUCTURAL RULES:
 - Write actual prose paragraphs — not bullet points, not instructions, not placeholders
 - Back claims with specific data from the provided FACT SHEET. Inline citations: "... (Source Name)"
 - Use specific numbers from the FACT SHEET, not ranges — pick the exact documented figure
@@ -347,7 +364,9 @@ Rules:
 - Start the opening section with a compelling hook, not "In today's..." or "Organizations..."
 - For config/code sections: provide brief context before and after the config block, but do NOT include the config block itself — the assembler handles that
 - Write in markdown format (bold, italic, lists where appropriate)
-- Maintain continuity with previous sections — build on what was said, don't repeat${plan.heal_augmentation ? `\n\nADDITIONAL REQUIREMENTS (from quality evaluation, iteration ${plan.heal_iteration || 1}):\n${plan.heal_augmentation}` : ""}`,
+- Maintain continuity with previous sections — build on what was said, don't repeat
+
+=== END CONTENT QUALITY POLICY ===${plan.heal_augmentation ? `\n\nADDITIONAL REQUIREMENTS (from quality evaluation, iteration ${plan.heal_iteration || 1}):\n${plan.heal_augmentation}` : ""}`,
     },
     {
       role: "user",

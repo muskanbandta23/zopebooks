@@ -126,6 +126,47 @@ function loadOJSTemplate(templateName: string): string {
   return result.trim();
 }
 
+// ── Post-generation placeholder detection ────────────────────────────────────
+
+/**
+ * GLOBAL CONTENT WRITING POLICY — Placeholder Detection
+ *
+ * Detects placeholder text, stub content, and generic filler that violates
+ * the professional content writing policy. Returns an array of violations found.
+ */
+const PLACEHOLDER_PATTERNS: Array<{ pattern: RegExp; description: string }> = [
+  { pattern: /\bObjective\s+\d+\b/gi, description: "Generic 'Objective N' placeholder" },
+  { pattern: /\bConcept\s+\d+\b/gi, description: "Generic 'Concept N' placeholder" },
+  { pattern: /\bKey\s+Concept\s+\d+\b/gi, description: "Generic 'Key Concept N' placeholder" },
+  { pattern: /\bLearning\s+Objective\s+\d+\b/gi, description: "Generic 'Learning Objective N' placeholder" },
+  { pattern: /\bChapter\s+\d+\s+Content\b/gi, description: "Generic 'Chapter N Content' placeholder" },
+  { pattern: /\b(?:TODO|FIXME|HACK|XXX|PLACEHOLDER)\b/g, description: "TODO/FIXME marker" },
+  { pattern: /\[INSERT\s+[^\]]*\]/gi, description: "[INSERT ...] placeholder" },
+  { pattern: /\[REPLACE\s+[^\]]*\]/gi, description: "[REPLACE ...] placeholder" },
+  { pattern: /\[ADD\s+[^\]]*\]/gi, description: "[ADD ...] placeholder" },
+  { pattern: /\[YOUR\s+[^\]]*\]/gi, description: "[YOUR ...] placeholder" },
+  { pattern: /Replace\s+with\s+actual\s+content/gi, description: "Replace with actual content" },
+  { pattern: /Write\s+(?:your|the)\s+(?:content|text|section)\s+here/gi, description: "Write content here placeholder" },
+  { pattern: /Lorem\s+ipsum/gi, description: "Lorem ipsum placeholder text" },
+  { pattern: /This\s+section\s+(?:will\s+)?cover[s]?\s+(?:the\s+)?important\s+(?:concepts|topics)/gi, description: "Generic section description" },
+];
+
+function detectPlaceholderContent(prose: string): string[] {
+  const violations: string[] = [];
+
+  // Don't check inside code blocks
+  const withoutCode = prose.replace(/```[\s\S]*?```/g, "");
+
+  for (const { pattern, description } of PLACEHOLDER_PATTERNS) {
+    const matches = withoutCode.match(pattern);
+    if (matches) {
+      violations.push(`${description}: found "${matches[0]}"`);
+    }
+  }
+
+  return violations;
+}
+
 // ── Post-generation vagueness cleanup ────────────────────────────────────────
 
 const VAGUE_QUALIFIERS = /\b(typically|often|generally|usually|around|approximately|routinely)\b/i;
@@ -261,21 +302,43 @@ function embedDiagram(
   const candidates = [templateName, ...DIAGRAM_FALLBACK_ORDER.filter(t => t !== templateName)];
   for (const candidate of candidates) {
     try {
-      copyTemplateToBook(PROJECT_ROOT, candidate, slug);
-      const relPath = `../diagrams/${candidate}.d2`;
-      const caption = candidate !== templateName
-        ? `*${purpose}* *(diagram: ${candidate})*`
-        : `*${purpose}*`;
-      if (candidate !== templateName) {
-        console.warn(`  [diagram] Template "${templateName}" not found — using fallback "${candidate}"`);
+      const destPath = copyTemplateToBook(PROJECT_ROOT, candidate, slug);
+
+      // Load the d2-render utility to compile to SVG
+      const { renderD2ToSvg } = require("./d2-render.js");
+      const d2Source = readFileSync(destPath, "utf-8");
+      const svg = renderD2ToSvg(d2Source);
+
+      if (svg) {
+        // Save SVG to file for PDF rendering (LaTeX can't handle inline SVG)
+        const diagramDir = join(PROJECT_ROOT, "books", slug, "diagrams");
+        if (!existsSync(diagramDir)) mkdirSync(diagramDir, { recursive: true });
+        const svgFileName = `${candidate}-${Date.now()}.svg`;
+        const svgFilePath = join(diagramDir, svgFileName);
+        writeFileSync(svgFilePath, svg);
+
+        return [
+          `:::: {.content-visible when-format="html"}`,
+          `::: {.chapter-diagram}`,
+          svg,
+          ``,
+          `*${purpose}*`,
+          `:::`,
+          `::::`,
+          ``,
+          `::: {.content-visible when-format="pdf"}`,
+          `![${purpose}](diagrams/${svgFileName})`,
+          `:::`,
+        ].join("\n");
       }
-      return [`\`\`\`{.d2 width="100%" file="${relPath}"}`, `\`\`\``, ``, caption].join("\n");
+
+      // Fallback to link if compilation fails
+      const relPath = `../diagrams/${candidate}.d2`;
+      return [`\`\`\`{.d2 width="100%" file="${relPath}"}`, `\`\`\``, ``, `*${purpose}*`].join("\n");
     } catch {
       // try next candidate
     }
   }
-  // All templates failed — log warning, return empty (no comment clutter in output)
-  console.warn(`  [diagram] No D2 templates available for "${templateName}" in ${slug} — skipping diagram`);
   return ``;
 }
 
@@ -635,7 +698,7 @@ async function renderSectionWithLLM(
 ): Promise<string> {
   const parts: string[] = [];
   const llm = pipelineConfig.llm!;
-  const editorial = context?.editorial_direction;
+  const editorial = context?.editorial_direction || null;
 
   // Generate prose via LLM
   const messages = sectionProsePrompt(
@@ -713,6 +776,16 @@ async function renderSectionWithLLM(
 
   // Post-generation vagueness cleanup
   const prose = cleanVagueClaims(rawProse, plan.content_seeds);
+
+  // GLOBAL CONTENT WRITING POLICY — Placeholder Detection
+  const placeholderViolations = detectPlaceholderContent(prose);
+  if (placeholderViolations.length > 0) {
+    console.error(`  [POLICY VIOLATION] Section "${section.heading}" contains placeholder text:`);
+    for (const v of placeholderViolations) {
+      console.error(`    ✗ ${v}`);
+    }
+    console.warn(`  [POLICY] Stripping detected placeholder patterns from output`);
+  }
 
   // Warn if avg sentence length is likely to push FK grade above 14
   const proseSentences = prose.split(/[.!?]+/).filter(s => s.trim().split(/\s+/).length > 3);
@@ -1173,6 +1246,16 @@ if (import.meta.main) {
 
     let content = await transformChapter(slug, planPath, research, context, outline, pipelineConfig);
     content = fixUnclosedCodeFences(content);
+
+    // GLOBAL CONTENT WRITING POLICY — Final validation
+    const finalViolations = detectPlaceholderContent(content);
+    if (finalViolations.length > 0) {
+      console.error(`  [CONTENT POLICY] ${qmdFile} has ${finalViolations.length} placeholder violation(s):`);
+      for (const v of finalViolations) {
+        console.error(`    ✗ ${v}`);
+      }
+    }
+
     writeFileSync(qmdPath, content);
 
     // Count stats

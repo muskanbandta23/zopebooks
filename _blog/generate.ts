@@ -79,33 +79,73 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // Remove HTML comments
   html = html.replace(/<!--[\s\S]*?-->/g, "");
 
+  // Handle content-visible blocks: unwrap HTML blocks, extract PDF/EPUB for static fallback
+  // First, unwrap :::: {.content-visible when-format="html"} → keep inner content
+  html = html.replace(/:{3,4}\s*\{\.content-visible\s+when-format="html"\}\s*\n([\s\S]*?):{3,4}\s*$/gm, "$1");
+
+  // Clean inline SVG for HTML5 embedding: strip XML declaration and CDATA markers
+  function cleanSvgForHtml(svg: string): string {
+    return svg
+      .replace(/<\?xml[^?]*\?>\s*/g, "")
+      .replace(/<!\[CDATA\[/g, "")
+      .replace(/\]\]>/g, "");
+  }
+
+  // Handle ::: {.chapter-diagram} blocks with inline SVG → extract to placeholder store
+  // These must be stored to protect SVG content from paragraph wrapping
+  const chapterDiagramStore: string[] = [];
+
+  html = html.replace(/:{3,4}\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:{3,4}/g, (_, svgContent, caption) => {
+    const cleanSvg = cleanSvgForHtml(svgContent.trim());
+    const rendered = `<div class="diagram-figure">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const idx = chapterDiagramStore.length;
+    chapterDiagramStore.push(rendered);
+    return `<div data-chapterdiagram="${idx}"></div>`;
+  });
+
+  // Also handle bare ::: {.chapter-diagram} (legacy format)
+  html = html.replace(/:::\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:::/g, (_, svgContent, caption) => {
+    const cleanSvg = cleanSvgForHtml(svgContent.trim());
+    const rendered = `<div class="diagram-figure">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const idx = chapterDiagramStore.length;
+    chapterDiagramStore.push(rendered);
+    return `<div data-chapterdiagram="${idx}"></div>`;
+  });
+
   // Extract static fallback from content-visible blocks (show ROI tables in HTML)
   const staticFallbacks: string[] = [];
-  html = html.replace(/::: \{\.content-visible when-format="(?:pdf|epub)"\}\n([\s\S]*?):::/g, (_, content) => {
+  html = html.replace(/:{3,4}\s*\{\.content-visible\s+when-format="(?:pdf|epub)"\}\s*\n([\s\S]*?):{3,4}/g, (_, content) => {
     staticFallbacks.push(content.trim());
     return "";
   });
 
+  // D2 diagram blocks — render to SVG and extract to placeholder store to protect from paragraph wrapping
+  const diagramStore: string[] = [];
+
   // D2 diagram blocks with file= reference — render from D2 file
   html = html.replace(/```\{\.?d2[^}]*file="([^"]+)"[^}]*\}\n([\s\S]*?)```/g, (_, fileRef) => {
+    let rendered = "";
     if (bookDir) {
       const d2Path = join(bookDir, fileRef);
       if (existsSync(d2Path)) {
         const src = readFileSync(d2Path, "utf-8");
-        // Try D2 CLI first, fall back to HTML card
         const svg = renderD2ToSvg(src);
-        if (svg) return `<div class="diagram-figure">${svg}</div>`;
-        return renderD2AsHtmlCard(src);
+        rendered = svg ? `<div class="diagram-figure">${svg}</div>` : renderD2AsHtmlCard(src);
       }
     }
-    return renderD2AsHtmlCard("");
+    if (!rendered) rendered = renderD2AsHtmlCard("");
+    const idx = diagramStore.length;
+    diagramStore.push(rendered);
+    return `<div data-diagram="${idx}"></div>`;
   });
 
   // D2 inline diagram blocks — render from inline source
   html = html.replace(/```\{\.?d2[^}]*\}\n([\s\S]*?)```/g, (_, source) => {
     const svg = renderD2ToSvg(source);
-    if (svg) return `<div class="diagram-figure">${svg}</div>`;
-    return renderD2AsHtmlCard(source);
+    const rendered = svg ? `<div class="diagram-figure">${svg}</div>` : renderD2AsHtmlCard(source);
+    const idx = diagramStore.length;
+    diagramStore.push(rendered);
+    return `<div data-diagram="${idx}"></div>`;
   });
 
   // OJS blocks — replace with static ROI table from fallback content
@@ -156,6 +196,9 @@ function markdownToHtml(md: string, bookDir?: string): string {
     return `<div class="callout callout-${type}"><strong>${icons[type] || ""} ${type.charAt(0).toUpperCase() + type.slice(1)}:</strong> ${content.trim()}</div>`;
   });
 
+  // Clean up any remaining fenced div markers (:::: or ::: with attributes or bare)
+  html = html.replace(/^:{3,4}\s*(?:\{[^}]*\})?\s*$/gm, "");
+
   // Headers
   html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
   html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
@@ -199,6 +242,16 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // Restore code blocks from placeholders
   for (let i = 0; i < codeBlockStore.length; i++) {
     html = html.replace(`<div data-codeblock="${i}"></div>`, codeBlockStore[i]);
+  }
+
+  // Restore D2 diagram SVGs from placeholders
+  for (let i = 0; i < diagramStore.length; i++) {
+    html = html.replace(`<div data-diagram="${i}"></div>`, diagramStore[i]);
+  }
+
+  // Restore chapter-diagram SVGs from placeholders
+  for (let i = 0; i < chapterDiagramStore.length; i++) {
+    html = html.replace(`<div data-chapterdiagram="${i}"></div>`, chapterDiagramStore[i]);
   }
 
   return html;

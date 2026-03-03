@@ -131,22 +131,6 @@ ebooks:
       cta_text: "Download Free Ebook"
       form_action: "#"
 
-  - slug: docker-security-best-practices
-    title: "Docker Security Best Practices"
-    subtitle: "A Practical Guide to Docker Security Best Practices"
-    authors:
-      - "Zopdev Team"
-    status: draft
-    tags: [docker, security, practices]
-    outputs:
-      html: true
-      pdf: true
-      epub: true
-      landing_page: true
-      linkedin_carousel: true
-      instagram_posts: true
-      og_image: true
-
   - slug: aws-lambda-best-practices
     title: "AWS Lambda Best Practices"
     subtitle: "A Practical Guide to AWS Lambda Best Practices"

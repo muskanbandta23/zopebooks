@@ -62,10 +62,33 @@ interface CommandDef {
   handler: (slug: string | null, opts: Record<string, string>) => void;
 }
 
+// ── Runtime Detection ──────────────────────────────────────────────────────
+
+function detectTsRunner(): { cmd: string; runArgs: string[] } {
+  // Check if we're already running in Bun
+  if (typeof (globalThis as any).Bun !== "undefined") {
+    return { cmd: "bun", runArgs: ["run"] };
+  }
+  // Try bun
+  try {
+    const r = spawnSync("bun", ["--version"], { stdio: "pipe" });
+    if (r.status === 0) return { cmd: "bun", runArgs: ["run"] };
+  } catch { /* not available */ }
+  // Try npx tsx
+  try {
+    const r = spawnSync("npx", ["tsx", "--version"], { stdio: "pipe" });
+    if (r.status === 0) return { cmd: "npx", runArgs: ["tsx"] };
+  } catch { /* not available */ }
+  // Fallback
+  return { cmd: "node", runArgs: ["--import", "tsx"] };
+}
+
+const tsRunner = detectTsRunner();
+
 // ── Subprocess Runner ──────────────────────────────────────────────────────
 
 function run(script: string, args: string[]): void {
-  const result = spawnSync("bun", ["run", script, ...args], {
+  const result = spawnSync(tsRunner.cmd, [...tsRunner.runArgs, script, ...args], {
     cwd: ROOT,
     stdio: "inherit",
     env: process.env,
@@ -674,8 +697,8 @@ const COMMANDS: CommandDef[] = [
         spawnSync(openCmd, [`http://localhost:${port}`], { stdio: "ignore" });
       }, 500);
 
-      // Run server (blocking)
-      const result = spawnSync("bun", ["run", join(ROOT, "_server", "server.ts")], {
+      // Run server (blocking) — uses detected TS runtime
+      const result = spawnSync(tsRunner.cmd, [...tsRunner.runArgs, join(ROOT, "_server", "server.ts")], {
         cwd: ROOT,
         stdio: "inherit",
         env,

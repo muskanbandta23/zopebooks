@@ -13,8 +13,10 @@
  *   bun run _reader/generate.ts              # Render all ebooks
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync, unlinkSync } from "fs";
 import { join, dirname, basename } from "path";
+import { execSync } from "child_process";
+import { tmpdir } from "os";
 import { parse } from "yaml";
 import Mustache from "mustache";
 import { loadMergedBrand, buildCssVars } from "../scripts/brand-utils.js";
@@ -315,16 +317,56 @@ function renderD2AsHtml(d2Source: string, fileRef?: string): string {
 }
 
 /**
- * Resolve a D2 file reference and render it as HTML.
+ * Render a D2 diagram using the CLI if available, otherwise fallback to HTML card.
+ */
+function findD2Cli(): string | null {
+  const candidates = [
+    "d2",
+    join(process.env.HOME || "", ".local", "bin", "d2"),
+    "/usr/local/bin/d2",
+    "/opt/homebrew/bin/d2",
+  ];
+  for (const cmd of candidates) {
+    try {
+      execSync(`"${cmd}" --version`, { stdio: "pipe" });
+      return cmd;
+    } catch { /* not found */ }
+  }
+  return null;
+}
+
+const d2Cli = findD2Cli();
+
+function compileD2ToSvg(source: string): string {
+  if (!d2Cli) return renderD2AsHtml(source);
+
+  try {
+    const tmpIn = join(tmpdir(), `d2-${Date.now()}-${Math.random().toString(36).slice(2)}.d2`);
+    const tmpOut = join(tmpdir(), `d2-${Date.now()}-${Math.random().toString(36).slice(2)}.svg`);
+    writeFileSync(tmpIn, source);
+    execSync(`"${d2Cli}" --layout=elk --theme=200 "${tmpIn}" "${tmpOut}"`, { stdio: "pipe" });
+    let svg = readFileSync(tmpOut, "utf-8");
+    try { unlinkSync(tmpIn); } catch { }
+    try { unlinkSync(tmpOut); } catch { }
+    // Clean SVG for HTML5: strip XML declaration and CDATA markers
+    svg = svg.replace(/<\?xml[^?]*\?>\s*/g, "").replace(/<!\[CDATA\[/g, "").replace(/\]\]>/g, "");
+    // Wrap SVG in a responsive container
+    return `<div class="diagram-svg-wrapper">${svg}</div>`;
+  } catch (err) {
+    return renderD2AsHtml(source);
+  }
+}
+
+/**
+ * Resolve a D2 file reference and render it as SVG/HTML.
  */
 function resolveD2File(bookDir: string, fileAttr: string): string {
-  // fileAttr is like: diagrams/vpa-workflow.d2
   const d2Path = join(bookDir, fileAttr);
   if (existsSync(d2Path)) {
     const source = readFileSync(d2Path, "utf-8");
-    return renderD2AsHtml(source, fileAttr);
+    return compileD2ToSvg(source);
   }
-  return `<div class="diagram-card"><div class="diagram-card-header"><span class="diagram-icon">📊</span>Diagram</div><div class="diagram-card-body"><p class="diagram-notice">Diagram file: ${fileAttr}</p></div></div>`;
+  return `<div class="diagram-card"><div class="diagram-card-header"><span class="diagram-icon">📊</span>Diagram</div><div class="diagram-card-body"><p class="diagram-notice">Diagram file not found: ${fileAttr}</p></div></div>`;
 }
 
 // ── Markdown to HTML (lightweight) ──────────────────────────────────────────
@@ -338,16 +380,45 @@ function markdownToHtml(md: string, bookDir?: string): string {
   // Remove HTML comments
   html = html.replace(/<!--[\s\S]*?-->/g, "");
 
+  // Handle content-visible blocks: keep HTML blocks, extract PDF/EPUB for static fallback
+  // First, unwrap :::: {.content-visible when-format="html"} → keep inner content
+  html = html.replace(/:{3,4}\s*\{\.content-visible\s+when-format="html"\}\s*\n([\s\S]*?):{3,4}\s*$/gm, "$1");
+
+  // Clean inline SVG for HTML5 embedding: strip XML declaration and CDATA markers
+  function cleanSvgForHtml(svg: string): string {
+    return svg
+      .replace(/<\?xml[^?]*\?>\s*/g, "")       // Strip <?xml ... ?>
+      .replace(/<!\[CDATA\[/g, "")               // Strip <![CDATA[
+      .replace(/\]\]>/g, "");                     // Strip ]]>
+  }
+
+  // Handle ::: {.chapter-diagram} blocks with inline SVG → extract SVG to placeholder
+  const diagramStore: string[] = [];
+
+  html = html.replace(/:{3,4}\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:{3,4}/g, (_, svgContent, caption) => {
+    const cleanSvg = cleanSvgForHtml(svgContent.trim());
+    const rendered = `<div class="diagram-svg-wrapper">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const idx = diagramStore.length;
+    diagramStore.push(rendered);
+    return `\n<div data-diagram="${idx}"></div>\n`;
+  });
+
+  // Also handle bare ::: {.chapter-diagram} without nested content-visible (legacy format)
+  html = html.replace(/:::\s*\{\.chapter-diagram\}\s*\n([\s\S]*?)\n\n\*([^*]+)\*\s*\n:::/g, (_, svgContent, caption) => {
+    const cleanSvg = cleanSvgForHtml(svgContent.trim());
+    const rendered = `<div class="diagram-svg-wrapper">${cleanSvg}</div><p class="diagram-caption"><em>${caption}</em></p>`;
+    const idx = diagramStore.length;
+    diagramStore.push(rendered);
+    return `\n<div data-diagram="${idx}"></div>\n`;
+  });
+
   // Extract static fallback from content-visible blocks (PDF/EPUB fallback → show in HTML too)
   // These contain the static ROI tables we want to show
   const staticFallbacks: string[] = [];
-  html = html.replace(/::: \{\.content-visible when-format="(?:pdf|epub)"\}\n([\s\S]*?):::/g, (_, content) => {
+  html = html.replace(/:{3,4}\s*\{\.content-visible\s+when-format="(?:pdf|epub)"\}\s*\n([\s\S]*?):{3,4}/g, (_, content) => {
     staticFallbacks.push(content.trim());
     return ""; // Remove — we'll use the first one found after removing OJS blocks
   });
-
-  // D2 diagram blocks — extract to placeholder store (protects from paragraph wrapping)
-  const diagramStore: string[] = [];
 
   // File-referenced D2 blocks
   html = html.replace(/```\{\.?d2[^}]*file="([^"]+)"[^}]*\}\n([\s\S]*?)```/g, (_, fileRef) => {
@@ -359,7 +430,7 @@ function markdownToHtml(md: string, bookDir?: string): string {
 
   // Inline D2 blocks
   html = html.replace(/```\{\.?d2[^}]*\}\n([\s\S]*?)```/g, (_, source) => {
-    const rendered = renderD2AsHtml(source);
+    const rendered = compileD2ToSvg(source);
     const idx = diagramStore.length;
     diagramStore.push(rendered);
     return `\n<div data-diagram="${idx}"></div>\n`;
@@ -370,7 +441,9 @@ function markdownToHtml(md: string, bookDir?: string): string {
   html = html.replace(/```\{ojs[^}]*\}[\s\S]*?```/g, () => {
     if (!ojsReplacementDone && staticFallbacks.length > 0) {
       ojsReplacementDone = true;
-      const rendered = `<div class="static-calculator"><div class="static-calculator-header">📊 ROI Calculator (Static View)</div><div class="static-calculator-body">${staticFallbacks[0]}</div></div>`;
+      // Convert the static fallback (markdown table) to HTML before embedding
+      const tableHtml = markdownToHtml(staticFallbacks[0]);
+      const rendered = `<div class="static-calculator"><div class="static-calculator-header">📊 ROI Calculator (Static View)</div><div class="static-calculator-body">${tableHtml}</div></div>`;
       const idx = diagramStore.length;
       diagramStore.push(rendered);
       return `\n<div data-diagram="${idx}"></div>\n`;
@@ -426,6 +499,9 @@ function markdownToHtml(md: string, bookDir?: string): string {
     const icons: Record<string, string> = { note: "ℹ️", tip: "💡", warning: "⚠️", important: "❗" };
     return `<div class="callout callout-${type}"><div class="callout-header">${icons[type] || "📌"} ${type.charAt(0).toUpperCase() + type.slice(1)}</div><div class="callout-body">${content.trim()}</div></div>`;
   });
+
+  // Clean up any remaining fenced div markers (:::: or ::: with attributes or bare)
+  html = html.replace(/^:{3,4}\s*(?:\{[^}]*\})?\s*$/gm, "");
 
   // Headers — add IDs for TOC linking
   html = html.replace(/^#### (.+)$/gm, (_, title) => {

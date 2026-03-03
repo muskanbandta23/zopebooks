@@ -47,19 +47,15 @@ sed -e "s/{{slug}}/$SLUG/g" \
 # NOTE: Do NOT use 'title:' in YAML for index.qmd. Quarto always counts
 # YAML-titled entries in the sidebar numbering. Using a body-level H1 with
 # {.unnumbered} keeps it out of the chapter count.
-cat > "$BOOK_DIR/index.qmd" << EOF
----
-subtitle: "$SUBTITLE"
----
-
-# $TITLE {.unnumbered}
-
-## Preface {.unnumbered}
-
-Welcome to *$TITLE*.
-
-<!-- TODO: Write preface content -->
-EOF
+{
+  echo "---"
+  echo "subtitle: \"$SUBTITLE\""
+  echo "---"
+  echo ""
+  echo "# $TITLE {.unnumbered}"
+  echo ""
+  sed "s/{{topic}}/$TITLE/g" "$ROOT_DIR/_templates/preface.qmd"
+} > "$BOOK_DIR/index.qmd"
 
 # Generate first chapter from template
 sed -e "s/{{title}}/Introduction/g" \

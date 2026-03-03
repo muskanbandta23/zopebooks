@@ -31,7 +31,9 @@ export function renderD2ToSvg(d2Source: string, options?: {
       `d2 --layout=${layout} --theme=${theme} --pad=${pad} "${tmpInput}" "${tmpOutput}"`,
       { stdio: "pipe", timeout: 30000 }
     );
-    const svg = readFileSync(tmpOutput, "utf-8");
+    let svg = readFileSync(tmpOutput, "utf-8");
+    // Clean SVG for HTML5 embedding: strip XML declaration and CDATA markers
+    svg = svg.replace(/<\?xml[^?]*\?>\s*/g, "").replace(/<!\[CDATA\[/g, "").replace(/\]\]>/g, "");
     return svg;
   } catch (err: any) {
     console.warn(`D2 render failed: ${err.message}`);
