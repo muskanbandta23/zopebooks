@@ -105,8 +105,7 @@
             <h2>Read the full guide</h2>
             <p>This post is one chapter from <strong>{{ebook_title}}</strong>. Download the complete ebook for all chapters, interactive calculators, and production-ready code examples.</p>
           </div>
-          {{#pdf_url}}<button class="cta-button" onclick="openLeadModal()">Download Free Ebook</button>{{/pdf_url}}
-          {{^pdf_url}}<a href="../../index.html" class="cta-button">View All Ebooks</a>{{/pdf_url}}
+          <button class="cta-button" onclick="openLeadModal()">{{#pdf_url}}Download Free Ebook{{/pdf_url}}{{^pdf_url}}Get Early Access{{/pdf_url}}</button>
         </div>
       </div>
     </section>
@@ -148,7 +147,7 @@
       </form>
       <div class="lead-modal-success" id="lead-success" style="display: none;">
         <div class="lead-modal-success-icon">&#10003;</div>
-        <p>Your PDF is opening now. Redirecting to the ebook page...</p>
+        <p id="lead-success-msg">{{#pdf_url}}Your PDF is opening now. Redirecting to the ebook page...{{/pdf_url}}{{^pdf_url}}Thank you! We'll be in touch when the full ebook is ready.{{/pdf_url}}</p>
       </div>
     </div>
   </div>
@@ -263,14 +262,17 @@
 
         if (pdfUrl) {
           window.open(pdfUrl, '_blank');
+          setTimeout(function() {
+            closeLeadModal();
+            if (dashboardUrl) {
+              window.location.href = dashboardUrl;
+            }
+          }, 2500);
+        } else {
+          setTimeout(function() {
+            closeLeadModal();
+          }, 2000);
         }
-
-        setTimeout(function() {
-          closeLeadModal();
-          if (dashboardUrl) {
-            window.location.href = dashboardUrl;
-          }
-        }, 2500);
       });
 
       return false;

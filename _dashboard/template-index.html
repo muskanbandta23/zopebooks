@@ -24,11 +24,12 @@
       </a>
       <div class="dash-nav-center">
         <a href="{{{home_url}}}" class="dash-nav-link">Home</a>
-        <a href="#" class="dash-nav-link active">Ebooks</a>
+        <a href="#ebooks" class="dash-nav-link active" data-section="ebooks">Ebooks</a>
+        <a href="#blogs" class="dash-nav-link" data-section="blogs">Blogs</a>
       </div>
       <div class="dash-nav-search">
         <span class="dash-nav-search-icon">&#128269;</span>
-        <input type="text" id="search-input" placeholder="Search ebooks..." aria-label="Search ebooks">
+        <input type="text" id="search-input" placeholder="Search..." aria-label="Search">
       </div>
       <button class="dash-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
         <svg class="theme-icon--light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -127,6 +128,35 @@
     </div>
   </main>
 
+  <!-- ═══ Blog Posts Section ═══ -->
+  <section id="blogs" class="dash-section" style="display:none;">
+    <div class="dash-container">
+      <div class="dash-grid" id="blog-grid">
+        {{#all_blog_posts}}
+        <article class="dash-card" data-title="{{title}}" data-book="{{book_title}}">
+          <a href="{{{url}}}" class="dash-card-link" aria-label="Read {{title}}" target="_blank"></a>
+          <div class="dash-card-header" style="background: {{card_gradient}};">
+            <span class="dash-card-icon">{{card_icon}}</span>
+            <span class="dash-card-badge dash-card-badge--blog">Blog Post</span>
+            <span class="dash-card-chapters">&#128221; Article</span>
+          </div>
+          <div class="dash-card-body">
+            <h2 class="dash-card-title">{{title}}</h2>
+            <p class="dash-card-topic">From: {{book_title}}</p>
+            <div class="dash-card-actions">
+              <span class="dash-card-action dash-card-action--secondary" style="pointer-events:none;">&#128214; Read Article &rarr;</span>
+            </div>
+          </div>
+        </article>
+        {{/all_blog_posts}}
+      </div>
+      <div class="dash-empty" id="no-blog-results" style="display: none;">
+        <div class="dash-empty-icon">&#128221;</div>
+        <p>No blog posts found. Generate blog posts from the ebook detail pages.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══ Footer ═══ -->
   <footer class="dash-footer">
     <div class="dash-container">
@@ -211,10 +241,25 @@
       localStorage.setItem('zopdev-dash-theme', next);
     });
 
+    /* ── Section Navigation ── */
+    const navLinks = document.querySelectorAll('.dash-nav-link[data-section]');
+    const sections = { ebooks: document.querySelector('main.dash-container'), blogs: document.getElementById('blogs') };
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = link.dataset.section;
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        if (sections.ebooks) sections.ebooks.style.display = section === 'ebooks' ? '' : 'none';
+        if (sections.blogs) sections.blogs.style.display = section === 'blogs' ? '' : 'none';
+      });
+    });
+
     /* ── Search & Filter ── */
     const searchInput = document.getElementById('search-input');
     const grid = document.getElementById('ebook-grid');
-    const cards = grid.querySelectorAll('.dash-card');
+    const cards = grid ? grid.querySelectorAll('.dash-card') : [];
     const noResults = document.getElementById('no-results');
     const tagButtons = document.querySelectorAll('.tag-btn');
 

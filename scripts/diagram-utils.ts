@@ -44,7 +44,7 @@ const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
 
 // ── D2 CLI detection ────────────────────────────────────────────────────────
 
-function d2Available(): boolean {
+export function d2Available(): boolean {
   try {
     execSync("d2 --version", { stdio: "pipe" });
     return true;

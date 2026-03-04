@@ -101,8 +101,6 @@ This tiered approach creates a foundation for governance. The parameterized conf
 
 ## Policy-as-Code Guardrails: Preventing Cost Mistakes
 
-# Policy-as-Code Guardrails: Preventing Cost Mistakes
-
 The ephemeral environments and tiered instance strategies discussed above represent proactive cost optimization, but they share a common limitation: they rely on engineers making correct choices. Policy-as-code guardrails eliminate that reliance entirely by enforcing cost boundaries automatically—rejecting expensive configurations before Terraform applies them rather than discovering overruns on the monthly bill.
 
 This shift-left approach catches mistakes at the planning stage, when correction costs nothing. Infracost integration reveals that 20-30% of IaC changes have cost impact (Verified Claim), making automated enforcement essential for organizations serious about cloud spend governance. Policy-as-code guardrails prevent expensive resource configurations before deployment by embedding rules directly into the deployment pipeline (Verified Claim).
@@ -132,8 +130,6 @@ data:
 ```
 
 ## Estimating Infrastructure Costs Before Deployment
-
-# Estimating Infrastructure Costs Before Deployment
 
 Before committing resources to the cloud, teams need a reliable method to project spending across different infrastructure scenarios. An interactive cost impact calculator transforms abstract optimization concepts into concrete financial projections, enabling data-driven decisions about environment strategy and instance selection.
 

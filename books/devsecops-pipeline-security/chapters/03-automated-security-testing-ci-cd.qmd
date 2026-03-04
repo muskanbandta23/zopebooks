@@ -27,8 +27,6 @@ This is why the shift-left pattern has become operational imperative. Organizati
 
 ## SAST Integration: Tool Selection and Pipeline Patterns
 
-# SAST Integration: Tool Selection and Pipeline Patterns
-
 Choosing a static analysis tool demands evaluation across five operational dimensions. First, verify language coverage matches your codebase—CodeQL supports 17+ languages while Semgrep offers 20+ with community-contributed rules. Second, assess false positive rates; tools averaging below 15% false positives reduce triage fatigue significantly. Third, prioritize IDE integration that surfaces findings during coding, catching defects before they reach the pipeline. Fourth, confirm CI/CD integration quality through native GitHub Actions, GitLab CI, or Azure DevOps connectors that support matrix builds and artifact caching. Fifth, evaluate reporting capabilities: trend visualization, remediation guidance, and export formats for governance dashboards.
 
 The pipeline configuration follows a severity-gated fail-fast pattern. High-severity findings—those mapping to CWE categories like SQL injection, command injection, or path traversal—trigger immediate build failure and block merge. Medium-severity issues generate warnings that allow the build to proceed but require explicit triage within 72 hours. Low-severity findings enter a backlog queue for scheduled remediation in the next sprint.
