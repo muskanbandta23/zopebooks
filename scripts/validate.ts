@@ -9,7 +9,7 @@ import { join, dirname } from "path";
 import { parse } from "yaml";
 import { buildDesignTokenCssVars } from "./theme-utils.js";
 import { getOJSSummary } from "./ojs-utils.js";
-import { findBookDiagrams, validateD2Syntax } from "./diagram-utils.js";
+import { findBookDiagrams, validateD2Syntax, d2Available } from "./diagram-utils.js";
 import { auditEbook } from "./content-audit.js";
 import { validateEbookCode } from "./code-validation.js";
 
@@ -459,39 +459,43 @@ for (const prefix of expectedPrefixes) {
 
 // --- Validate D2 diagrams ---
 
-for (const slug of slugs) {
-  const diagrams = findBookDiagrams(PROJECT_ROOT, slug);
-  if (diagrams.length === 0) continue;
+if (!d2Available()) {
+  warn("D2 CLI not installed — skipping D2 diagram syntax checks (install with: brew install d2)");
+} else {
+  for (const slug of slugs) {
+    const diagrams = findBookDiagrams(PROJECT_ROOT, slug);
+    if (diagrams.length === 0) continue;
 
-  console.log(`Validating D2 diagrams in books/${slug}/...`);
+    console.log(`Validating D2 diagrams in books/${slug}/...`);
 
-  for (const diagramPath of diagrams) {
-    const result = validateD2Syntax(diagramPath);
-    const relPath = diagramPath.replace(PROJECT_ROOT + "/", "");
+    for (const diagramPath of diagrams) {
+      const result = validateD2Syntax(diagramPath);
+      const relPath = diagramPath.replace(PROJECT_ROOT + "/", "");
 
-    if (!result.valid) {
-      for (const err of result.errors) {
-        error(`${relPath}: D2 syntax error — ${err}`);
+      if (!result.valid) {
+        for (const err of result.errors) {
+          error(`${relPath}: D2 syntax error — ${err}`);
+        }
       }
     }
   }
-}
 
-// --- Validate D2 diagram templates ---
+  // --- Validate D2 diagram templates ---
 
-const templatesDir = join(PROJECT_ROOT, "_diagrams", "templates");
-if (existsSync(templatesDir)) {
-  console.log("Validating D2 diagram templates...");
+  const templatesDir = join(PROJECT_ROOT, "_diagrams", "templates");
+  if (existsSync(templatesDir)) {
+    console.log("Validating D2 diagram templates...");
 
-  const templateFiles = readdirSync(templatesDir).filter((f) => f.endsWith(".d2"));
+    const templateFiles = readdirSync(templatesDir).filter((f) => f.endsWith(".d2"));
 
-  for (const file of templateFiles) {
-    const templatePath = join(templatesDir, file);
-    const result = validateD2Syntax(templatePath);
+    for (const file of templateFiles) {
+      const templatePath = join(templatesDir, file);
+      const result = validateD2Syntax(templatePath);
 
-    if (!result.valid) {
-      for (const err of result.errors) {
-        error(`_diagrams/templates/${file}: D2 syntax error — ${err}`);
+      if (!result.valid) {
+        for (const err of result.errors) {
+          error(`_diagrams/templates/${file}: D2 syntax error — ${err}`);
+        }
       }
     }
   }
