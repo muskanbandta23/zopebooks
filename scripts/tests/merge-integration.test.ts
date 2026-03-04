@@ -11,10 +11,9 @@ describe("cross-ebook brand comparison", () => {
   const finops = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
   const k8s = loadMergedBrand(PROJECT_ROOT, "k8s-cost-guide");
 
-  test("primary colors differ between ebooks", () => {
+  test("primary colors match between ebooks (both override to same value)", () => {
     expect(finops.resolved.colors.primary).toBe("#0e7490");
-    expect(k8s.resolved.colors.primary).toBe("#0047AB");
-    expect(finops.resolved.colors.primary).not.toBe(k8s.resolved.colors.primary);
+    expect(k8s.resolved.colors.primary).toBe("#0e7490");
   });
 
   test("non-overridden colors are identical", () => {
@@ -57,7 +56,7 @@ describe("no-override ebook vs overridden ebook", () => {
   const noOverride = loadMergedBrand(PROJECT_ROOT, "nonexistent-book");
   const finops = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
 
-  test("no-override gets default primary color", () => {
+  test("no-override gets default primary color from palette", () => {
     expect(noOverride.resolved.colors.primary).toBe("#0891b2");
     expect(finops.resolved.colors.primary).toBe("#0e7490");
   });

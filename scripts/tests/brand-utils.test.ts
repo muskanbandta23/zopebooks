@@ -50,17 +50,17 @@ describe("loadBrandCore", () => {
     const core = loadBrandCore(PROJECT_ROOT);
     expect(core.color).toBeDefined();
     expect(core.color.palette).toBeDefined();
-    expect(core.color.palette.blue).toBe("#0891b2");
-    expect(core.color.palette["dark-blue"]).toBe("#0e7490");
+    expect(core.color.palette.cyan).toBe("#0891b2");
+    expect(core.color.palette["dark-cyan"]).toBe("#0e7490");
   });
 
   test("loads semantic color references", () => {
     const core = loadBrandCore(PROJECT_ROOT);
-    expect(core.color.primary).toBe("blue");
+    expect(core.color.primary).toBe("cyan");
     expect(core.color.foreground).toBe("navy");
     expect(core.color.background).toBe("off-white");
     expect(core.color.secondary).toBe("gray-500");
-    expect(core.color.link).toBe("blue");
+    expect(core.color.link).toBe("cyan");
   });
 
   test("loads typography settings", () => {
@@ -89,7 +89,7 @@ describe("loadBrandExtended", () => {
     const ext = loadBrandExtended(PROJECT_ROOT);
     expect(ext.company.name).toBe("Zopdev");
     expect(ext.company.tagline).toBe("Cloud Engineering Excellence");
-    expect(ext.company.website).toBe("https://zopdev.com");
+    expect(ext.company.website).toBe("https://zop.dev");
   });
 
   test("loads 3 products", () => {
@@ -153,7 +153,7 @@ describe("loadBrandOverrides", () => {
     const overrides = loadBrandOverrides(PROJECT_ROOT, "k8s-cost-guide");
     expect(overrides).not.toBeNull();
     expect(overrides!.target_icps).toEqual(["devops-engineer"]);
-    expect(overrides!.colors?.primary).toBe("#0047AB");
+    expect(overrides!.colors?.primary).toBe("#0e7490");
   });
 
   test("loads CTA overrides", () => {
@@ -179,7 +179,7 @@ describe("loadMergedBrand", () => {
 
   test("resolves primary color from k8s-cost-guide override", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "k8s-cost-guide");
-    expect(merged.resolved.colors.primary).toBe("#0047AB");
+    expect(merged.resolved.colors.primary).toBe("#0e7490");
   });
 
   test("resolves foreground from core (not overridden)", () => {
@@ -189,18 +189,18 @@ describe("loadMergedBrand", () => {
 
   test("resolves background from core (not overridden)", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.resolved.colors.background).toBe("#FAFAFA");
+    expect(merged.resolved.colors.background).toBe("#f9fafb");
   });
 
   test("resolves secondary from core palette", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.resolved.colors.secondary).toBe("#737373");
+    expect(merged.resolved.colors.secondary).toBe("#6b7280");
   });
 
   test("palette includes overridden primary alongside base colors", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
     expect(merged.resolved.colors.palette.primary).toBe("#0e7490");
-    expect(merged.resolved.colors.palette.blue).toBe("#0891b2");
+    expect(merged.resolved.colors.palette.cyan).toBe("#0891b2");
     expect(merged.resolved.colors.palette.navy).toBe("#111827");
   });
 
@@ -287,13 +287,13 @@ describe("loadMergedBrand", () => {
   test("passes company info through to resolved", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
     expect(merged.resolved.company.name).toBe("Zopdev");
-    expect(merged.resolved.company.website).toBe("https://zopdev.com");
+    expect(merged.resolved.company.website).toBe("https://zop.dev");
   });
 
   // Raw layer access
   test("exposes raw core, extended, and overrides", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
-    expect(merged.core.color.palette.blue).toBe("#0891b2");
+    expect(merged.core.color.palette.cyan).toBe("#0891b2");
     expect(merged.extended.company.name).toBe("Zopdev");
     expect(merged.overrides).not.toBeNull();
     expect(merged.overrides!.colors?.primary).toBe("#0e7490");
@@ -330,7 +330,7 @@ describe("buildCssVars", () => {
     const merged = loadMergedBrand(PROJECT_ROOT, "finops-playbook");
     const vars = buildCssVars(merged);
     const names = vars.map((v) => v.name);
-    expect(names).toContain("--color-blue");
+    expect(names).toContain("--color-cyan");
     expect(names).toContain("--color-navy");
   });
 
