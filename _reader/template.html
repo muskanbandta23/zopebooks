@@ -1084,12 +1084,11 @@
     {{/chapters}}
 
     <!-- ═══ Download CTA with Lead Form ═══ -->
-    {{#has_pdf}}
     <section class="reader-cta" id="download-cta">
       <div class="reader-cta-card">
         <div class="reader-cta-icon">&#128218;</div>
-        <h2 class="reader-cta-title">Download Free Ebook</h2>
-        <p class="reader-cta-desc">Get the complete <strong>{{title}}</strong> as a PDF — {{chapter_count}} chapters, production-ready code, and actionable insights you can use today.</p>
+        <h2 class="reader-cta-title">{{#has_pdf}}Download Free Ebook{{/has_pdf}}{{^has_pdf}}Stay in the Loop{{/has_pdf}}</h2>
+        <p class="reader-cta-desc">{{#has_pdf}}Get the complete <strong>{{title}}</strong> as a PDF — {{chapter_count}} chapters, production-ready code, and actionable insights you can use today.{{/has_pdf}}{{^has_pdf}}Enjoyed <strong>{{title}}</strong>? Join our community to get notified when new chapters and companion ebooks are published.{{/has_pdf}}</p>
 
         <form class="reader-cta-form" id="lead-capture-form" onsubmit="return handleLeadSubmit(event)">
           <div class="reader-cta-fields">
@@ -1113,19 +1112,18 @@
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="flex-shrink:0">
               <path d="M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5M4 15h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Download Free PDF
+            {{#has_pdf}}Download Free PDF{{/has_pdf}}{{^has_pdf}}Get Notified{{/has_pdf}}
           </button>
           <p class="reader-cta-privacy">We respect your privacy. No spam, ever.</p>
         </form>
 
         <div class="reader-cta-success" id="lead-success" style="display:none;">
           <div class="reader-cta-check">&#10003;</div>
-          <p>Thank you! Your download is starting&hellip;</p>
-          <p class="reader-cta-redirect">Redirecting to ebook page&hellip;</p>
+          <p>{{#has_pdf}}Thank you! Your download is starting&hellip;{{/has_pdf}}{{^has_pdf}}Thank you! We'll let you know when it's ready.{{/has_pdf}}</p>
+          {{#has_pdf}}<p class="reader-cta-redirect">Redirecting to ebook page&hellip;</p>{{/has_pdf}}
         </div>
       </div>
     </section>
-    {{/has_pdf}}
   </div>
 
   <!-- ═══ Footer ═══ -->

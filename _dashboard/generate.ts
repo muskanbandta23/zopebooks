@@ -140,6 +140,18 @@ const GRADIENTS = [
 
 const CARD_ICONS = ["📘", "📗", "📕", "📙", "📓", "📔", "📒", "📚"];
 
+const BLOG_GRADIENTS = [
+  "linear-gradient(135deg, #6366f1 0%, #0891b2 100%)",
+  "linear-gradient(135deg, #7c3aed 0%, #0891b2 100%)",
+  "linear-gradient(135deg, #059669 0%, #0891b2 100%)",
+  "linear-gradient(135deg, #dc2626 0%, #0891b2 100%)",
+  "linear-gradient(135deg, #d97706 0%, #0e7490 100%)",
+  "linear-gradient(135deg, #0891b2 0%, #6366f1 100%)",
+  "linear-gradient(135deg, #0f766e 0%, #7c3aed 100%)",
+  "linear-gradient(135deg, #1d4ed8 0%, #0891b2 100%)",
+];
+const BLOG_ICONS = ["📝", "✍️", "🔖", "📰", "🗞️", "📄", "💡", "🖊️"];
+
 function hashSlug(slug: string): number {
   let hash = 0;
   for (let i = 0; i < slug.length; i++) {
@@ -532,6 +544,22 @@ function generateDashboard(): void {
     } catch { /* use default */ }
   }
 
+  // ── Aggregate all blog posts across ebooks ─────────────────────────────
+  const allBlogPosts: Array<{ title: string; url: string; book_title: string; card_gradient: string; card_icon: string }> = [];
+  for (const ebook of ebooks) {
+    const posts = findBlogPosts(ebook.slug);
+    for (const post of posts) {
+      const h = hashSlug(post.slug + ebook.slug);
+      allBlogPosts.push({
+        title: post.title,
+        url: post.url,
+        book_title: ebook.title,
+        card_gradient: BLOG_GRADIENTS[h % BLOG_GRADIENTS.length],
+        card_icon: BLOG_ICONS[h % BLOG_ICONS.length],
+      });
+    }
+  }
+
   // ── Generate Index Page ────────────────────────────────────────────────
 
   const indexData = {
@@ -542,6 +570,8 @@ function generateDashboard(): void {
     tags: [...allTags].sort().map(t => ({ name: t })),
     year: new Date().getFullYear(),
     has_ebooks: ebooks.length > 0,
+    all_blog_posts: allBlogPosts,
+    all_blog_count: allBlogPosts.length,
   };
 
   const indexHtml = Mustache.render(indexTemplate, indexData);

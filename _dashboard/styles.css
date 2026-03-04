@@ -577,6 +577,11 @@ a:hover {
   color: var(--dash-accent);
 }
 
+.dash-card-badge--blog {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
 .dash-card-chapters {
   position: absolute;
   top: 0.875rem;
